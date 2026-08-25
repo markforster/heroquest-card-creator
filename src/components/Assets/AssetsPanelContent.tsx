@@ -850,6 +850,8 @@ export default function AssetsPanelContent({
             patch.imageOffsetX = undefined;
             patch.imageOffsetY = undefined;
             patch.imageRotation = undefined;
+            patch.imageClipEdgeMask = undefined;
+            patch.imageClipBottom = undefined;
           }
           if (iconMatch) {
             patch.monsterIconAssetId = undefined;
@@ -898,6 +900,8 @@ export default function AssetsPanelContent({
       setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
       setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
       setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageClipEdgeMask", undefined, { shouldDirty: true, shouldTouch: true });
+      setValue("imageClipBottom", undefined, { shouldDirty: true, shouldTouch: true });
     }
     if (iconMatch) {
       setValue("iconAssetId" as never, undefined as never, {

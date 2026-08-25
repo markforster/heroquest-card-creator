@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { useI18n } from "@/i18n/I18nProvider";
 import { descriptionSupportsBodyTextFitToBounds } from "@/lib/blueprint-text";
+import { getImageLayerClipEdgeSettings } from "@/lib/image-clip-edges";
 import { getImageLayerBounds } from "@/lib/image-scale";
 import type { TemplateId } from "@/types/templates";
 
@@ -112,6 +113,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               label={t(field.labelKey)}
               boundsWidth={bounds.width}
               boundsHeight={bounds.height}
+              clipEdgeSettings={getImageLayerClipEdgeSettings(templateId, field.bind)}
             />
           );
         }

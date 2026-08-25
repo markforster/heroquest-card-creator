@@ -28,7 +28,11 @@ import { layerTypes } from "@/data/card-systems/types";
 import { computeImageZoomModel } from "@/lib/image-scale";
 import type { CardDataByTemplate } from "@/types/card-data";
 
+import type { Ref } from "react";
+
 const capturedOverlayPresence: boolean[] = [];
+const capturedClipGuidePresence: boolean[] = [];
+const capturedClipScissorsPresence: boolean[] = [];
 const mockGetStagePointFromClientCoordinates = jest.fn();
 const selectedPreviewData = {
   title: "Hero",
@@ -86,6 +90,15 @@ jest.mock("@/components/Cards/CardPreview/cardPreviewPointer", () => ({
 jest.mock("@/hooks/useAssetImageUrl", () => ({
   __esModule: true,
   useAssetImageUrl: (assetId?: string) => {
+    if (assetId === "asset-1") {
+      return {
+        url: "blob:asset-1",
+        status: "ready",
+        width: 1400,
+        height: 1800,
+      };
+    }
+
     if (assetId === "icon-1") {
       return {
         url: "blob:icon-1",
@@ -118,6 +131,12 @@ jest.mock("@/lib/render-svg-to-canvas", () => ({
       mutateSvg?.(clonedSvg);
       capturedOverlayPresence.push(
         Boolean(clonedSvg.querySelector('[data-editor-image-frame="true"]')),
+      );
+      capturedClipGuidePresence.push(
+        Boolean(clonedSvg.querySelector('[data-editor-image-clip-bottom-guide="true"]')),
+      );
+      capturedClipScissorsPresence.push(
+        Boolean(clonedSvg.querySelector("[data-editor-image-clip-bottom-scissors]")),
       );
       const canvas = document.createElement("canvas");
       canvas.toBlob = ((callback: BlobCallback) => {
@@ -160,8 +179,12 @@ describe("CardPreview renderToCanvas", () => {
         "iconOffsetY",
         "iconRotation",
         "iconScale",
+        "imageClipEdgeMask",
+        "imageClipBottom",
       ],
     }) as [
+      number | undefined,
+      number | undefined,
       number | undefined,
       number | undefined,
       number | undefined,
@@ -183,6 +206,8 @@ describe("CardPreview renderToCanvas", () => {
         data-icon-offset-y={values[5] ?? ""}
         data-icon-rotation={values[6] ?? ""}
         data-icon-scale={values[7] ?? ""}
+        data-image-clip-edge-mask={values[8] ?? ""}
+        data-image-clip-bottom={values[9] ?? ""}
       />
     );
   }
@@ -217,7 +242,7 @@ describe("CardPreview renderToCanvas", () => {
 
     return (
       <CardPreview
-        ref={previewRef}
+        ref={previewRef as Ref<CardPreviewHandle>}
         templateId={templateId}
         templateName={templateName}
         cardData={cardData}
@@ -227,6 +252,8 @@ describe("CardPreview renderToCanvas", () => {
 
   beforeEach(() => {
     capturedOverlayPresence.length = 0;
+    capturedClipGuidePresence.length = 0;
+    capturedClipScissorsPresence.length = 0;
     mockGetStagePointFromClientCoordinates.mockReset();
 
     HTMLCanvasElement.prototype.getContext = jest.fn(() => null);
@@ -286,6 +313,9 @@ describe("CardPreview renderToCanvas", () => {
 
   function getSelectedPreviewStageGeometry() {
     const blueprint = blueprintsByTemplateId.hero;
+    if (!blueprint) {
+      throw new Error("Expected hero blueprint");
+    }
     const imageLayer = blueprint.layers.find((layer) => {
       return layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId";
     });
@@ -336,6 +366,9 @@ describe("CardPreview renderToCanvas", () => {
     overrides?: Partial<typeof selectedMonsterIconData>,
   ) {
     const blueprint = blueprintsByTemplateId.monster;
+    if (!blueprint) {
+      throw new Error("Expected monster blueprint");
+    }
     const overlayGeometry = resolveMonsterIconOverlayGeometry({
       blueprint,
       cardData: {
@@ -448,6 +481,19 @@ describe("CardPreview renderToCanvas", () => {
       scaleSnapRings: () => document.querySelectorAll("[data-editor-image-snap-scale-ring]"),
       activeScaleSnapRing: () =>
         document.querySelector('[data-editor-image-snap-scale-ring-active="true"]'),
+      clipBottomGuide: () => document.querySelector('[data-editor-image-clip-bottom-guide="true"]'),
+      clipBottomLine: () => document.querySelector('[data-editor-image-clip-bottom-line="true"]'),
+      clipBottomScissors: () =>
+        document.querySelectorAll("[data-editor-image-clip-bottom-scissors]"),
+      clipBottomHandleVisual: () =>
+        document.querySelector('[data-editor-image-clip-bottom-handle-visual="true"]'),
+      clipBottomHandle: () => {
+        const handle = document.querySelector('[data-editor-image-clip-bottom-handle="true"]');
+        if (!(handle instanceof SVGElement)) {
+          throw new Error("Expected clip bottom handle");
+        }
+        return handle;
+      },
     };
   }
 
@@ -483,6 +529,87 @@ describe("CardPreview renderToCanvas", () => {
     });
 
     expect(capturedOverlayPresence).toEqual([false]);
+    expect(capturedClipGuidePresence).toEqual([false]);
+    expect(capturedClipScissorsPresence).toEqual([false]);
+  });
+
+  it("shows the lower clip guide only for selected main artwork that supports it", async () => {
+    const mainPreview = await renderSelectedPreview();
+    expect(mainPreview.clipBottomGuide()).not.toBeNull();
+    expect(mainPreview.clipBottomLine()).toHaveAttribute(
+      "data-editor-image-clip-bottom-active",
+      "false",
+    );
+    expect(mainPreview.clipBottomLine()).toHaveAttribute("stroke", "rgba(107, 114, 128, 0.82)");
+    expect(mainPreview.clipBottomLine()).not.toHaveAttribute("stroke-dasharray");
+    expect(mainPreview.clipBottomHandleVisual()).toHaveAttribute(
+      "data-editor-image-clip-bottom-active",
+      "false",
+    );
+    expect(mainPreview.clipBottomHandleVisual()).toHaveAttribute(
+      "fill",
+      "rgba(107, 114, 128, 0.72)",
+    );
+    expect(mainPreview.clipBottomScissors()).toHaveLength(2);
+    expect(
+      Array.from(mainPreview.clipBottomScissors()).map((marker) =>
+        marker.getAttribute("data-editor-image-clip-bottom-scissors"),
+      ),
+    ).toEqual(["left", "right"]);
+    expect(
+      Array.from(mainPreview.clipBottomScissors()).map((marker) =>
+        marker.getAttribute("data-editor-image-clip-bottom-active"),
+      ),
+    ).toEqual(["false", "false"]);
+  });
+
+  it("does not show the lower clip guide for selected monster icon artwork", async () => {
+    const preview = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+
+    expect(preview.clipBottomGuide()).toBeNull();
+  });
+
+  it("updates and enables artwork bottom clipping while dragging the guide handle", async () => {
+    const preview = await renderSelectedPreview();
+    const handle = preview.clipBottomHandle();
+    const layout = getCardPreviewStageLayout();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 850 })
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 760 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 1 });
+      fireEvent.pointerMove(handle, { pointerId: 1 });
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+    });
+
+    expect(preview.values()).toHaveAttribute("data-image-clip-edge-mask", "1");
+    expect(preview.values()).toHaveAttribute("data-image-clip-bottom", "760");
+    expect(preview.values()).toHaveAttribute("data-offset-x", "0");
+    expect(preview.values()).toHaveAttribute("data-offset-y", "0");
+  });
+
+  it("clamps artwork bottom clipping while dragging the guide handle", async () => {
+    const preview = await renderSelectedPreview();
+    const handle = preview.clipBottomHandle();
+    const layout = getCardPreviewStageLayout();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 850 })
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 200 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 1 });
+      fireEvent.pointerMove(handle, { pointerId: 1 });
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+    });
+
+    expect(preview.values()).toHaveAttribute("data-image-clip-edge-mask", "1");
+    expect(preview.values()).toHaveAttribute("data-image-clip-bottom", "470");
   });
 
   it("updates image offsets while dragging the move handle", async () => {
@@ -513,6 +640,9 @@ describe("CardPreview renderToCanvas", () => {
 
   it("uses the true rendered image pivot instead of the clipped frame center", () => {
     const blueprint = blueprintsByTemplateId.hero;
+    if (!blueprint) {
+      throw new Error("Expected hero blueprint");
+    }
     const imageLayer = blueprint.layers.find((layer) => {
       return layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId";
     });

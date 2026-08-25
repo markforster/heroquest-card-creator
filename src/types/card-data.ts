@@ -28,6 +28,8 @@ export interface BaseCardFields {
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
+  imageClipEdgeMask?: number;
+  imageClipBottom?: number;
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   description?: string;

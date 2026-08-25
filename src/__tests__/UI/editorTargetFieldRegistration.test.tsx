@@ -231,6 +231,22 @@ describe("editor target field registration", () => {
     });
   });
 
+  it("renders monster icon picker and adjustments with compact image toolbar controls", () => {
+    renderWithForm(<MonsterIconField label="Monster Icon" />, {
+      iconAssetId: "icon-1",
+      iconAssetName: "Icon",
+    });
+
+    const pickerButton = screen.getByTitle("tooltip.openIconPicker");
+    const adjustmentsButton = screen.getByRole("button", { name: "form.imageAdjustments" });
+
+    expect(pickerButton).toHaveClass("justify-content-center");
+    expect(pickerButton).toHaveTextContent("actions.chooseImage");
+    expect(adjustmentsButton).toHaveAttribute("aria-pressed", "false");
+    expect(adjustmentsButton).not.toHaveClass("btn-outline-secondary");
+    expect(screen.queryByTitle("form.artworkLowerClip")).not.toBeInTheDocument();
+  });
+
   it("routes svg double click through the registered secondary action", async () => {
     renderWithForm(
       <>

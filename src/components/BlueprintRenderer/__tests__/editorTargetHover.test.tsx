@@ -1096,6 +1096,127 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(clipGroup?.getAttribute("clip-path")).toMatch(/^url\(#/);
   });
 
+  it("applies active hero artwork bottom clipping without changing image transform", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageRotation: 15,
+            imageClipEdgeMask: 1,
+            imageClipBottom: 760,
+            showCopyright: false,
+          } as never
+        }
+      />,
+    );
+
+    const image = container.querySelector("[data-user-asset-id='art-1']") as SVGImageElement;
+    const clipGroup = image.parentElement as SVGGElement | null;
+    const clipPathId = clipGroup?.getAttribute("clip-path")?.match(/^url\(#(.+)\)$/)?.[1];
+    const clipRect = clipPathId
+      ? (container.querySelector(`clipPath[id="${clipPathId}"] rect`) as SVGRectElement | null)
+      : null;
+
+    expect(image.getAttribute("transform")).toContain("rotate(15 ");
+    expect(clipRect).not.toBeNull();
+    expect(clipRect).toHaveAttribute("x", "0");
+    expect(clipRect).toHaveAttribute("y", "0");
+    expect(clipRect).toHaveAttribute("width", "750");
+    expect(clipRect).toHaveAttribute("height", "760");
+  });
+
+  it("renders selected active lower-clip artwork ghost beneath hero stats", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageRotation: 15,
+            imageClipEdgeMask: 1,
+            imageClipBottom: 760,
+            showCopyright: false,
+          } as never
+        }
+      />,
+    );
+
+    expect(container.querySelector('[data-preview-only="image-clip-ghost"]')).toBeNull();
+
+    const imageTarget = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGGElement;
+    fireEvent.click(imageTarget);
+
+    const ghost = container.querySelector(
+      '[data-preview-only="image-clip-ghost"]',
+    ) as SVGGElement | null;
+    const ghostImage = container.querySelector(
+      '[data-editor-image-clip-bottom-ghost-image="true"]',
+    ) as SVGImageElement | null;
+    const statsHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHero}"]`,
+    ) as SVGRectElement | null;
+
+    expect(ghost).not.toBeNull();
+    expect(ghost).toHaveAttribute("opacity", "0.5");
+    expect(ghostImage).toHaveAttribute("href", "asset://art-1");
+    expect(statsHitArea).not.toBeNull();
+    expect(
+      ghost?.compareDocumentPosition(statsHitArea as SVGRectElement) ??
+        Node.DOCUMENT_POSITION_DISCONNECTED,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("ignores active artwork bottom clip fields on unsupported image blueprints", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="large-treasure"
+        templateName="Large Treasure"
+        cardData={
+          {
+            title: "Potion",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 1,
+            imageClipEdgeMask: 1,
+            imageClipBottom: 400,
+            showCopyright: false,
+          } as never
+        }
+      />,
+    );
+
+    const image = container.querySelector("[data-user-asset-id='art-1']") as SVGImageElement;
+    const clipGroup = image.parentElement as SVGGElement | null;
+    const clipPathId = clipGroup?.getAttribute("clip-path")?.match(/^url\(#(.+)\)$/)?.[1];
+    const clipRect = clipPathId
+      ? (container.querySelector(`clipPath[id="${clipPathId}"] rect`) as SVGRectElement | null)
+      : null;
+
+    expect(clipRect).not.toBeNull();
+    expect(clipRect).not.toHaveAttribute("height", "400");
+  });
+
   it("encloses rotated near-edge canvas-clipped artwork while still clamping only affected edges", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer

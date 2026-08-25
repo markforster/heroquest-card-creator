@@ -282,8 +282,36 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
       data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
-      <div className={layoutStyles.inspectorFieldHeader}>
-        <FormLabelWithIcon label={label} icon={Image} className="form-label" />
+      <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
+        <div className="flex-grow-1 flex-shrink-0">
+          <FormLabelWithIcon label={label} icon={Image} className="form-label mb-0" />
+        </div>
+        <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}>
+          <button
+            ref={adjustmentsButtonRef}
+            type="button"
+            className={`${layoutStyles.bodyTextToolbarButton} ${
+              isAdjustmentsOpen ? layoutStyles.bodyTextToolbarButtonActive : ""
+            } ${!iconAssetId ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+            title={t("form.imageAdjustments")}
+            aria-label={t("form.imageAdjustments")}
+            aria-pressed={isAdjustmentsOpen}
+            disabled={!iconAssetId}
+            onClick={() => {
+              setIsAdjustmentsOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  requestAnimationFrame(() => {
+                    positionPopover();
+                  });
+                }
+                return next;
+              });
+            }}
+          >
+            <SlidersHorizontal size={14} aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
         <div className="input-group input-group-sm">
@@ -329,32 +357,12 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             className="btn btn-outline-secondary btn-sm"
             icon={ImagePlus}
             title={t("tooltip.openIconPicker")}
+            iconOnly
             onClick={() => {
               picker.open();
             }}
           >
-            {t("actions.chooseImage")}
-          </IconButton>
-          <IconButton
-            className="btn btn-outline-secondary btn-sm"
-            icon={SlidersHorizontal}
-            title={t("form.imageAdjustments")}
-            disabled={!iconAssetId}
-            buttonRef={adjustmentsButtonRef}
-            iconOnly
-            onClick={() => {
-              setIsAdjustmentsOpen((prev) => {
-                const next = !prev;
-                if (next) {
-                  requestAnimationFrame(() => {
-                    positionPopover();
-                  });
-                }
-                return next;
-              });
-            }}
-          >
-            <span className="visually-hidden">{t("form.imageAdjustments")}</span>
+            <span className="visually-hidden">{t("actions.chooseImage")}</span>
           </IconButton>
           {iconAssetId ? (
             <IconButton

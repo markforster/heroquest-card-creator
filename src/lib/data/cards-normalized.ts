@@ -261,6 +261,8 @@ export function assembleNormalizedCardRecord(
         result.imageOffsetX = component.offsetX;
         result.imageOffsetY = component.offsetY;
         result.imageRotation = component.rotation;
+        result.imageClipEdgeMask = component.clipEdgeMask;
+        result.imageClipBottom = component.clipBottom;
         result.imageOriginalWidth = component.originalWidth;
         result.imageOriginalHeight = component.originalHeight;
         break;
@@ -472,6 +474,8 @@ export function buildNormalizedCardRecords(
           offsetX: record.imageOffsetX,
           offsetY: record.imageOffsetY,
           rotation: record.imageRotation,
+          clipEdgeMask: record.imageClipEdgeMask,
+          clipBottom: record.imageClipBottom,
           originalWidth: record.imageOriginalWidth,
           originalHeight: record.imageOriginalHeight,
         });

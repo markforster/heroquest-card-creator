@@ -77,6 +77,10 @@ export type BlueprintLayerOverlay = BlueprintLayerBase & {
 export type BlueprintLayerImage = BlueprintLayerBase & {
   type: "image";
   clip?: BlueprintImageClip;
+  adjustableClipEdgeMask?: number;
+  adjustableClipBottomMin?: number;
+  adjustableClipBottomMax?: number;
+  adjustableClipBottomDefault?: number;
 };
 
 export type BlueprintLayerLogo = BlueprintLayerBase & {

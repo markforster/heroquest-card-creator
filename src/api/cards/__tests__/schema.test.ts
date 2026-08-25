@@ -56,6 +56,16 @@ describe("card schemas", () => {
     expect(parsed.bodyTextFitToBounds).toBe(true);
   });
 
+  it("accepts optional artwork clip edge fields in update payloads", () => {
+    const parsed = cardUpdateInputSchema.parse({
+      imageClipEdgeMask: 1,
+      imageClipBottom: 760,
+    });
+
+    expect(parsed.imageClipEdgeMask).toBe(1);
+    expect(parsed.imageClipBottom).toBe(760);
+  });
+
   it("accepts optional title typography values and rejects unknown values", () => {
     const parsed = cardUpdateInputSchema.parse({
       titleTypography: "boldItalic",

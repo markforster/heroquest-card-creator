@@ -28,6 +28,10 @@ function removePreviewOnlyEditorOverlay(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-preview-only="editor-overlay"]').forEach((node) => node.remove());
 }
 
+function removePreviewOnlyImageClipGhosts(svg: SVGSVGElement) {
+  svg.querySelectorAll('[data-preview-only="image-clip-ghost"]').forEach((node) => node.remove());
+}
+
 function cropSvgRootToCardBounds(svg: SVGSVGElement) {
   const { cardOriginX, cardOriginY } = getCardPreviewStageLayout();
   svg.setAttribute("viewBox", `${cardOriginX} ${cardOriginY} ${CARD_WIDTH} ${CARD_HEIGHT}`);
@@ -113,6 +117,7 @@ export function mutateSvgForExport(
 
   removePreviewOnlyOverflowWarnings(svg);
   removePreviewOnlyEditorOverlay(svg);
+  removePreviewOnlyImageClipGhosts(svg);
   cropSvgRootToCardBounds(svg);
 
   applyExportImageClip(svg);

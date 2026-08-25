@@ -126,4 +126,15 @@ describe("mutateSvgForExport", () => {
       `${cardOriginX} ${cardOriginY} ${CARD_WIDTH} ${CARD_HEIGHT}`,
     );
   });
+
+  it("removes preview-only image clip ghost nodes", () => {
+    const svg = createSvg();
+    const ghost = document.createElementNS(svg.namespaceURI, "g");
+    ghost.setAttribute("data-preview-only", "image-clip-ghost");
+    svg.appendChild(ghost);
+
+    mutateSvgForExport(svg, { mode: "standard" });
+
+    expect(svg.querySelector('[data-preview-only="image-clip-ghost"]')).toBeNull();
+  });
 });

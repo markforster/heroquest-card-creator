@@ -6,6 +6,7 @@ import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
+  useOptionalEditorTargets,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
@@ -21,12 +22,20 @@ import { useHeroBackLogoImageUrl } from "@/hooks/useHeroBackLogoImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getCardShowCopyrightValue, resolveCardCopyrightText } from "@/lib/copyright-defaults";
 import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
+import {
+  getBaseImageClipBounds,
+  isImageClipEdgeActive,
+  resolveImageClipBottomRange,
+  resolveImageLayerClipBounds,
+} from "@/lib/image-clip-edges";
 import { computeContainScale } from "@/lib/image-scale";
+import { clamp } from "@/lib/math";
 import { getTitleLayerTypographyDefault, resolveTitleTypography } from "@/lib/title-typography";
 import { DEFAULT_BACKGROUND_TINT_BLEND_MODE } from "@/types/background-tint";
 import type { BackgroundTintBlendMode } from "@/types/background-tint";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
+import { IMAGE_CLIP_EDGE_BOTTOM } from "@/types/image-clip-edges";
 import type { TemplateId } from "@/types/templates";
 import type { TitleTypography } from "@/types/title-typography";
 
@@ -41,6 +50,7 @@ import type { StaticImageData } from "next/image";
 
 const IMAGE_HOVER_EDGE_INSET = 18;
 const IMAGE_HOVER_RADIUS = 16;
+const IMAGE_CLIP_GHOST_OPACITY = 0.5;
 
 export function getImageHoverEdgeInset() {
   return IMAGE_HOVER_EDGE_INSET;
@@ -236,6 +246,7 @@ export function ImageLayer({
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
+  const editorTargets = useOptionalEditorTargets();
   const bounds = isImageLayer ? getLayerBounds(blueprint, layer) : null;
   const imageLayer = isImageLayer ? (layer as Extract<BlueprintLayer, { type: "image" }>) : null;
   const clipMode = imageLayer?.clip ?? "bounds";
@@ -319,11 +330,47 @@ export function ImageLayer({
 
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
   const shouldClip = clipMode !== "none";
-  const clipBounds = clipMode === "canvas" ? canvasBounds : bounds;
+  const baseClipBounds =
+    shouldClip && imageLayer ? getBaseImageClipBounds({ blueprint, layer: imageLayer }) : null;
+  const clipBounds = shouldClip
+    ? (resolveImageLayerClipBounds({
+        blueprint,
+        layer,
+        cardState: cardData as { imageClipEdgeMask?: number; imageClipBottom?: number },
+      }) ?? (clipMode === "canvas" ? canvasBounds : bounds))
+    : null;
+  const clipBottomRange =
+    imageLayer && baseClipBounds
+      ? resolveImageClipBottomRange({ layer: imageLayer, baseClipBounds })
+      : null;
+  const isBottomClipActive =
+    imageLayer &&
+    isImageClipEdgeActive({
+      supportedMask: imageLayer.adjustableClipEdgeMask,
+      activeMask: (cardData as { imageClipEdgeMask?: number }).imageClipEdgeMask,
+      edge: IMAGE_CLIP_EDGE_BOTTOM,
+    });
+  const selectedMainImage = editorTargets?.selectedTargetId === EDITOR_TARGET_IDS.imageMain;
+  const clipGhostBottom =
+    clipBottomRange && cardData
+      ? clamp(
+          (cardData as { imageClipBottom?: number }).imageClipBottom ??
+            clipBottomRange.defaultValue,
+          clipBottomRange.min,
+          clipBottomRange.max,
+        )
+      : null;
+  const clipGhostHeight =
+    baseClipBounds && clipGhostBottom != null
+      ? baseClipBounds.y + baseClipBounds.height - clipGhostBottom
+      : 0;
+  const shouldRenderClipGhost =
+    selectedMainImage && isBottomClipActive && baseClipBounds && clipGhostHeight > 0;
+  const clipGhostId = shouldRenderClipGhost ? `${clipId}-ghost` : undefined;
 
   return (
     <Layer key={layer.id} {...svgFocusProps}>
-      {shouldClip ? (
+      {shouldClip && clipBounds ? (
         <defs>
           <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
             <rect
@@ -348,6 +395,40 @@ export function ImageLayer({
           preserveAspectRatio="xMidYMid meet"
         />
       </g>
+      {shouldRenderClipGhost && baseClipBounds && clipGhostBottom != null && clipGhostId ? (
+        <>
+          <defs>
+            <clipPath id={clipGhostId} clipPathUnits="userSpaceOnUse">
+              <rect
+                x={baseClipBounds.x}
+                y={clipGhostBottom}
+                width={baseClipBounds.width}
+                height={clipGhostHeight}
+              />
+            </clipPath>
+          </defs>
+          <g
+            clipPath={`url(#${clipGhostId})`}
+            opacity={IMAGE_CLIP_GHOST_OPACITY}
+            pointerEvents="none"
+            data-preview-only="image-clip-ghost"
+            data-editor-image-clip-bottom-ghost="true"
+          >
+            <image
+              href={imageUrl}
+              data-user-asset-id={assetId}
+              data-user-asset-name={assetName}
+              x={x}
+              y={y}
+              width={scaledWidth}
+              height={scaledHeight}
+              transform={transform}
+              preserveAspectRatio="xMidYMid meet"
+              data-editor-image-clip-bottom-ghost-image="true"
+            />
+          </g>
+        </>
+      ) : null}
     </Layer>
   );
 }

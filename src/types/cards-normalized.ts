@@ -99,6 +99,8 @@ export interface CardImageComponentRecord extends NormalizedCardComponentBase {
   offsetX?: number;
   offsetY?: number;
   rotation?: number;
+  clipEdgeMask?: number;
+  clipBottom?: number;
   originalWidth?: number;
   originalHeight?: number;
 }

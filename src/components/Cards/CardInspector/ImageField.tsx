@@ -10,6 +10,7 @@ import {
   ImagePlus,
   Search,
   RotateCcw,
+  Scissors,
   SlidersHorizontal,
   XCircle,
   ZoomIn,
@@ -51,6 +52,10 @@ import {
   UI_ZOOM_SLIDER_STEP,
 } from "@/lib/image-scale";
 import { clamp } from "@/lib/math";
+import {
+  IMAGE_CLIP_EDGE_BOTTOM,
+  type ImageClipEdgeControlSettings,
+} from "@/types/image-clip-edges";
 
 import type { CSSProperties } from "react";
 
@@ -58,6 +63,7 @@ type ImageFieldProps = {
   label: string;
   boundsWidth?: number;
   boundsHeight?: number;
+  clipEdgeSettings?: ImageClipEdgeControlSettings;
 };
 
 type ImageSnapshot = {
@@ -70,9 +76,18 @@ type ImageSnapshot = {
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
+  imageClipEdgeMask?: number;
+  imageClipBottom?: number;
 };
 
-export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFieldProps) {
+type ImagePopoverKind = "transform" | "clip";
+
+export default function ImageField({
+  label,
+  boundsWidth,
+  boundsHeight,
+  clipEdgeSettings,
+}: ImageFieldProps) {
   const { t } = useI18n();
   const {
     setValue,
@@ -94,6 +109,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const imageOffsetXWatch = useWatch({ name: "imageOffsetX" }) as number | undefined;
   const imageOffsetYWatch = useWatch({ name: "imageOffsetY" }) as number | undefined;
   const imageRotationWatch = useWatch({ name: "imageRotation" }) as number | undefined;
+  const imageClipEdgeMaskWatch = useWatch({ name: "imageClipEdgeMask" }) as number | undefined;
+  const imageClipBottomWatch = useWatch({ name: "imageClipBottom" }) as number | undefined;
   const picker = usePopupState(false);
 
   const fieldError = (errors as Record<string, { message?: string }>).imageAssetId;
@@ -107,15 +124,17 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const imageOffsetX = imageOffsetXWatch ?? 0;
   const imageOffsetY = imageOffsetYWatch ?? 0;
   const imageRotation = imageRotationWatch ?? 0;
+  const imageClipEdgeMask = imageClipEdgeMaskWatch ?? 0;
   const imageOriginalWidth = imageOriginalWidthWatch;
   const imageOriginalHeight = imageOriginalHeightWatch;
-  const [isAdjustmentsOpen, setIsAdjustmentsOpen] = useState(false);
+  const [activeImagePopover, setActiveImagePopover] = useState<ImagePopoverKind | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [query, setQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [assets, setAssets] = useState<AssetRecord[]>([]);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
-  const adjustmentsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const transformButtonRef = useRef<HTMLButtonElement | null>(null);
+  const clipButtonRef = useRef<HTMLButtonElement | null>(null);
   const adjustmentsPopoverRef = useRef<HTMLDivElement | null>(null);
   const [adjustmentsStyle, setAdjustmentsStyle] = useState<CSSProperties | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -141,6 +160,44 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
   const MIN_ROTATION = -180;
   const MAX_ROTATION = 180;
   const ROTATION_STEP = 1;
+  const supportsBottomClip =
+    !!clipEdgeSettings &&
+    (clipEdgeSettings.adjustableClipEdgeMask & IMAGE_CLIP_EDGE_BOTTOM) === IMAGE_CLIP_EDGE_BOTTOM;
+  const isBottomClipEnabled =
+    supportsBottomClip && (imageClipEdgeMask & IMAGE_CLIP_EDGE_BOTTOM) === IMAGE_CLIP_EDGE_BOTTOM;
+  const imageClipBottom =
+    supportsBottomClip && clipEdgeSettings
+      ? clamp(
+          imageClipBottomWatch ?? clipEdgeSettings.bottomDefault,
+          clipEdgeSettings.bottomMin,
+          clipEdgeSettings.bottomMax,
+        )
+      : undefined;
+
+  const enableBottomClip = useCallback(() => {
+    if (!clipEdgeSettings) return;
+    const nextMask = imageClipEdgeMask | IMAGE_CLIP_EDGE_BOTTOM;
+    const nextBottom = clamp(
+      imageClipBottomWatch ?? clipEdgeSettings.bottomDefault,
+      clipEdgeSettings.bottomMin,
+      clipEdgeSettings.bottomMax,
+    );
+    setValue("imageClipEdgeMask", nextMask, { shouldDirty: true, shouldTouch: true });
+    setValue("imageClipBottom", nextBottom, { shouldDirty: true, shouldTouch: true });
+  }, [clipEdgeSettings, imageClipBottomWatch, imageClipEdgeMask, setValue]);
+
+  const disableBottomClip = useCallback(() => {
+    const nextMask = imageClipEdgeMask & ~IMAGE_CLIP_EDGE_BOTTOM;
+    setValue("imageClipEdgeMask", nextMask || undefined, { shouldDirty: true, shouldTouch: true });
+  }, [imageClipEdgeMask, setValue]);
+
+  const toggleBottomClip = useCallback(() => {
+    if (isBottomClipEnabled) {
+      disableBottomClip();
+      return;
+    }
+    enableBottomClip();
+  }, [disableBottomClip, enableBottomClip, isBottomClipEnabled]);
 
   const imageBounds = useMemo(
     () =>
@@ -234,6 +291,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       imageOffsetX,
       imageOffsetY,
       imageRotation,
+      imageClipEdgeMask: imageClipEdgeMaskWatch,
+      imageClipBottom: imageClipBottomWatch,
     }),
     [
       imageAssetId,
@@ -245,6 +304,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       imageOffsetX,
       imageOffsetY,
       imageRotation,
+      imageClipEdgeMaskWatch,
+      imageClipBottomWatch,
     ],
   );
 
@@ -272,6 +333,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     }
     setValue("imageOffsetX", 0, { shouldDirty: true, shouldTouch: true });
     setValue("imageOffsetY", 0, { shouldDirty: true, shouldTouch: true });
+    setValue("imageClipEdgeMask", undefined, { shouldDirty: true, shouldTouch: true });
+    setValue("imageClipBottom", undefined, { shouldDirty: true, shouldTouch: true });
   };
 
   const handleSelect = (asset: AssetRecord) => {
@@ -297,19 +360,27 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     setValue("imageOffsetX", previous.imageOffsetX, { shouldDirty: true, shouldTouch: true });
     setValue("imageOffsetY", previous.imageOffsetY, { shouldDirty: true, shouldTouch: true });
     setValue("imageRotation", previous.imageRotation, { shouldDirty: true, shouldTouch: true });
+    setValue("imageClipEdgeMask", previous.imageClipEdgeMask, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("imageClipBottom", previous.imageClipBottom, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
     resetSearchState();
   };
 
   useEffect(() => {
     if (!imageAssetId) {
-      setIsAdjustmentsOpen(false);
+      setActiveImagePopover(null);
     }
   }, [imageAssetId]);
 
   useOutsideClick(
-    [adjustmentsPopoverRef, adjustmentsButtonRef],
-    () => setIsAdjustmentsOpen(false),
-    isAdjustmentsOpen,
+    [adjustmentsPopoverRef, transformButtonRef, clipButtonRef],
+    () => setActiveImagePopover(null),
+    activeImagePopover !== null,
   );
 
   useEffect(() => {
@@ -338,6 +409,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     imageOffsetX,
     imageOffsetY,
     imageRotation,
+    imageClipEdgeMaskWatch,
+    imageClipBottomWatch,
     getCurrentSnapshot,
   ]);
 
@@ -446,17 +519,37 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
     ? (imageAssetId ?? "") !== (previousImageId ?? "")
     : false;
 
-  const positionPopover = () => {
+  const getActivePopoverButton = useCallback(() => {
+    if (activeImagePopover === "clip") return clipButtonRef.current;
+    return transformButtonRef.current;
+  }, [activeImagePopover]);
+
+  const positionPopover = useCallback(() => {
     const position = computeCardInspectorPopoverPosition(
-      adjustmentsButtonRef.current,
+      getActivePopoverButton(),
       adjustmentsPopoverRef.current,
     );
     if (!position) return;
     setAdjustmentsStyle({ left: position.left, top: position.top });
-  };
+  }, [getActivePopoverButton]);
+
+  const toggleImagePopover = useCallback(
+    (kind: ImagePopoverKind) => {
+      setActiveImagePopover((previous) => {
+        const next = previous === kind ? null : kind;
+        if (next) {
+          requestAnimationFrame(() => {
+            positionPopover();
+          });
+        }
+        return next;
+      });
+    },
+    [positionPopover],
+  );
 
   useLayoutEffect(() => {
-    if (!isAdjustmentsOpen) return;
+    if (!activeImagePopover) return;
     if (typeof window === "undefined") return;
 
     const updatePosition = () => {
@@ -470,7 +563,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [isAdjustmentsOpen]);
+  }, [activeImagePopover, positionPopover]);
 
   useLayoutEffect(() => {
     const sliderEl = scaleSliderRef.current;
@@ -496,7 +589,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       return () => window.removeEventListener("resize", measure);
     }
     return undefined;
-  }, [isAdjustmentsOpen, sliderMin, sliderMax, imageScaleMode]);
+  }, [activeImagePopover, sliderMin, sliderMax, imageScaleMode]);
 
   return (
     <div
@@ -506,8 +599,44 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
       data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
-      <div className={layoutStyles.inspectorFieldHeader}>
-        <FormLabelWithIcon label={label} icon={Image} className="form-label" />
+      <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
+        <div className="flex-grow-1 flex-shrink-0">
+          <FormLabelWithIcon label={label} icon={Image} className="form-label mb-0" />
+        </div>
+        <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}>
+          <button
+            ref={transformButtonRef}
+            type="button"
+            className={`${layoutStyles.bodyTextToolbarButton} ${
+              activeImagePopover === "transform" ? layoutStyles.bodyTextToolbarButtonActive : ""
+            } ${!imageAssetId ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+            title={t("form.imageAdjustments")}
+            aria-label={t("form.imageAdjustments")}
+            aria-pressed={activeImagePopover === "transform"}
+            disabled={!imageAssetId}
+            onClick={() => toggleImagePopover("transform")}
+          >
+            <SlidersHorizontal size={14} aria-hidden="true" />
+          </button>
+          {supportsBottomClip ? (
+            <button
+              ref={clipButtonRef}
+              type="button"
+              className={`${layoutStyles.bodyTextToolbarButton} ${
+                activeImagePopover === "clip" || isBottomClipEnabled
+                  ? layoutStyles.bodyTextToolbarButtonActive
+                  : ""
+              } ${!imageAssetId ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+              title={t("form.artworkLowerClip")}
+              aria-label={t("form.artworkLowerClip")}
+              aria-pressed={activeImagePopover === "clip" || isBottomClipEnabled}
+              disabled={!imageAssetId}
+              onClick={() => toggleImagePopover("clip")}
+            >
+              <Scissors size={14} aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
       </div>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
         <div className="input-group input-group-sm">
@@ -553,32 +682,12 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             className="btn btn-outline-secondary btn-sm"
             icon={ImagePlus}
             title={t("tooltip.openImagePicker")}
+            iconOnly
             onClick={() => {
               picker.open();
             }}
           >
-            {t("actions.chooseImage")}
-          </IconButton>
-          <IconButton
-            className="btn btn-outline-secondary btn-sm"
-            icon={SlidersHorizontal}
-            title={t("form.imageAdjustments")}
-            disabled={!imageAssetId}
-            buttonRef={adjustmentsButtonRef}
-            iconOnly
-            onClick={() => {
-              setIsAdjustmentsOpen((prev) => {
-                const next = !prev;
-                if (next) {
-                  requestAnimationFrame(() => {
-                    positionPopover();
-                  });
-                }
-                return next;
-              });
-            }}
-          >
-            <span className="visually-hidden">{t("form.imageAdjustments")}</span>
+            <span className="visually-hidden">{t("actions.chooseImage")}</span>
           </IconButton>
           {canRestorePrevious ? (
             <IconButton
@@ -610,6 +719,8 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
                 setValue("imageOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
                 setValue("imageRotation", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageClipEdgeMask", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("imageClipBottom", undefined, { shouldDirty: true, shouldTouch: true });
               }}
             >
               <span className="visually-hidden">{t("actions.clear")}</span>
@@ -717,7 +828,7 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
           {String(fieldError.message ?? t("errors.invalidValue"))}
         </div>
       ) : null}
-      {isAdjustmentsOpen && imageAssetId && isClient
+      {activeImagePopover && imageAssetId && isClient
         ? createPortal(
             <div
               ref={adjustmentsPopoverRef}
@@ -726,358 +837,418 @@ export default function ImageField({ label, boundsWidth, boundsHeight }: ImageFi
             >
               <div className={layoutStyles.imageAdjustmentsPopoverContent}>
                 <div className={layoutStyles.imageControlGroup}>
-                  <div className={layoutStyles.imageControlLabelRow}>
-                    <label className="form-label mb-1">{t("form.horizontalPosition")}</label>
-                  </div>
-                  <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
-                    <input
-                      type="range"
-                      className={`${layoutStyles.imageControlRange} flex-grow-1`}
-                      min={-maxOffsetX}
-                      max={maxOffsetX}
-                      step={1}
-                      value={imageOffsetX}
-                      title={t("tooltip.adjustHorizontal")}
-                      onChange={(event) => {
-                        const next = Number(event.target.value);
-                        if (!Number.isNaN(next)) {
-                          setValue("imageOffsetX", next, {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.nudgeLeft")}
-                      onClick={() => {
-                        setValue("imageOffsetX", imageOffsetX - 1, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.nudgeRight")}
-                      onClick={() => {
-                        setValue("imageOffsetX", imageOffsetX + 1, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.centerHorizontal")}
-                      onClick={() => {
-                        setValue("imageOffsetX", 0, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <Crosshair className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                  </div>
-                  <div className={layoutStyles.imageControlLabelRow}>
-                    <label className="form-label mb-1">{t("form.verticalPosition")}</label>
-                  </div>
-                  <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
-                    <input
-                      type="range"
-                      className={`${layoutStyles.imageControlRange} flex-grow-1`}
-                      min={-maxOffsetY}
-                      max={maxOffsetY}
-                      step={1}
-                      value={imageOffsetY}
-                      title={t("tooltip.adjustVertical")}
-                      onChange={(event) => {
-                        const next = Number(event.target.value);
-                        if (!Number.isNaN(next)) {
-                          setValue("imageOffsetY", next, {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.nudgeUp")}
-                      onClick={() => {
-                        setValue("imageOffsetY", imageOffsetY - 1, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ChevronUp className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.nudgeDown")}
-                      onClick={() => {
-                        setValue("imageOffsetY", imageOffsetY + 1, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ChevronDown className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.centerVertical")}
-                      onClick={() => {
-                        setValue("imageOffsetY", 0, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <Crosshair className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                  </div>
-                  <div className={layoutStyles.imageControlLabelRow}>
-                    <label className="form-label mb-1">{t("form.scale")}</label>
-                  </div>
-                  <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
-                    <div className={layoutStyles.imageScaleControlWrap}>
-                      {coverScaleTick ? (
-                        <div
-                          className={`${layoutStyles.imageScaleTicks} ${layoutStyles.imageScaleTicksTop}`}
-                          aria-hidden="true"
-                        >
-                          <div
-                            className={`${layoutStyles.imageScaleTick} ${layoutStyles.imageScaleTickTop} ${layoutStyles.imageScaleTickStrong}`}
-                            style={{ left: `${coverScaleTickLeftPx}px` }}
-                            data-testid="image-scale-tick-cover"
-                          >
-                            <span className={layoutStyles.imageScaleTickLine} />
-                            <span className={layoutStyles.imageScaleTickLabel}>
-                              {coverScaleTick.label}
-                            </span>
-                          </div>
-                        </div>
-                      ) : null}
-                      <input
-                        ref={scaleSliderRef}
-                        type="range"
-                        className={`${layoutStyles.imageControlRange} flex-grow-1`}
-                        style={
-                          {
-                            "--image-range-thumb-size": `${IMAGE_SCALE_SLIDER_THUMB_SIZE_PX}px`,
-                          } as CSSProperties
-                        }
-                        min={sliderMin}
-                        max={sliderMax}
-                        step={sliderStep}
-                        value={sliderValue}
-                        list={zoomTicksId}
-                        title={t("tooltip.adjustScale")}
-                        onChange={(event) => {
-                          const next = Number(event.target.value);
-                          if (!Number.isNaN(next)) {
-                            const nextScale =
-                              imageScaleMode === "relative" && zoomModel
-                                ? mapUiZoomToRelativeScale(next, zoomModel)
-                                : next;
-                            setValue("imageScale", clamp(nextScale, minScale, maxScale), {
+                  {activeImagePopover === "transform" ? (
+                    <>
+                      <div className={layoutStyles.imageControlLabelRow}>
+                        <label className="form-label mb-1">{t("form.horizontalPosition")}</label>
+                      </div>
+                      <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
+                        <input
+                          type="range"
+                          className={`${layoutStyles.imageControlRange} flex-grow-1`}
+                          min={-maxOffsetX}
+                          max={maxOffsetX}
+                          step={1}
+                          value={imageOffsetX}
+                          title={t("tooltip.adjustHorizontal")}
+                          onChange={(event) => {
+                            const next = Number(event.target.value);
+                            if (!Number.isNaN(next)) {
+                              setValue("imageOffsetX", next, {
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              });
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.nudgeLeft")}
+                          onClick={() => {
+                            setValue("imageOffsetX", imageOffsetX - 1, {
                               shouldDirty: true,
                               shouldTouch: true,
                             });
-                          }
-                        }}
-                      />
-                      {zoomTicksId ? (
-                        <datalist id={zoomTicksId}>
-                          <option value={sliderMin} />
-                          <option value={1} />
-                          <option value={2} />
-                          <option value={3} />
-                          <option value={zoomModel?.relativeCover ?? sliderMax} />
-                          <option value={sliderMax} />
-                        </datalist>
-                      ) : null}
-                      {customScaleTicks.length ? (
-                        <div className={layoutStyles.imageScaleTicks} aria-hidden="true">
-                          {customScaleTicks.map((tick, index) => {
-                            const leftPx = computeSliderTickLeftPx(
-                              tick.value,
-                              sliderMin,
-                              sliderMax,
-                              scaleSliderWidthPx,
-                              IMAGE_SCALE_SLIDER_THUMB_SIZE_PX,
-                            );
-                            const positionClass =
-                              index === 0
-                                ? layoutStyles.imageScaleTickStart
-                                : index === customScaleTicks.length - 1
-                                  ? layoutStyles.imageScaleTickEnd
-                                  : "";
-                            return (
+                          }}
+                        >
+                          <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.nudgeRight")}
+                          onClick={() => {
+                            setValue("imageOffsetX", imageOffsetX + 1, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.centerHorizontal")}
+                          onClick={() => {
+                            setValue("imageOffsetX", 0, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <Crosshair className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                      </div>
+                      <div className={layoutStyles.imageControlLabelRow}>
+                        <label className="form-label mb-1">{t("form.verticalPosition")}</label>
+                      </div>
+                      <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
+                        <input
+                          type="range"
+                          className={`${layoutStyles.imageControlRange} flex-grow-1`}
+                          min={-maxOffsetY}
+                          max={maxOffsetY}
+                          step={1}
+                          value={imageOffsetY}
+                          title={t("tooltip.adjustVertical")}
+                          onChange={(event) => {
+                            const next = Number(event.target.value);
+                            if (!Number.isNaN(next)) {
+                              setValue("imageOffsetY", next, {
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              });
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.nudgeUp")}
+                          onClick={() => {
+                            setValue("imageOffsetY", imageOffsetY - 1, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ChevronUp className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.nudgeDown")}
+                          onClick={() => {
+                            setValue("imageOffsetY", imageOffsetY + 1, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ChevronDown className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.centerVertical")}
+                          onClick={() => {
+                            setValue("imageOffsetY", 0, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <Crosshair className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                      </div>
+                      <div className={layoutStyles.imageControlLabelRow}>
+                        <label className="form-label mb-1">{t("form.scale")}</label>
+                      </div>
+                      <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
+                        <div className={layoutStyles.imageScaleControlWrap}>
+                          {coverScaleTick ? (
+                            <div
+                              className={`${layoutStyles.imageScaleTicks} ${layoutStyles.imageScaleTicksTop}`}
+                              aria-hidden="true"
+                            >
                               <div
-                                key={`${tick.id}-${index}`}
-                                className={`${layoutStyles.imageScaleTick} ${positionClass} ${
-                                  tick.emphasize ? layoutStyles.imageScaleTickStrong : ""
-                                }`}
-                                style={{ left: `${leftPx}px` }}
-                                data-testid={`image-scale-tick-${tick.id}`}
+                                className={`${layoutStyles.imageScaleTick} ${layoutStyles.imageScaleTickTop} ${layoutStyles.imageScaleTickStrong}`}
+                                style={{ left: `${coverScaleTickLeftPx}px` }}
+                                data-testid="image-scale-tick-cover"
                               >
                                 <span className={layoutStyles.imageScaleTickLine} />
                                 <span className={layoutStyles.imageScaleTickLabel}>
-                                  {tick.label}
+                                  {coverScaleTick.label}
                                 </span>
                               </div>
-                            );
-                          })}
+                            </div>
+                          ) : null}
+                          <input
+                            ref={scaleSliderRef}
+                            type="range"
+                            className={`${layoutStyles.imageControlRange} flex-grow-1`}
+                            style={
+                              {
+                                "--image-range-thumb-size": `${IMAGE_SCALE_SLIDER_THUMB_SIZE_PX}px`,
+                              } as CSSProperties
+                            }
+                            min={sliderMin}
+                            max={sliderMax}
+                            step={sliderStep}
+                            value={sliderValue}
+                            list={zoomTicksId}
+                            title={t("tooltip.adjustScale")}
+                            onChange={(event) => {
+                              const next = Number(event.target.value);
+                              if (!Number.isNaN(next)) {
+                                const nextScale =
+                                  imageScaleMode === "relative" && zoomModel
+                                    ? mapUiZoomToRelativeScale(next, zoomModel)
+                                    : next;
+                                setValue("imageScale", clamp(nextScale, minScale, maxScale), {
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                });
+                              }
+                            }}
+                          />
+                          {zoomTicksId ? (
+                            <datalist id={zoomTicksId}>
+                              <option value={sliderMin} />
+                              <option value={1} />
+                              <option value={2} />
+                              <option value={3} />
+                              <option value={zoomModel?.relativeCover ?? sliderMax} />
+                              <option value={sliderMax} />
+                            </datalist>
+                          ) : null}
+                          {customScaleTicks.length ? (
+                            <div className={layoutStyles.imageScaleTicks} aria-hidden="true">
+                              {customScaleTicks.map((tick, index) => {
+                                const leftPx = computeSliderTickLeftPx(
+                                  tick.value,
+                                  sliderMin,
+                                  sliderMax,
+                                  scaleSliderWidthPx,
+                                  IMAGE_SCALE_SLIDER_THUMB_SIZE_PX,
+                                );
+                                const positionClass =
+                                  index === 0
+                                    ? layoutStyles.imageScaleTickStart
+                                    : index === customScaleTicks.length - 1
+                                      ? layoutStyles.imageScaleTickEnd
+                                      : "";
+                                return (
+                                  <div
+                                    key={`${tick.id}-${index}`}
+                                    className={`${layoutStyles.imageScaleTick} ${positionClass} ${
+                                      tick.emphasize ? layoutStyles.imageScaleTickStrong : ""
+                                    }`}
+                                    style={{ left: `${leftPx}px` }}
+                                    data-testid={`image-scale-tick-${tick.id}`}
+                                  >
+                                    <span className={layoutStyles.imageScaleTickLine} />
+                                    <span className={layoutStyles.imageScaleTickLabel}>
+                                      {tick.label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.zoomOut")}
-                      onClick={() => {
-                        const next =
-                          imageScaleMode === "relative" && zoomModel
-                            ? mapUiZoomToRelativeScale(
-                                clamp(sliderValue - UI_ZOOM_BUTTON_STEP, sliderMin, sliderMax),
-                                zoomModel,
-                              )
-                            : clamp(imageScale - SCALE_STEP, minScale, maxScale);
-                        setValue("imageScale", next, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ZoomOut className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.zoomIn")}
-                      onClick={() => {
-                        const next =
-                          imageScaleMode === "relative" && zoomModel
-                            ? mapUiZoomToRelativeScale(
-                                clamp(sliderValue + UI_ZOOM_BUTTON_STEP, sliderMin, sliderMax),
-                                zoomModel,
-                              )
-                            : clamp(imageScale + SCALE_STEP, minScale, maxScale);
-                        setValue("imageScale", next, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ZoomIn className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.autoScale")}
-                      onClick={() => {
-                        const auto = computeAutoScale();
-                        const next = clamp(auto, minScale, maxScale);
-                        setValue("imageScale", next, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                        setValue("imageScaleMode", "relative", {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <RotateCcw className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                  </div>
-                  <div className={layoutStyles.imageControlLabelRow}>
-                    <label className="form-label mb-1">{t("form.rotation")}</label>
-                  </div>
-                  <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
-                    <input
-                      type="range"
-                      className={`${layoutStyles.imageControlRange} flex-grow-1`}
-                      min={MIN_ROTATION}
-                      max={MAX_ROTATION}
-                      step={ROTATION_STEP}
-                      value={imageRotation}
-                      title={t("tooltip.adjustRotation")}
-                      onChange={(event) => {
-                        const next = Number(event.target.value);
-                        if (!Number.isNaN(next)) {
-                          setValue("imageRotation", next, {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.rotateLeft")}
-                      onClick={() => {
-                        const next = clamp(
-                          imageRotation - ROTATION_STEP,
-                          MIN_ROTATION,
-                          MAX_ROTATION,
-                        );
-                        setValue("imageRotation", next, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.rotateRight")}
-                      onClick={() => {
-                        const next = clamp(
-                          imageRotation + ROTATION_STEP,
-                          MIN_ROTATION,
-                          MAX_ROTATION,
-                        );
-                        setValue("imageRotation", next, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
-                      title={t("tooltip.resetRotation")}
-                      onClick={() => {
-                        setValue("imageRotation", 0, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                        });
-                      }}
-                    >
-                      <RotateCcw className={layoutStyles.icon} aria-hidden="true" />
-                    </button>
-                  </div>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.zoomOut")}
+                          onClick={() => {
+                            const next =
+                              imageScaleMode === "relative" && zoomModel
+                                ? mapUiZoomToRelativeScale(
+                                    clamp(sliderValue - UI_ZOOM_BUTTON_STEP, sliderMin, sliderMax),
+                                    zoomModel,
+                                  )
+                                : clamp(imageScale - SCALE_STEP, minScale, maxScale);
+                            setValue("imageScale", next, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ZoomOut className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.zoomIn")}
+                          onClick={() => {
+                            const next =
+                              imageScaleMode === "relative" && zoomModel
+                                ? mapUiZoomToRelativeScale(
+                                    clamp(sliderValue + UI_ZOOM_BUTTON_STEP, sliderMin, sliderMax),
+                                    zoomModel,
+                                  )
+                                : clamp(imageScale + SCALE_STEP, minScale, maxScale);
+                            setValue("imageScale", next, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ZoomIn className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.autoScale")}
+                          onClick={() => {
+                            const auto = computeAutoScale();
+                            const next = clamp(auto, minScale, maxScale);
+                            setValue("imageScale", next, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                            setValue("imageScaleMode", "relative", {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <RotateCcw className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                      </div>
+                      <div className={layoutStyles.imageControlLabelRow}>
+                        <label className="form-label mb-1">{t("form.rotation")}</label>
+                      </div>
+                      <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
+                        <input
+                          type="range"
+                          className={`${layoutStyles.imageControlRange} flex-grow-1`}
+                          min={MIN_ROTATION}
+                          max={MAX_ROTATION}
+                          step={ROTATION_STEP}
+                          value={imageRotation}
+                          title={t("tooltip.adjustRotation")}
+                          onChange={(event) => {
+                            const next = Number(event.target.value);
+                            if (!Number.isNaN(next)) {
+                              setValue("imageRotation", next, {
+                                shouldDirty: true,
+                                shouldTouch: true,
+                              });
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.rotateLeft")}
+                          onClick={() => {
+                            const next = clamp(
+                              imageRotation - ROTATION_STEP,
+                              MIN_ROTATION,
+                              MAX_ROTATION,
+                            );
+                            setValue("imageRotation", next, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ChevronLeft className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.rotateRight")}
+                          onClick={() => {
+                            const next = clamp(
+                              imageRotation + ROTATION_STEP,
+                              MIN_ROTATION,
+                              MAX_ROTATION,
+                            );
+                            setValue("imageRotation", next, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <ChevronRight className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
+                          title={t("tooltip.resetRotation")}
+                          onClick={() => {
+                            setValue("imageRotation", 0, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                            });
+                          }}
+                        >
+                          <RotateCcw className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
+                  {activeImagePopover === "clip" && supportsBottomClip && clipEdgeSettings ? (
+                    <>
+                      <div className={layoutStyles.imageControlLabelRow}>
+                        <label className="form-label mb-1">{t("form.artworkLowerClip")}</label>
+                      </div>
+                      <div className={`${layoutStyles.imageControlRow} input-group input-group-sm`}>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.imageControlButton} btn ${
+                            isBottomClipEnabled ? "btn-secondary" : "btn-outline-secondary"
+                          } btn-sm`}
+                          title={t("tooltip.toggleArtworkLowerClip")}
+                          aria-pressed={isBottomClipEnabled}
+                          onClick={toggleBottomClip}
+                        >
+                          <Scissors className={layoutStyles.icon} aria-hidden="true" />
+                        </button>
+                        {isBottomClipEnabled && imageClipBottom != null ? (
+                          <input
+                            type="range"
+                            className={`${layoutStyles.imageControlRange} flex-grow-1`}
+                            min={clipEdgeSettings.bottomMin}
+                            max={clipEdgeSettings.bottomMax}
+                            step={1}
+                            value={imageClipBottom}
+                            title={t("tooltip.adjustArtworkLowerClip")}
+                            onChange={(event) => {
+                              const next = Number(event.target.value);
+                              if (!Number.isNaN(next)) {
+                                setValue(
+                                  "imageClipBottom",
+                                  clamp(
+                                    next,
+                                    clipEdgeSettings.bottomMin,
+                                    clipEdgeSettings.bottomMax,
+                                  ),
+                                  {
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                  },
+                                );
+                                setValue(
+                                  "imageClipEdgeMask",
+                                  imageClipEdgeMask | IMAGE_CLIP_EDGE_BOTTOM,
+                                  {
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                  },
+                                );
+                              }
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>,

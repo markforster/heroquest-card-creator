@@ -154,6 +154,29 @@ describe("cardRecordToCardData", () => {
     expect(patch.backgroundTintBlendMode).toBeUndefined();
   });
 
+  it("round-trips artwork clip edge fields through flat card records", () => {
+    const record: CardRecord & { templateId: "hero" } = {
+      id: "clip-card",
+      templateId: "hero",
+      status: "saved",
+      name: "Clipped Hero",
+      nameLower: "clipped hero",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+      imageClipEdgeMask: 1,
+      imageClipBottom: 760,
+    };
+
+    const data = cardRecordToCardData(record);
+    const patch = cardDataToCardRecordPatch("hero", "Clipped Hero", data);
+
+    expect(data.imageClipEdgeMask).toBe(1);
+    expect(data.imageClipBottom).toBe(760);
+    expect(patch.imageClipEdgeMask).toBe(1);
+    expect(patch.imageClipBottom).toBe(760);
+  });
+
   it("omits standard template default title typography and persists bold italic opt-in", () => {
     const defaultPatch = cardDataToCardRecordPatch("hero", "Sir Ragnar", {
       title: "Sir Ragnar",

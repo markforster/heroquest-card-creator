@@ -53,6 +53,8 @@ export const cardRecordSchema = z.object({
   imageOffsetX: z.number().optional(),
   imageOffsetY: z.number().optional(),
   imageRotation: z.number().optional(),
+  imageClipEdgeMask: z.number().optional(),
+  imageClipBottom: z.number().optional(),
   imageOriginalWidth: z.number().optional(),
   imageOriginalHeight: z.number().optional(),
   borderColor: z.string().optional(),

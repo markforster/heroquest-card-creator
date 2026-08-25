@@ -121,6 +121,8 @@ async function seedLegacyDb(): Promise<void> {
         imageAssetName: "Goblin Art",
         imageScale: 1.2,
         imageScaleMode: "relative",
+        imageClipEdgeMask: 1,
+        imageClipBottom: 760,
         backgroundTint: "#eeeeee",
         backgroundTintBlendMode: "screen",
         heroAttackDice: 0,
@@ -216,6 +218,8 @@ describe("cards normalized migration", () => {
         assetName: "Goblin Art",
         scale: 1.2,
         scaleMode: "relative",
+        clipEdgeMask: 1,
+        clipBottom: 760,
       }),
     );
     expect(
@@ -247,6 +251,8 @@ describe("cards normalized migration", () => {
         name: "Goblin",
         titleTypography: "boldItalic",
         description: "A sneaky foe",
+        imageClipEdgeMask: 1,
+        imageClipBottom: 760,
         backgroundTintBlendMode: "screen",
         monsterIconAssetId: "asset-icon",
         thumbnailBlob: expect.objectContaining({ type: "image/png" }),

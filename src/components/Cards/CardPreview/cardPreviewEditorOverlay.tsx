@@ -12,6 +12,7 @@ import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
+import { getImageLayerClipEdgeSettings, resolveImageClipBottomValue } from "@/lib/image-clip-edges";
 import {
   computeImageZoomModel,
   LEGACY_ABSOLUTE_IMAGE_SCALE_MAX,
@@ -19,6 +20,10 @@ import {
 } from "@/lib/image-scale";
 import { clamp } from "@/lib/math";
 import type { CardDataByTemplate } from "@/types/card-data";
+import {
+  IMAGE_CLIP_EDGE_BOTTOM,
+  type ImageClipEdgeControlSettings,
+} from "@/types/image-clip-edges";
 import type { TemplateId } from "@/types/templates";
 
 import {
@@ -60,6 +65,8 @@ const GIZMO_CYAN_ACTIVE = "rgba(34, 211, 238, 1)";
 const GIZMO_CYAN_STROKE = "rgba(34, 211, 238, 0.98)";
 const GIZMO_CYAN_FILL = "rgba(34, 211, 238, 0.95)";
 const GIZMO_SNAP_GUIDE = "rgba(34, 211, 238, 0.34)";
+const GIZMO_DISABLED_STROKE = "rgba(107, 114, 128, 0.82)";
+const GIZMO_DISABLED_FILL = "rgba(107, 114, 128, 0.72)";
 const GIZMO_FRAME_STROKE_WIDTH = 4;
 const GIZMO_ARM_STROKE_WIDTH = 4;
 const GIZMO_SNAP_GUIDE_STROKE_WIDTH = 3;
@@ -80,6 +87,13 @@ const GIZMO_PIVOT_MARKER_CROSSHAIR_HALF = 10;
 const GIZMO_MOVE_SNAP_HANDLE_FILL = "rgba(17, 24, 39, 0.24)";
 const GIZMO_MOVE_SNAP_VISUAL_OFFSET_Y = 2.5;
 const GIZMO_MOVE_GRID_MASK_RADIUS = 360;
+const CLIP_GUIDE_STROKE_WIDTH = 4;
+const CLIP_GUIDE_HANDLE_RADIUS = 9;
+const CLIP_GUIDE_HANDLE_HIT_RADIUS = 18;
+const CLIP_GUIDE_SCISSORS_SIZE = 24;
+const CLIP_GUIDE_SCISSORS_INSET = 28;
+const CLIP_GUIDE_SCISSORS_HALO_STROKE_WIDTH = 6;
+const CLIP_GUIDE_SCISSORS_STROKE_WIDTH = 2.5;
 const ICON_SCALE_MIN = 0.2;
 const ICON_SCALE_MAX = 3;
 
@@ -90,6 +104,8 @@ type MainImageOverlayData = {
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
+  imageClipEdgeMask?: number;
+  imageClipBottom?: number;
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
 };
@@ -112,6 +128,9 @@ type ActiveTarget =
       scaleBounds: { min: number; max: number };
       offsetX: number;
       offsetY: number;
+      clipEdgeSettings?: ImageClipEdgeControlSettings;
+      clipBottom?: number;
+      clipBottomActive?: boolean;
     }
   | {
       kind: "monster-icon";
@@ -156,7 +175,62 @@ type DragState =
       startScale: number;
       minScale: number;
       maxScale: number;
+    }
+  | {
+      mode: "clip-bottom";
+      pointerId: number;
+      startBottom: number;
+      minBottom: number;
+      maxBottom: number;
+      activeMask: number;
     };
+
+function ClipGuideScissorsIcon({
+  x,
+  y,
+  direction,
+  active,
+}: {
+  x: number;
+  y: number;
+  direction: "left" | "right";
+  active: boolean;
+}) {
+  const transform =
+    direction === "right"
+      ? `translate(${x + CLIP_GUIDE_SCISSORS_SIZE / 2} ${y - CLIP_GUIDE_SCISSORS_SIZE / 2}) scale(-1 1)`
+      : `translate(${x - CLIP_GUIDE_SCISSORS_SIZE / 2} ${y - CLIP_GUIDE_SCISSORS_SIZE / 2})`;
+
+  return (
+    <g
+      transform={transform}
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      pointerEvents="none"
+      data-editor-image-clip-bottom-scissors={direction}
+      data-editor-image-clip-bottom-active={active ? "true" : "false"}
+    >
+      <g stroke={GIZMO_DARK_RING} strokeWidth={CLIP_GUIDE_SCISSORS_HALO_STROKE_WIDTH}>
+        <circle cx={6} cy={6} r={3} />
+        <path d="M8.12 8.12 12 12" />
+        <path d="M20 4 8.12 15.88" />
+        <circle cx={6} cy={18} r={3} />
+        <path d="M14.8 14.8 20 20" />
+      </g>
+      <g
+        stroke={active ? GIZMO_CYAN_ACTIVE : GIZMO_DISABLED_STROKE}
+        strokeWidth={CLIP_GUIDE_SCISSORS_STROKE_WIDTH}
+      >
+        <circle cx={6} cy={6} r={3} />
+        <path d="M8.12 8.12 12 12" />
+        <path d="M20 4 8.12 15.88" />
+        <circle cx={6} cy={18} r={3} />
+        <path d="M14.8 14.8 20 20" />
+      </g>
+    </g>
+  );
+}
 
 export default function CardPreviewEditorOverlay(props: CardPreviewEditorOverlayProps) {
   if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return null;
@@ -238,6 +312,17 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
       if (!geometry) {
         return null;
       }
+      const clipEdgeSettings = getImageLayerClipEdgeSettings(templateId, "imageAssetId");
+      const clipBottom =
+        clipEdgeSettings != null
+          ? resolveImageClipBottomValue({
+              value: imageData.imageClipBottom,
+              settings: clipEdgeSettings,
+            })
+          : undefined;
+      const clipBottomActive =
+        clipEdgeSettings != null &&
+        ((imageData.imageClipEdgeMask ?? 0) & IMAGE_CLIP_EDGE_BOTTOM) === IMAGE_CLIP_EDGE_BOTTOM;
 
       return {
         kind: "main-image",
@@ -248,6 +333,9 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
         scaleBounds: mainImageScaleBounds,
         offsetX: imageData.imageOffsetX ?? 0,
         offsetY: imageData.imageOffsetY ?? 0,
+        clipEdgeSettings,
+        clipBottom,
+        clipBottomActive,
       };
     }
 
@@ -289,6 +377,8 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
     imageData.imageOffsetY,
     imageData.imageRotation,
     imageData.imageScale,
+    imageData.imageClipBottom,
+    imageData.imageClipEdgeMask,
     imageLayer,
     mainImageScaleBounds,
     monsterIconData.iconAssetId,
@@ -297,6 +387,7 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
     monsterIconData.iconRotation,
     monsterIconData.iconScale,
     selectedTargetId,
+    templateId,
   ]);
 
   const layout = getCardPreviewStageLayout();
@@ -488,6 +579,32 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
     setActiveSnapScaleRatio(null);
   };
 
+  const beginClipBottomDrag = (event: React.PointerEvent<SVGCircleElement>) => {
+    if (
+      activeTarget.kind !== "main-image" ||
+      activeTarget.clipBottom == null ||
+      !activeTarget.clipEdgeSettings
+    ) {
+      return;
+    }
+    const point = getStagePoint(event);
+    if (!point) return;
+    event.stopPropagation();
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragStateRef.current = {
+      mode: "clip-bottom",
+      pointerId: event.pointerId,
+      startBottom: activeTarget.clipBottom,
+      minBottom: activeTarget.clipEdgeSettings.bottomMin,
+      maxBottom: activeTarget.clipEdgeSettings.bottomMax,
+      activeMask: imageData.imageClipEdgeMask ?? 0,
+    };
+    setActiveDragMode("clip-bottom");
+    setActiveSnapAngle(null);
+    setActiveSnapScaleRatio(null);
+  };
+
   const updateMoveDrag = (
     state: Extract<DragState, { mode: "move" }>,
     point: { x: number; y: number },
@@ -616,6 +733,25 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
     });
   };
 
+  const updateClipBottomDrag = (
+    state: Extract<DragState, { mode: "clip-bottom" }>,
+    point: { x: number; y: number },
+  ) => {
+    const nextBottom = clamp(
+      roundStageValue(point.y - layout.cardOriginY),
+      state.minBottom,
+      state.maxBottom,
+    );
+    setValue("imageClipBottom", nextBottom, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("imageClipEdgeMask", state.activeMask | IMAGE_CLIP_EDGE_BOTTOM, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+  };
+
   const handlePointerMove = (event: React.PointerEvent<SVGCircleElement>) => {
     const state = dragStateRef.current;
     if (!state || state.pointerId !== event.pointerId) return;
@@ -630,6 +766,11 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
 
     if (state.mode === "move") {
       updateMoveDrag(state, point, snapActive);
+      return;
+    }
+
+    if (state.mode === "clip-bottom") {
+      updateClipBottomDrag(state, point);
       return;
     }
 
@@ -653,6 +794,23 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
   const armStroke = activeDragMode === "transform" ? GIZMO_CYAN_ACTIVE : GIZMO_CYAN_FRAME;
   const moveCursor = activeDragMode === "move" ? "grabbing" : "grab";
   const transformCursor = activeDragMode === "transform" ? "grabbing" : "grab";
+  const clipGuideCursor = activeDragMode === "clip-bottom" ? "grabbing" : "ns-resize";
+  const clipGuide =
+    activeTarget.kind === "main-image" &&
+    activeTarget.clipEdgeSettings &&
+    activeTarget.clipBottom != null
+      ? {
+          x1: layout.cardOriginX + activeTarget.clipEdgeSettings.baseClipBounds.x,
+          x2:
+            layout.cardOriginX +
+            activeTarget.clipEdgeSettings.baseClipBounds.x +
+            activeTarget.clipEdgeSettings.baseClipBounds.width,
+          y: layout.cardOriginY + activeTarget.clipBottom,
+          active: activeTarget.clipBottomActive ?? false,
+        }
+      : null;
+  const clipGuideStroke = clipGuide?.active ? GIZMO_CYAN_ACTIVE : GIZMO_DISABLED_STROKE;
+  const clipGuideHandleFill = clipGuide?.active ? GIZMO_CYAN_FILL : GIZMO_DISABLED_FILL;
   const armStart = isMoveSnapActive
     ? getArmEndpoint({
         centerX: stageCenterX,
@@ -877,6 +1035,57 @@ function EnabledCardPreviewEditorOverlay({ templateId, cardData }: CardPreviewEd
         pointerEvents="none"
         data-editor-image-frame="true"
       />
+      {clipGuide ? (
+        <g data-editor-image-clip-bottom-guide="true">
+          <line
+            x1={clipGuide.x1}
+            y1={clipGuide.y}
+            x2={clipGuide.x2}
+            y2={clipGuide.y}
+            stroke={clipGuideStroke}
+            strokeWidth={CLIP_GUIDE_STROKE_WIDTH}
+            strokeLinecap="round"
+            pointerEvents="none"
+            data-editor-image-clip-bottom-line="true"
+            data-editor-image-clip-bottom-active={clipGuide.active ? "true" : "false"}
+          />
+          <ClipGuideScissorsIcon
+            x={clipGuide.x1 + CLIP_GUIDE_SCISSORS_INSET}
+            y={clipGuide.y}
+            direction="left"
+            active={clipGuide.active}
+          />
+          <ClipGuideScissorsIcon
+            x={clipGuide.x2 - CLIP_GUIDE_SCISSORS_INSET}
+            y={clipGuide.y}
+            direction="right"
+            active={clipGuide.active}
+          />
+          <circle
+            cx={(clipGuide.x1 + clipGuide.x2) / 2}
+            cy={clipGuide.y}
+            r={CLIP_GUIDE_HANDLE_RADIUS}
+            fill={clipGuideHandleFill}
+            stroke={GIZMO_DARK_RING}
+            strokeWidth={GIZMO_TRANSFORM_HANDLE_STROKE_WIDTH}
+            pointerEvents="none"
+            data-editor-image-clip-bottom-handle-visual="true"
+            data-editor-image-clip-bottom-active={clipGuide.active ? "true" : "false"}
+          />
+          <circle
+            cx={(clipGuide.x1 + clipGuide.x2) / 2}
+            cy={clipGuide.y}
+            r={CLIP_GUIDE_HANDLE_HIT_RADIUS}
+            fill="transparent"
+            style={{ cursor: clipGuideCursor }}
+            onPointerDown={beginClipBottomDrag}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            data-editor-image-clip-bottom-handle="true"
+          />
+        </g>
+      ) : null}
       <line
         x1={armStart.x}
         y1={visualArmStartY}

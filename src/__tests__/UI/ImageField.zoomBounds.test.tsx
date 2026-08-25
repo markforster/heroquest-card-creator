@@ -3,6 +3,9 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import ImageField from "@/components/Cards/CardInspector/ImageField";
 import { computeImageZoomModel } from "@/lib/image-scale";
+import { IMAGE_CLIP_EDGE_BOTTOM } from "@/types/image-clip-edges";
+
+import type { ComponentProps } from "react";
 
 jest.mock("@/i18n/I18nProvider", () => ({
   __esModule: true,
@@ -40,18 +43,38 @@ type FormValues = {
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
+  imageClipEdgeMask?: number;
+  imageClipBottom?: number;
 };
 
-function renderWithForm(defaultValues: FormValues) {
+function renderWithForm(
+  defaultValues: FormValues,
+  options?: {
+    clipEdgeSettings?: ComponentProps<typeof ImageField>["clipEdgeSettings"];
+  },
+) {
   function Harness() {
     const methods = useForm<FormValues>({ defaultValues });
     const currentScale = useWatch({ control: methods.control, name: "imageScale" }) as
       | number
       | undefined;
+    const currentClipMask = useWatch({ control: methods.control, name: "imageClipEdgeMask" }) as
+      | number
+      | undefined;
+    const currentClipBottom = useWatch({ control: methods.control, name: "imageClipBottom" }) as
+      | number
+      | undefined;
     return (
       <FormProvider {...methods}>
-        <ImageField label="Artwork" boundsWidth={100} boundsHeight={100} />
+        <ImageField
+          label="Artwork"
+          boundsWidth={100}
+          boundsHeight={100}
+          clipEdgeSettings={options?.clipEdgeSettings}
+        />
         <div data-testid="scale-value">{String(currentScale ?? "")}</div>
+        <div data-testid="clip-mask-value">{String(currentClipMask ?? "")}</div>
+        <div data-testid="clip-bottom-value">{String(currentClipBottom ?? "")}</div>
       </FormProvider>
     );
   }
@@ -130,5 +153,76 @@ describe("ImageField zoom bounds", () => {
     const model = computeImageZoomModel({ x: 0, y: 0, width: 100, height: 100 }, 1050, 750);
     expect(model.relativeCover).toBeGreaterThan(3);
     rectSpy.mockRestore();
+  });
+
+  it("does not show artwork lower clip toolbar controls without blueprint support", () => {
+    renderWithForm({
+      imageAssetId: "asset-1",
+      imageAssetName: "Art",
+      imageScale: 1,
+      imageScaleMode: "relative",
+      imageOffsetX: 0,
+      imageOffsetY: 0,
+      imageRotation: 0,
+    });
+
+    expect(screen.queryByTitle("form.artworkLowerClip")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle("form.imageAdjustments"));
+
+    expect(screen.queryByText("form.artworkLowerClip")).not.toBeInTheDocument();
+  });
+
+  it("enables, updates, and disables artwork lower clip without changing transforms", async () => {
+    renderWithForm(
+      {
+        imageAssetId: "asset-1",
+        imageAssetName: "Art",
+        imageScale: 1,
+        imageScaleMode: "relative",
+        imageOffsetX: 12,
+        imageOffsetY: -8,
+        imageRotation: 9,
+      },
+      {
+        clipEdgeSettings: {
+          adjustableClipEdgeMask: IMAGE_CLIP_EDGE_BOTTOM,
+          bottomMin: 470,
+          bottomMax: 1050,
+          bottomDefault: 850,
+          baseClipBounds: { x: 0, y: 0, width: 750, height: 1050 },
+        },
+      },
+    );
+
+    fireEvent.click(screen.getByTitle("form.imageAdjustments"));
+    expect(await screen.findByTitle("tooltip.adjustScale")).toBeInTheDocument();
+    expect(screen.queryByTitle("tooltip.toggleArtworkLowerClip")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle("form.artworkLowerClip"));
+
+    const toggle = await screen.findByTitle("tooltip.toggleArtworkLowerClip");
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("clip-mask-value")).toHaveTextContent("1");
+      expect(screen.getByTestId("clip-bottom-value")).toHaveTextContent("850");
+    });
+
+    const slider = screen.getByTitle("tooltip.adjustArtworkLowerClip") as HTMLInputElement;
+    fireEvent.change(slider, { target: { value: "760" } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("clip-mask-value")).toHaveTextContent("1");
+      expect(screen.getByTestId("clip-bottom-value")).toHaveTextContent("760");
+    });
+
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("clip-mask-value")).toHaveTextContent("");
+      expect(screen.getByTestId("clip-bottom-value")).toHaveTextContent("760");
+    });
   });
 });
