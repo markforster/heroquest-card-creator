@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import type { AssetKind } from "@/api/assets";
 import {
@@ -107,6 +107,12 @@ function SvgTargetProbe({ targetId }: { targetId: keyof typeof EDITOR_TARGET_IDS
   );
 }
 
+function CopyrightColorProbe() {
+  const copyrightColor = useWatch({ name: "copyrightColor" }) as string | undefined;
+
+  return <div data-testid="copyright-color">{copyrightColor ?? ""}</div>;
+}
+
 function renderWithForm(ui: React.ReactNode, defaultValues: Record<string, unknown> = {}) {
   function Harness() {
     const methods = useForm({ defaultValues });
@@ -191,6 +197,34 @@ describe("editor target field registration", () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue("3")).toHaveFocus();
     });
+  });
+
+  it("moves copyright auto colour into the field toolbar", async () => {
+    renderWithForm(
+      <>
+        <CopyrightField label="Copyright" showToggle />
+        <CopyrightColorProbe />
+      </>,
+      {
+        copyright: "Hero Copyright",
+        showCopyright: true,
+        copyrightColor: "#123456",
+      },
+    );
+
+    const autoButton = screen.getByRole("button", { name: "actions.auto" });
+
+    expect(autoButton).toHaveAttribute("aria-pressed", "false");
+    expect(autoButton).toHaveClass("bodyTextToolbarButton");
+    expect(autoButton).toHaveTextContent("");
+    expect(screen.getByTestId("copyright-color")).toHaveTextContent("#123456");
+
+    fireEvent.click(autoButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("copyright-color")).toHaveTextContent("");
+    });
+    expect(autoButton).toHaveAttribute("aria-pressed", "true");
   });
 
   it("runs registered secondary actions when requested directly", async () => {
