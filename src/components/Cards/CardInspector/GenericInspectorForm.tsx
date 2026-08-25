@@ -58,6 +58,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               showStyleToggle={field.showStyleToggle}
               showToolbar={field.showToolbar}
               showTitleColor={field.showTitleColor}
+              templateId={templateId}
             />
           );
         }

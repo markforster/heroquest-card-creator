@@ -148,6 +148,7 @@ describe("getCard", () => {
       id: "back-1",
       templateId: "labelled-back",
       title: "Treasure Deck",
+      titleTypography: "bold",
       titlePlacement: "top",
       titleStyle: "plain",
       description: "Back card body",
@@ -172,6 +173,7 @@ describe("getCard", () => {
       expect.objectContaining({
         templateId: "labelled-back",
         title: "Treasure Deck",
+        titleTypography: "bold",
         titlePlacement: "top",
         titleStyle: "plain",
         description: "Back card body",

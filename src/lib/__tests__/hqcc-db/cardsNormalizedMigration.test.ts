@@ -110,6 +110,7 @@ async function seedLegacyDb(): Promise<void> {
         updatedAt: 20,
         schemaVersion: 2,
         title: "Goblin",
+        titleTypography: "boldItalic",
         description: "A sneaky foe",
         bodyTextColor: "#111111",
         bodyTextFitToBounds: true,
@@ -199,6 +200,7 @@ describe("cards normalized migration", () => {
     expect(await db.cardTitleComponents.get("monster-1:hq.2021.title.main")).toEqual(
       expect.objectContaining({
         title: "Goblin",
+        titleTypography: "boldItalic",
       }),
     );
     expect(await db.cardTextComponents.get("monster-1:hq.2021.text.body")).toEqual(
@@ -243,6 +245,7 @@ describe("cards normalized migration", () => {
         id: "monster-1",
         templateId: "monster",
         name: "Goblin",
+        titleTypography: "boldItalic",
         description: "A sneaky foe",
         backgroundTintBlendMode: "screen",
         monsterIconAssetId: "asset-icon",

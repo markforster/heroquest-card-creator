@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Ορισμός χρώματος τίτλου",
   "tooltip.titleStyleRibbon": "Εμφάνιση κορδέλας πίσω από τον τίτλο",
   "tooltip.titleStylePlain": "Εμφάνιση τίτλου χωρίς κορδέλα",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Κανόνες και κείμενο περιγραφής που εμφανίζονται στο σώμα της κάρτας",
   "tooltip.formattingHelp": "Βοήθεια μορφοποίησης",
   "tooltip.insertEmoji": "Εισαγωγή emoji",

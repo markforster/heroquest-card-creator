@@ -1,6 +1,6 @@
 "use client";
 
-import { BookType, PanelBottom, PanelTop, Tag, Type } from "lucide-react";
+import { BookType, Italic, PanelBottom, PanelTop, Tag, Type } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -15,6 +15,14 @@ import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { DEFAULT_TITLE_COLOR } from "@/config/colors";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  getAlternateTitleTypography,
+  getTemplateTitleTypographyDefault,
+  normalizeTitleTypographyForStorage,
+  resolveTitleTypography,
+} from "@/lib/title-typography";
+import type { TemplateId } from "@/types/templates";
+import type { TitleTypography } from "@/types/title-typography";
 
 import BaseInspectorField from "./BaseInspectorField";
 
@@ -26,6 +34,7 @@ type TitleFieldProps = {
   showStyleToggle?: boolean;
   showToolbar?: boolean;
   showTitleColor?: boolean;
+  templateId?: TemplateId;
 };
 
 export default function TitleField({
@@ -36,6 +45,7 @@ export default function TitleField({
   showStyleToggle = false,
   showToolbar = false,
   showTitleColor = false,
+  templateId = "hero",
 }: TitleFieldProps) {
   const { t } = useI18n();
   const {
@@ -54,10 +64,17 @@ export default function TitleField({
   const placementValue = useWatch({ name: "titlePlacement" }) as string | undefined;
   const showTitleValue = useWatch({ name: "showTitle" }) as boolean | undefined;
   const titleStyleValue = useWatch({ name: "titleStyle" }) as string | undefined;
+  const titleTypographyValue = useWatch({ name: "titleTypography" }) as TitleTypography | undefined;
   const titleColorValue = useWatch({ name: "titleColor" }) as string | undefined;
   const titleDisabled = showToggle && showTitleValue === false;
   const placement = placementValue ?? "bottom";
   const titleStyle = titleStyleValue ?? "ribbon";
+  const defaultTitleTypography = getTemplateTitleTypographyDefault(templateId);
+  const titleTypography = resolveTitleTypography({
+    saved: titleTypographyValue,
+    defaultTypography: defaultTitleTypography,
+  });
+  const titleBoldItalic = titleTypography === "boldItalic";
   const titleColor = titleColorValue ?? DEFAULT_TITLE_COLOR;
   const [isTitleColorOpen, setIsTitleColorOpen] = useState(false);
   const { renderPreviewCanvas } = usePreviewCanvas();
@@ -137,6 +154,31 @@ export default function TitleField({
           )}
         </button>
       ) : null}
+      <button
+        type="button"
+        className={`${layoutStyles.bodyTextToolbarButton} ${
+          titleBoldItalic ? layoutStyles.bodyTextToolbarButtonActive : ""
+        } ${titleDisabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+        title={t("tooltip.titleBoldItalic")}
+        aria-label={t("tooltip.titleBoldItalic")}
+        aria-pressed={titleBoldItalic}
+        disabled={titleDisabled}
+        onClick={() =>
+          setValue(
+            "titleTypography",
+            normalizeTitleTypographyForStorage({
+              value: getAlternateTitleTypography(titleTypography),
+              defaultTypography: defaultTitleTypography,
+            }),
+            {
+              shouldDirty: true,
+              shouldTouch: true,
+            },
+          )
+        }
+      >
+        <Italic size={14} aria-hidden="true" />
+      </button>
     </div>
   ) : null;
 

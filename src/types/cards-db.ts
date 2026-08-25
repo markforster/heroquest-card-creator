@@ -3,6 +3,7 @@ import type { BodyTextStyle, HeroBackLogoMode } from "./card-data";
 import type { CardFace } from "./card-face";
 import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
+import type { TitleTypography } from "./title-typography";
 
 /**
  * Saved-state lifecycle for a stored card record.
@@ -29,6 +30,7 @@ export interface CardRecord {
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
+  titleTypography?: TitleTypography;
   titleColor?: string;
   bodyTextColor?: string;
   bodyTextFitToBounds?: boolean;

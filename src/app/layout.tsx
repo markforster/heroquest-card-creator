@@ -167,6 +167,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
 }
 
 @font-face {
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Bold Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "HeroQuest";
   src: url("./fonts/HeroQuest.ttf") format("truetype");
   font-style: normal;

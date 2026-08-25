@@ -22,11 +22,13 @@ import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getCardShowCopyrightValue, resolveCardCopyrightText } from "@/lib/copyright-defaults";
 import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
 import { computeContainScale } from "@/lib/image-scale";
+import { getTitleLayerTypographyDefault, resolveTitleTypography } from "@/lib/title-typography";
 import { DEFAULT_BACKGROUND_TINT_BLEND_MODE } from "@/types/background-tint";
 import type { BackgroundTintBlendMode } from "@/types/background-tint";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
+import type { TitleTypography } from "@/types/title-typography";
 
 import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 import {
@@ -638,6 +640,13 @@ export function TitleLayer({
   const titleStyle = cardData
     ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle
     : undefined;
+  const savedTitleTypography = cardData
+    ? (cardData as { titleTypography?: TitleTypography }).titleTypography
+    : undefined;
+  const titleTypography = resolveTitleTypography({
+    saved: savedTitleTypography,
+    defaultTypography: getTitleLayerTypographyDefault(layer),
+  });
   const showRibbon =
     titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
   const titleColor = cardData ? (cardData as { titleColor?: string }).titleColor : undefined;
@@ -671,6 +680,7 @@ export function TitleLayer({
       showRibbon={showRibbon}
       y={y}
       titleColor={titleColor}
+      titleTypography={titleTypography}
       ribbonBounds={ribbonBounds}
       textBounds={textBounds}
       textBoundsNoRibbon={textBoundsNoRibbon}

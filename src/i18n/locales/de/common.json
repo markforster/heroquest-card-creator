@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Titelfarbe festlegen",
   "tooltip.titleStyleRibbon": "Band hinter dem Titel anzeigen",
   "tooltip.titleStylePlain": "Titel ohne Band anzeigen",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Regeln und Flavour-Text im Kartenkörper",
   "tooltip.formattingHelp": "Formatierungshilfe",
   "tooltip.insertEmoji": "Emoji einfügen",

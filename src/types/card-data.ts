@@ -5,6 +5,7 @@ import type { BackgroundTintBlendMode } from "./background-tint";
 import type { CardFace } from "./card-face";
 import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
+import type { TitleTypography } from "./title-typography";
 
 /**
  * Shared editable fields used by multiple card templates before persistence normalization.
@@ -14,6 +15,7 @@ export interface BaseCardFields {
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
+  titleTypography?: TitleTypography;
   titleColor?: string;
   bodyTextColor?: string;
   bodyTextFitToBounds?: boolean;

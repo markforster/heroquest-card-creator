@@ -362,6 +362,7 @@
   "tooltip.titleColor": "Set the title colour",
   "tooltip.titleStyleRibbon": "Show the ribbon behind the title",
   "tooltip.titleStylePlain": "Show the title without a ribbon",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Rules and flavour text shown in the body of the card",
   "tooltip.formattingHelp": "Formatting help",
   "tooltip.insertInlineDice": "Insert inline dice",

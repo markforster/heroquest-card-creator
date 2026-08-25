@@ -92,6 +92,7 @@ export const LABELLED_BACK_BLUEPRINT: Blueprint = {
       type: layerTypes.title,
       bind: { titleKey: "title" },
       props: {
+        titleTypographyDefault: "boldItalic",
         y: sy(866),
         ribbonX: makeRibbonBounds({ y: 866 }).x,
         ribbonY: makeRibbonBounds({ y: 866 }).y,

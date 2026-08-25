@@ -116,4 +116,92 @@ describe("BlueprintRenderer outside EditorTargetsProvider", () => {
     expect(container.querySelector("[data-user-asset-id='art-5']")).not.toBeNull();
     expect(container.querySelector("[data-hqcc-hit-area='title']")).not.toBeNull();
   });
+
+  it("renders normal title typography by default for standard templates", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero"
+          templateName="Hero"
+          cardData={
+            {
+              title: "Sir Ragnar",
+            } as never
+          }
+        />
+      </svg>,
+    );
+
+    const title = Array.from(container.querySelectorAll("text")).find(
+      (entry) => entry.textContent === "Example",
+    );
+    expect(title?.style.fontStyle).toBe("");
+  });
+
+  it("applies explicit bold italic title styling from card data", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="hero"
+          templateName="Hero"
+          cardData={
+            {
+              title: "Sir Ragnar",
+              titleTypography: "boldItalic",
+            } as never
+          }
+        />
+      </svg>,
+    );
+
+    const title = Array.from(container.querySelectorAll("text")).find(
+      (entry) => entry.textContent === "Example",
+    );
+    expect(title).toHaveStyle({ fontStyle: "italic", fontWeight: "700" });
+  });
+
+  it("uses bold italic typography by default for labelled backs", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="labelled-back"
+          templateName="Labelled Back"
+          cardData={
+            {
+              title: "Treasure Deck",
+              showTitle: true,
+            } as never
+          }
+        />
+      </svg>,
+    );
+
+    const title = Array.from(container.querySelectorAll("text")).find(
+      (entry) => entry.textContent === "Example",
+    );
+    expect(title).toHaveStyle({ fontStyle: "italic", fontWeight: "700" });
+  });
+
+  it("allows labelled backs to opt out of bold italic typography", () => {
+    const { container } = render(
+      <svg>
+        <BlueprintRenderer
+          templateId="labelled-back"
+          templateName="Labelled Back"
+          cardData={
+            {
+              title: "Treasure Deck",
+              showTitle: true,
+              titleTypography: "bold",
+            } as never
+          }
+        />
+      </svg>,
+    );
+
+    const title = Array.from(container.querySelectorAll("text")).find(
+      (entry) => entry.textContent === "Example",
+    );
+    expect(title?.style.fontStyle).toBe("");
+  });
 });

@@ -56,6 +56,19 @@ describe("card schemas", () => {
     expect(parsed.bodyTextFitToBounds).toBe(true);
   });
 
+  it("accepts optional title typography values and rejects unknown values", () => {
+    const parsed = cardUpdateInputSchema.parse({
+      titleTypography: "boldItalic",
+    });
+
+    expect(parsed.titleTypography).toBe("boldItalic");
+    expect(() =>
+      cardUpdateInputSchema.parse({
+        titleTypography: "italic",
+      }),
+    ).toThrow();
+  });
+
   it("accepts standard background tint blend modes and rejects canvas-only operations", () => {
     const parsed = cardUpdateInputSchema.parse({
       backgroundTintBlendMode: "screen",

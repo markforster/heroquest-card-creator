@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Ustaw kolor tytułu",
   "tooltip.titleStyleRibbon": "Pokaż wstęgę za tytułem",
   "tooltip.titleStylePlain": "Pokaż tytuł bez wstęgi",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Zasady i tekst fabularny widoczne w treści karty",
   "tooltip.formattingHelp": "Pomoc formatowania",
   "tooltip.insertEmoji": "Wstaw emoji",

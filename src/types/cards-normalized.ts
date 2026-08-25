@@ -10,6 +10,7 @@ import type { CardFace } from "@/types/card-face";
 import type { CardStatus } from "@/types/cards-db";
 import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
+import type { TitleTypography } from "@/types/title-typography";
 
 export type NormalizedCardSchemaVersion = 1;
 
@@ -72,6 +73,7 @@ export interface CardTitleComponentRecord extends NormalizedCardComponentBase {
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
+  titleTypography?: TitleTypography;
   titleColor?: string;
   titlePlacement?: "top" | "bottom";
 }

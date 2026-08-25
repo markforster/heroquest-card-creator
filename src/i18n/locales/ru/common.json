@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Задать цвет заголовка",
   "tooltip.titleStyleRibbon": "Показывать ленту за заголовком",
   "tooltip.titleStylePlain": "Показывать заголовок без ленты",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Правила и художественный текст, отображаемые в основном тексте карты",
   "tooltip.formattingHelp": "Помощь по форматированию",
   "tooltip.insertEmoji": "Вставить эмодзи",

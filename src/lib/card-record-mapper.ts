@@ -1,5 +1,9 @@
 import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
+import {
+  getTemplateTitleTypographyDefault,
+  normalizeTitleTypographyForStorage,
+} from "@/lib/title-typography";
 import { normalizeBackgroundTintBlendModeForStorage } from "@/types/background-tint";
 import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
@@ -29,6 +33,7 @@ export function cardRecordToCardData<T extends TemplateId>(
     title: record.title,
     showTitle: record.showTitle ?? true,
     titleStyle: record.titleStyle,
+    titleTypography: record.titleTypography,
     titleColor: record.titleColor,
     bodyTextColor: record.bodyTextColor,
     bodyTextFitToBounds: record.bodyTextFitToBounds ?? false,
@@ -141,12 +146,17 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
   data: CardDataByTemplate[T],
 ): Partial<CardRecord> {
   const face = data.face;
+  const defaultTitleTypography = getTemplateTitleTypographyDefault(templateId);
   const basePatch: Partial<CardRecord> = {
     templateId,
     name,
     title: data.title,
     showTitle: data.showTitle,
     titleStyle: data.titleStyle,
+    titleTypography: normalizeTitleTypographyForStorage({
+      value: data.titleTypography,
+      defaultTypography: defaultTitleTypography,
+    }),
     titleColor: data.titleColor,
     bodyTextColor: data.bodyTextColor,
     bodyTextFitToBounds: data.bodyTextFitToBounds,

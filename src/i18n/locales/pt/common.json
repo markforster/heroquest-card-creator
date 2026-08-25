@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Definir a cor do título",
   "tooltip.titleStyleRibbon": "Mostrar a faixa atrás do título",
   "tooltip.titleStylePlain": "Mostrar o título sem faixa",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Regras e texto no corpo da carta",
   "tooltip.formattingHelp": "Ajuda de formatação",
   "tooltip.insertEmoji": "Inserir emoji",

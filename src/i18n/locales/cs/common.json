@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Nastavit barvu názvu",
   "tooltip.titleStyleRibbon": "Zobrazit stuhu za názvem",
   "tooltip.titleStylePlain": "Zobrazit název bez stuhy",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Pravidla a flavor text zobrazený v těle karty",
   "tooltip.formattingHelp": "Nápověda k formátování",
   "tooltip.insertEmoji": "Vložit emoji",

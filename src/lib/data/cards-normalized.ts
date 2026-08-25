@@ -1,6 +1,10 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
+import {
+  getTitleLayerTypographyDefault,
+  normalizeTitleTypographyForStorage,
+} from "@/lib/title-typography";
 import { normalizeBackgroundTintBlendModeForStorage } from "@/types/background-tint";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardRecord } from "@/types/cards-db";
@@ -225,6 +229,7 @@ export function assembleNormalizedCardRecord(
         result.title = component.title;
         result.showTitle = component.showTitle;
         result.titleStyle = component.titleStyle;
+        result.titleTypography = component.titleTypography;
         result.titleColor = component.titleColor;
         result.titlePlacement = component.titlePlacement;
         break;
@@ -432,6 +437,10 @@ export function buildNormalizedCardRecords(
           title: record.title,
           showTitle: record.showTitle,
           titleStyle: record.titleStyle,
+          titleTypography: normalizeTitleTypographyForStorage({
+            value: record.titleTypography,
+            defaultTypography: getTitleLayerTypographyDefault(node),
+          }),
           titleColor: record.titleColor,
           titlePlacement: record.titlePlacement,
         });

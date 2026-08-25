@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Cím színének beállítása",
   "tooltip.titleStyleRibbon": "Szalag megjelenítése a cím mögött",
   "tooltip.titleStylePlain": "Cím megjelenítése szalag nélkül",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "A kártya törzsében megjelenő szabályok és ízesítő szöveg",
   "tooltip.formattingHelp": "Formázási súgó",
   "tooltip.insertEmoji": "Emoji beszúrása",

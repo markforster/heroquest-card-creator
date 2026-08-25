@@ -11,5 +11,6 @@ describe("getEmbeddedFontCss", () => {
 
     expect(typeof first).toBe("string");
     expect(second).toBe(first);
+    expect(first).toContain("font-style: italic");
   });
 });

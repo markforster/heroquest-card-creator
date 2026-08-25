@@ -15,6 +15,7 @@ export const cardStatusSchema = z.enum(["draft", "saved", "archived"]);
 export const cardSchemaVersionSchema = z.union([z.literal(1), z.literal(2)]);
 
 export const backgroundTintBlendModeSchema = z.enum(BACKGROUND_TINT_BLEND_MODES);
+export const titleTypographySchema = z.enum(["bold", "boldItalic"]);
 
 export const cardRecordSchema = z.object({
   id: z.string(),
@@ -33,6 +34,7 @@ export const cardRecordSchema = z.object({
   title: z.string().optional(),
   showTitle: z.boolean().optional(),
   titleStyle: z.enum(["ribbon", "plain"]).optional(),
+  titleTypography: titleTypographySchema.optional(),
   titleColor: z.string().optional(),
   bodyTextColor: z.string().optional(),
   bodyTextFitToBounds: z.boolean().optional(),

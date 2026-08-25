@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Imposta il colore del titolo",
   "tooltip.titleStyleRibbon": "Mostra il nastro dietro il titolo",
   "tooltip.titleStylePlain": "Mostra il titolo senza nastro",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Regole e testo nel corpo della carta",
   "tooltip.formattingHelp": "Guida alla formattazione",
   "tooltip.insertEmoji": "Inserisci emoji",

@@ -352,6 +352,7 @@
   "tooltip.titleColor": "Ange titelfärg",
   "tooltip.titleStyleRibbon": "Visa band bakom titeln",
   "tooltip.titleStylePlain": "Visa titel utan band",
+  "tooltip.titleBoldItalic": "Toggle bold italic title",
   "tooltip.rulesAndFlavour": "Regler och smaktext som visas i kortets brödtext",
   "tooltip.formattingHelp": "Formateringshjälp",
   "tooltip.insertEmoji": "Infoga emoji",

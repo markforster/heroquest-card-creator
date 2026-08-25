@@ -122,6 +122,7 @@ describe("cardRecordToCardData", () => {
       updatedAt: 1,
       schemaVersion: 2,
       face: "front",
+      titleTypography: "boldItalic",
       description: "**Movement**\nMove around the board.",
       backgroundTint: "#efe2bf",
       backgroundTintBlendMode: "screen",
@@ -133,6 +134,7 @@ describe("cardRecordToCardData", () => {
       expect.objectContaining({
         name: "Turn Summary",
         face: "front",
+        titleTypography: "boldItalic",
         description: "**Movement**\nMove around the board.",
         backgroundTint: "#efe2bf",
         backgroundTintBlendMode: "screen",
@@ -150,6 +152,34 @@ describe("cardRecordToCardData", () => {
 
     expect(patch.backgroundTint).toBe("#efe2bf");
     expect(patch.backgroundTintBlendMode).toBeUndefined();
+  });
+
+  it("omits standard template default title typography and persists bold italic opt-in", () => {
+    const defaultPatch = cardDataToCardRecordPatch("hero", "Sir Ragnar", {
+      title: "Sir Ragnar",
+      titleTypography: "bold",
+    });
+    const boldItalicPatch = cardDataToCardRecordPatch("hero", "Sir Ragnar", {
+      title: "Sir Ragnar",
+      titleTypography: "boldItalic",
+    });
+
+    expect(defaultPatch.titleTypography).toBeUndefined();
+    expect(boldItalicPatch.titleTypography).toBe("boldItalic");
+  });
+
+  it("omits labelled-back default bold italic typography and persists bold opt-out", () => {
+    const defaultPatch = cardDataToCardRecordPatch("labelled-back", "Treasure Deck", {
+      title: "Treasure Deck",
+      titleTypography: "boldItalic",
+    });
+    const boldPatch = cardDataToCardRecordPatch("labelled-back", "Treasure Deck", {
+      title: "Treasure Deck",
+      titleTypography: "bold",
+    });
+
+    expect(defaultPatch.titleTypography).toBeUndefined();
+    expect(boldPatch.titleTypography).toBe("bold");
   });
 
   it("maps persisted logo selection into Logo Back editor data", () => {
