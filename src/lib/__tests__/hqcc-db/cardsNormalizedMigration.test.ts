@@ -121,6 +121,7 @@ async function seedLegacyDb(): Promise<void> {
         imageScale: 1.2,
         imageScaleMode: "relative",
         backgroundTint: "#eeeeee",
+        backgroundTintBlendMode: "screen",
         heroAttackDice: 0,
         monsterMovementSquares: 8,
         monsterAttackDice: 2,
@@ -192,6 +193,7 @@ describe("cards normalized migration", () => {
     expect(await db.cardBackgroundComponents.get("monster-1:hq.2021.background.base")).toEqual(
       expect.objectContaining({
         tint: "#eeeeee",
+        blendMode: "screen",
       }),
     );
     expect(await db.cardTitleComponents.get("monster-1:hq.2021.title.main")).toEqual(
@@ -242,6 +244,7 @@ describe("cards normalized migration", () => {
         templateId: "monster",
         name: "Goblin",
         description: "A sneaky foe",
+        backgroundTintBlendMode: "screen",
         monsterIconAssetId: "asset-icon",
         thumbnailBlob: expect.objectContaining({ type: "image/png" }),
       }),

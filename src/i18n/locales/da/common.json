@@ -195,6 +195,7 @@
   "label.backgroundColor": "Baggrundsfarve",
   "form.borderColor": "Rammefarve",
   "form.backgroundTint": "Baggrundsnuance",
+  "form.backgroundTintBlendMode": "Blandingstilstand",
   "form.heroBackLogo": "Heltebagside-logo",
   "form.copyright": "Ophavsret",
   "form.showCopyright": "Vis copyright",

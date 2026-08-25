@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import { DEFAULT_BODY_TEXT_COLOR } from "@/config/colors";
 
+import type { BackgroundTintBlendMode } from "./background-tint";
 import type { CardFace } from "./card-face";
 import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
@@ -30,6 +31,7 @@ export interface BaseCardFields {
   description?: string;
   borderColor?: string;
   backgroundTint?: string;
+  backgroundTintBlendMode?: BackgroundTintBlendMode;
   copyright?: string;
   copyrightColor?: string;
   showCopyright?: boolean;

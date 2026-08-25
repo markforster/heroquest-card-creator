@@ -1,4 +1,4 @@
-import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import { computeContainScale, getImageLayerBounds } from "@/lib/image-scale";
 import type { CardRecord } from "@/types/cards-db";
 
@@ -124,6 +124,7 @@ describe("cardRecordToCardData", () => {
       face: "front",
       description: "**Movement**\nMove around the board.",
       backgroundTint: "#efe2bf",
+      backgroundTintBlendMode: "screen",
       bodyTextColor: "#22170f",
       bodyTextFitToBounds: true,
     };
@@ -134,10 +135,21 @@ describe("cardRecordToCardData", () => {
         face: "front",
         description: "**Movement**\nMove around the board.",
         backgroundTint: "#efe2bf",
+        backgroundTintBlendMode: "screen",
         bodyTextColor: "#22170f",
         bodyTextFitToBounds: true,
       }),
     );
+  });
+
+  it("omits multiply when mapping editor form data to a card record patch", () => {
+    const patch = cardDataToCardRecordPatch("rules", "Turn Summary", {
+      backgroundTint: "#efe2bf",
+      backgroundTintBlendMode: "multiply",
+    });
+
+    expect(patch.backgroundTint).toBe("#efe2bf");
+    expect(patch.backgroundTintBlendMode).toBeUndefined();
   });
 
   it("maps persisted logo selection into Logo Back editor data", () => {

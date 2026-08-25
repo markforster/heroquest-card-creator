@@ -195,6 +195,7 @@
   "label.backgroundColor": "Cor de fundo",
   "form.borderColor": "Cor da borda",
   "form.backgroundTint": "Tonalidade de fundo",
+  "form.backgroundTintBlendMode": "Modo de mistura",
   "form.heroBackLogo": "Logotipo do verso de heroi",
   "form.copyright": "Direitos autorais",
   "form.showCopyright": "Mostrar direitos autorais",

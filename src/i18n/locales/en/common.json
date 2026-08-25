@@ -204,6 +204,7 @@
   "label.diceValue": "Value",
   "form.borderColor": "Border colour",
   "form.backgroundTint": "Background tint",
+  "form.backgroundTintBlendMode": "Blend mode",
   "form.heroBackLogo": "Hero Back logo",
   "form.copyright": "Copyright",
   "form.showCopyright": "Show copyright",

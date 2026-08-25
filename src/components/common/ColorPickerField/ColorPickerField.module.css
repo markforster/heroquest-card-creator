@@ -113,6 +113,11 @@
   margin-top: 8px;
 }
 
+.popoverExtraControls {
+  width: 100%;
+  margin-top: 4px;
+}
+
 .swatches {
   flex: 1 1 auto;
   min-width: 0;

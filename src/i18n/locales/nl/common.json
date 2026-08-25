@@ -195,6 +195,7 @@
   "label.backgroundColor": "Achtergrondkleur",
   "form.borderColor": "Randkleur",
   "form.backgroundTint": "Achtergrondtint",
+  "form.backgroundTintBlendMode": "Mengmodus",
   "form.heroBackLogo": "Held-achterkantlogo",
   "form.copyright": "Auteursrecht",
   "form.showCopyright": "Copyright tonen",

@@ -1,3 +1,4 @@
+import type { BackgroundTintBlendMode } from "./background-tint";
 import type { BodyTextStyle, HeroBackLogoMode } from "./card-data";
 import type { CardFace } from "./card-face";
 import type { StatAsteriskFlags, StatValue } from "./stats";
@@ -50,6 +51,7 @@ export interface CardRecord {
   imageOriginalHeight?: number;
   borderColor?: string;
   backgroundTint?: string;
+  backgroundTintBlendMode?: BackgroundTintBlendMode;
   heroBackLogoMode?: HeroBackLogoMode;
   heroBackLogoId?: string;
   heroBackLogoName?: string;

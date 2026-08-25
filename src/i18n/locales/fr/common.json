@@ -195,6 +195,7 @@
   "label.backgroundColor": "Couleur d’arrière-plan",
   "form.borderColor": "Couleur de bordure",
   "form.backgroundTint": "Teinte de l’arrière-plan",
+  "form.backgroundTintBlendMode": "Mode de fusion",
   "form.heroBackLogo": "Logo du dos de heros",
   "form.copyright": "Droit d’auteur",
   "form.showCopyright": "Afficher le copyright",

@@ -195,6 +195,7 @@
   "label.backgroundColor": "Hintergrundfarbe",
   "form.borderColor": "Rahmenfarbe",
   "form.backgroundTint": "Hintergrundtönung",
+  "form.backgroundTintBlendMode": "Mischmodus",
   "form.heroBackLogo": "Heldenruckseiten-Logo",
   "form.copyright": "Urheberrecht",
   "form.showCopyright": "Copyright anzeigen",

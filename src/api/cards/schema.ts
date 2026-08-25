@@ -8,10 +8,13 @@ import {
   statValueSchema,
   templateIdSchema,
 } from "@/api/shared/schema";
+import { BACKGROUND_TINT_BLEND_MODES } from "@/types/background-tint";
 
 export const cardStatusSchema = z.enum(["draft", "saved", "archived"]);
 
 export const cardSchemaVersionSchema = z.union([z.literal(1), z.literal(2)]);
+
+export const backgroundTintBlendModeSchema = z.enum(BACKGROUND_TINT_BLEND_MODES);
 
 export const cardRecordSchema = z.object({
   id: z.string(),
@@ -52,6 +55,7 @@ export const cardRecordSchema = z.object({
   imageOriginalHeight: z.number().optional(),
   borderColor: z.string().optional(),
   backgroundTint: z.string().optional(),
+  backgroundTintBlendMode: backgroundTintBlendModeSchema.optional(),
   heroBackLogoMode: z.enum(["default", "none", "custom"]).optional(),
   heroBackLogoId: z.string().optional(),
   heroBackLogoName: z.string().optional(),

@@ -197,6 +197,7 @@ describe("getCard", () => {
       face: "front",
       description: "**Movement**\nMove around the board.",
       backgroundTint: "#efe2bf",
+      backgroundTintBlendMode: "screen",
       bodyTextColor: "#22170f",
       bodyTextFitToBounds: true,
     });
@@ -218,6 +219,7 @@ describe("getCard", () => {
         face: "front",
         description: "**Movement**\nMove around the board.",
         backgroundTint: "#efe2bf",
+        backgroundTintBlendMode: "screen",
         bodyTextColor: "#22170f",
         bodyTextFitToBounds: true,
         schemaVersion: 2,

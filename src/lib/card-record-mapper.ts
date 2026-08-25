@@ -1,5 +1,6 @@
 import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
+import { normalizeBackgroundTintBlendModeForStorage } from "@/types/background-tint";
 import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatAsteriskFlags, StatValue } from "@/types/stats";
@@ -49,6 +50,7 @@ export function cardRecordToCardData<T extends TemplateId>(
     imageOriginalHeight: record.imageOriginalHeight,
     borderColor: record.borderColor,
     backgroundTint: record.backgroundTint,
+    backgroundTintBlendMode: record.backgroundTintBlendMode,
   };
 
   switch (record.templateId) {
@@ -166,6 +168,9 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     imageOriginalHeight: data.imageOriginalHeight,
     borderColor: data.borderColor,
     backgroundTint: data.backgroundTint,
+    backgroundTintBlendMode: normalizeBackgroundTintBlendModeForStorage(
+      data.backgroundTintBlendMode,
+    ),
   };
 
   switch (templateId) {

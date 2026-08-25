@@ -4,6 +4,7 @@ import type {
   BlueprintSlotId,
   SystemFamily,
 } from "@/data/card-systems/types";
+import type { BackgroundTintBlendMode } from "@/types/background-tint";
 import type { BodyTextStyle, HeroBackLogoMode } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardStatus } from "@/types/cards-db";
@@ -60,6 +61,7 @@ export interface CardSlotLinkRecord {
 
 export interface CardBackgroundComponentRecord extends NormalizedCardComponentBase {
   tint?: string;
+  blendMode?: BackgroundTintBlendMode;
 }
 
 export interface CardBorderComponentRecord extends NormalizedCardComponentBase {

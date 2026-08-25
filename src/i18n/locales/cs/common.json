@@ -195,6 +195,7 @@
   "label.backgroundColor": "Barva pozadí",
   "form.borderColor": "Barva okraje",
   "form.backgroundTint": "Odstín pozadí",
+  "form.backgroundTintBlendMode": "Režim prolnutí",
   "form.heroBackLogo": "Logo rubu hrdiny",
   "form.copyright": "Autorské právo",
   "form.showCopyright": "Zobrazit autorské právo",

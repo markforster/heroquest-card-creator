@@ -58,6 +58,7 @@ type ColorPickerFieldProps = {
   swatchIcon?: ReactNode;
   renderInPortal?: boolean;
   onPopoverElementChange?: (element: HTMLDivElement | null) => void;
+  popoverExtraControls?: ReactNode;
 };
 
 const FALLBACK_PANEL_BG = "#202020";
@@ -127,6 +128,7 @@ export default function ColorPickerField({
   swatchIcon,
   renderInPortal = false,
   onPopoverElementChange,
+  popoverExtraControls,
 }: ColorPickerFieldProps) {
   const { t } = useI18n();
   const { swatches, saveSwatch, removeSwatch, maxSwatches } = useSharedColorSwatches();
@@ -376,6 +378,9 @@ export default function ColorPickerField({
                 onCommit={commitHexDraft}
                 onCancelOrReset={resetHexDraft}
               />
+              {popoverExtraControls ? (
+                <div className={styles.popoverExtraControls}>{popoverExtraControls}</div>
+              ) : null}
               {presetSwatches.length > 0 ? (
                 <div className={styles.swatchGrid} data-testid="preset-swatch-grid">
                   {presetSwatches.map((swatch) => (

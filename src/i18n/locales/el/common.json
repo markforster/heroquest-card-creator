@@ -195,6 +195,7 @@
   "label.backgroundColor": "Χρώμα φόντου",
   "form.borderColor": "Χρώμα περιγράμματος",
   "form.backgroundTint": "Απόχρωση φόντου",
+  "form.backgroundTintBlendMode": "Λειτουργία ανάμειξης",
   "form.heroBackLogo": "Logotypo piso opsis iroa",
   "form.copyright": "Πνευματικά δικαιώματα",
   "form.showCopyright": "Εμφάνιση πνευματικών δικαιωμάτων",

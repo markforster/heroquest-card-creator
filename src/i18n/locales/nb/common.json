@@ -195,6 +195,7 @@
   "label.backgroundColor": "Baggrundsfarge",
   "form.borderColor": "Rammefarge",
   "form.backgroundTint": "Bakgrunnstone",
+  "form.backgroundTintBlendMode": "Blandingsmodus",
   "form.heroBackLogo": "Heltebakside-logo",
   "form.copyright": "Opphavsrett",
   "form.showCopyright": "Vis opphavsrett",

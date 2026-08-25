@@ -22,6 +22,8 @@ import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { getCardShowCopyrightValue, resolveCardCopyrightText } from "@/lib/copyright-defaults";
 import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
 import { computeContainScale } from "@/lib/image-scale";
+import { DEFAULT_BACKGROUND_TINT_BLEND_MODE } from "@/types/background-tint";
+import type { BackgroundTintBlendMode } from "@/types/background-tint";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
@@ -68,6 +70,8 @@ export function renderBackgroundLayer({
     tintKey && cardData ? (cardData as Record<string, unknown>)[tintKey] : undefined;
   const tint =
     typeof tintValue === "string" && tintValue.trim().length > 0 ? tintValue.trim() : undefined;
+  const tintBlendMode: BackgroundTintBlendMode =
+    cardData?.backgroundTintBlendMode ?? DEFAULT_BACKGROUND_TINT_BLEND_MODE;
   const cutoutBounds = "cutoutBounds" in layer ? layer.cutoutBounds : undefined;
   const maskId = cutoutBounds ? `${blueprint.templateId}-${layer.id}-cutout-mask` : undefined;
   const opacity = backgroundLoaded === false ? 0 : 1;
@@ -114,7 +118,7 @@ export function renderBackgroundLayer({
             width={bounds.width}
             height={bounds.height}
             fill={tint}
-            style={{ mixBlendMode: "multiply", opacity }}
+            style={{ mixBlendMode: tintBlendMode, opacity }}
             mask={maskId ? `url(#${maskId})` : undefined}
           />
         ) : null}

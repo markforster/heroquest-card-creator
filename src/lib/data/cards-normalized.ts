@@ -1,6 +1,7 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
+import { normalizeBackgroundTintBlendModeForStorage } from "@/types/background-tint";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardRecord } from "@/types/cards-db";
 import type {
@@ -209,6 +210,7 @@ export function assembleNormalizedCardRecord(
         const component = backgroundMap.get(slotLink.dataRecordId);
         if (!component) return null;
         result.backgroundTint = component.tint;
+        result.backgroundTintBlendMode = component.blendMode;
         break;
       }
       case layerTypes.border: {
@@ -415,6 +417,7 @@ export function buildNormalizedCardRecords(
         backgrounds.push({
           ...shared,
           tint: record.backgroundTint,
+          blendMode: normalizeBackgroundTintBlendModeForStorage(record.backgroundTintBlendMode),
         });
         return;
       case layerTypes.border:

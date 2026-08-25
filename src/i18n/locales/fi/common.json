@@ -195,6 +195,7 @@
   "label.backgroundColor": "Taustaväri",
   "form.borderColor": "Reunan väri",
   "form.backgroundTint": "Taustan sävytys",
+  "form.backgroundTintBlendMode": "Sekoitustila",
   "form.heroBackLogo": "Sankarin kaantopuolen logo",
   "form.copyright": "Tekijänoikeus",
   "form.showCopyright": "Näytä tekijänoikeus",

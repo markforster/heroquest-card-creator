@@ -210,6 +210,22 @@ describe("ColorPickerField", () => {
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
+  it("does not render popover extra controls unless provided", () => {
+    renderField({ showInput: false, isOpen: true });
+
+    expect(screen.queryByText("EXTRA_CONTROLS")).not.toBeInTheDocument();
+  });
+
+  it("renders provided extra controls in the popover picker tab", () => {
+    renderField({
+      showInput: false,
+      isOpen: true,
+      popoverExtraControls: <div>EXTRA_CONTROLS</div>,
+    });
+
+    expect(screen.getByText("EXTRA_CONTROLS")).toBeInTheDocument();
+  });
+
   it("can render the popover in a portal", () => {
     renderField({ showInput: false, isOpen: true, renderInPortal: true });
 

@@ -55,4 +55,17 @@ describe("card schemas", () => {
 
     expect(parsed.bodyTextFitToBounds).toBe(true);
   });
+
+  it("accepts standard background tint blend modes and rejects canvas-only operations", () => {
+    const parsed = cardUpdateInputSchema.parse({
+      backgroundTintBlendMode: "screen",
+    });
+
+    expect(parsed.backgroundTintBlendMode).toBe("screen");
+    expect(() =>
+      cardUpdateInputSchema.parse({
+        backgroundTintBlendMode: "source-over",
+      }),
+    ).toThrow();
+  });
 });

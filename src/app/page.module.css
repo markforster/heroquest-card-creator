@@ -1831,6 +1831,18 @@
   color: var(--hq-text);
 }
 
+.backgroundTintBlendModeField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
+}
+
 .rightPanel form > div {
   margin-bottom: var(--space-2);
 }

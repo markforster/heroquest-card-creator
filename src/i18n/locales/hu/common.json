@@ -195,6 +195,7 @@
   "label.backgroundColor": "Háttérszín",
   "form.borderColor": "Szegély színe",
   "form.backgroundTint": "Háttérszínezés",
+  "form.backgroundTintBlendMode": "Keverési mód",
   "form.heroBackLogo": "Hos hatoldali logo",
   "form.copyright": "Szerzői jog",
   "form.showCopyright": "Szerzői jog megjelenítése",

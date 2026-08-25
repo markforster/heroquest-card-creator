@@ -195,6 +195,7 @@
   "label.backgroundColor": "Цвет фона",
   "form.borderColor": "Цвет рамки",
   "form.backgroundTint": "Оттенок фона",
+  "form.backgroundTintBlendMode": "Режим наложения",
   "form.heroBackLogo": "Logotip oborota geroya",
   "form.copyright": "Авторские права",
   "form.showCopyright": "Показывать авторские права",

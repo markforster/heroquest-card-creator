@@ -195,6 +195,7 @@
   "label.backgroundColor": "Color de fondo",
   "form.borderColor": "Color del borde",
   "form.backgroundTint": "Tinte del fondo",
+  "form.backgroundTintBlendMode": "Modo de fusión",
   "form.heroBackLogo": "Logotipo del reverso de heroe",
   "form.copyright": "Derechos de autor",
   "form.showCopyright": "Mostrar copyright",

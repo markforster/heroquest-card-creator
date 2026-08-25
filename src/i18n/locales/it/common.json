@@ -195,6 +195,7 @@
   "label.backgroundColor": "Colore di sfondo",
   "form.borderColor": "Colore del bordo",
   "form.backgroundTint": "Tinta di sfondo",
+  "form.backgroundTintBlendMode": "Metodo di fusione",
   "form.heroBackLogo": "Logo del retro eroe",
   "form.copyright": "Diritto d'autore",
   "form.showCopyright": "Mostra copyright",
