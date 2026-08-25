@@ -39,10 +39,12 @@ import type { TitleTypography } from "@/types/title-typography";
 
 function FormValueProbe() {
   const name = useWatch({ name: "name" }) as string | undefined;
+  const customNameEnabled = useWatch({ name: "customNameEnabled" }) as boolean | undefined;
   const titleTypography = useWatch({ name: "titleTypography" }) as TitleTypography | undefined;
   return (
     <>
       <div data-testid="name-value">{name ?? ""}</div>
+      <div data-testid="custom-name-enabled-value">{String(customNameEnabled)}</div>
       <div data-testid="title-typography-value">{String(titleTypography)}</div>
     </>
   );
@@ -50,15 +52,20 @@ function FormValueProbe() {
 
 function TestHarness({
   templateId = "hero",
+  name = "Sir Ragnar",
+  customNameEnabled,
   titleTypography,
 }: {
   templateId?: TemplateId;
+  name?: string;
+  customNameEnabled?: boolean;
   titleTypography?: TitleTypography;
 }) {
   const methods = useForm({
     defaultValues: {
       title: "Sir Ragnar",
-      name: "Sir Ragnar",
+      name,
+      customNameEnabled,
       titleTypography,
     },
   });
@@ -79,6 +86,50 @@ describe("TitleField", () => {
 
     expect(screen.getByRole("textbox")).toHaveValue("Mentor");
     expect(screen.getByTestId("name-value")).toHaveTextContent("Mentor");
+  });
+
+  it("reveals a separate name field when custom naming is enabled", () => {
+    render(<TestHarness />);
+
+    fireEvent.click(screen.getByRole("button", { name: "tooltip.useCustomName" }));
+
+    expect(screen.getByLabelText("form.name")).toHaveValue("Sir Ragnar");
+    expect(screen.getByLabelText("form.title")).toHaveValue("Sir Ragnar");
+    expect(screen.getByTestId("custom-name-enabled-value")).toHaveTextContent("true");
+  });
+
+  it("allows name and title to differ while custom naming is enabled", () => {
+    render(<TestHarness customNameEnabled name="Female Barbarian" />);
+
+    fireEvent.change(screen.getByLabelText("form.title"), { target: { value: "Barbarian" } });
+
+    expect(screen.getByLabelText("form.name")).toHaveValue("Female Barbarian");
+    expect(screen.getByLabelText("form.title")).toHaveValue("Barbarian");
+    expect(screen.getByTestId("name-value")).toHaveTextContent("Female Barbarian");
+  });
+
+  it("keeps the unsaved custom name in form state when custom naming is collapsed", () => {
+    render(<TestHarness customNameEnabled name="Female Barbarian" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "tooltip.syncNameToTitle" }));
+
+    expect(screen.queryByLabelText("form.name")).not.toBeInTheDocument();
+    expect(screen.getByTestId("custom-name-enabled-value")).toHaveTextContent("undefined");
+    expect(screen.getByTestId("name-value")).toHaveTextContent("Female Barbarian");
+  });
+
+  it("restores the unsaved custom name when reopened after title edits while collapsed", () => {
+    render(<TestHarness customNameEnabled name="Female Barbarian" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "tooltip.syncNameToTitle" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Barbarian" } });
+    expect(screen.getByTestId("name-value")).toHaveTextContent("Barbarian");
+
+    fireEvent.click(screen.getByRole("button", { name: "tooltip.useCustomName" }));
+
+    expect(screen.getByLabelText("form.name")).toHaveValue("Female Barbarian");
+    expect(screen.getByLabelText("form.title")).toHaveValue("Barbarian");
+    expect(screen.getByTestId("name-value")).toHaveTextContent("Female Barbarian");
   });
 
   it("toggles the optional bold italic title state", () => {

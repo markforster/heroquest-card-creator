@@ -20,6 +20,7 @@ export interface CardRecord {
 
   name: string;
   nameLower: string;
+  customNameEnabled?: boolean;
   createdAt: number;
   updatedAt: number;
   lastViewedAt?: number;

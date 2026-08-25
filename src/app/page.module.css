@@ -9513,6 +9513,48 @@ button.assetsKindBadge:disabled {
   background: var(--hq-white-06);
 }
 
+.titleNameControl {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+.titleNameToggle {
+  width: 26px;
+  height: 26px;
+  margin-top: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hq-white-15);
+  background: var(--hq-white-06);
+  color: var(--hq-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.titleNameFields {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--hq-white-15);
+}
+
+.titleNameFieldRow {
+  min-width: 0;
+}
+
+.titleNameInlineLabel {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--hq-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
 .imageHeaderStatus {
   flex: 1 1 auto;
   min-width: 0;

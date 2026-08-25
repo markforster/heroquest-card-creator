@@ -1,5 +1,6 @@
 import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
+import { resolveLinkedTitleName } from "@/lib/title-name-linking";
 import {
   getTemplateTitleTypographyDefault,
   normalizeTitleTypographyForStorage,
@@ -30,6 +31,7 @@ export function cardRecordToCardData<T extends TemplateId>(
   const normalizedScale = normalizeImageScale(record as CardRecord & { templateId: TemplateId });
   const base = {
     name: record.name,
+    customNameEnabled: record.customNameEnabled,
     title: record.title,
     showTitle: record.showTitle ?? true,
     titleStyle: record.titleStyle,
@@ -149,9 +151,11 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
 ): Partial<CardRecord> {
   const face = data.face;
   const defaultTitleTypography = getTemplateTitleTypographyDefault(templateId);
+  const titleName = resolveLinkedTitleName(templateId, data);
   const basePatch: Partial<CardRecord> = {
     templateId,
-    name,
+    name: titleName.name || name,
+    customNameEnabled: titleName.customNameEnabled,
     title: data.title,
     showTitle: data.showTitle,
     titleStyle: data.titleStyle,

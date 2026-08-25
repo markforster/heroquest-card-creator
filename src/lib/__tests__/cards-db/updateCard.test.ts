@@ -58,8 +58,8 @@ describe("updateCard", () => {
           id: "c1",
           createdAt: 100,
           updatedAt: 100,
-          name: "Old Name",
-          nameLower: "old name",
+          name: "New title",
+          nameLower: "new title",
         }),
         title: "New title",
         updatedAt: 200,
@@ -71,8 +71,56 @@ describe("updateCard", () => {
     await expect(db.cardTitleComponents.get("c1:hq.2021.title.main")).resolves.toEqual(
       expect.objectContaining({ title: "New title" }),
     );
-    await expect(getCard("c1")).resolves.toEqual(expect.objectContaining({ title: "New title" }));
+    await expect(getCard("c1")).resolves.toEqual(
+      expect.objectContaining({ name: "New title", title: "New title" }),
+    );
     expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "c1");
+  });
+
+  it("preserves distinct name and title while custom naming is enabled", async () => {
+    await seedNormalizedCard(
+      createCardRecord({
+        id: "c1",
+        name: "Female Barbarian",
+        nameLower: "female barbarian",
+        title: "Barbarian",
+        customNameEnabled: true,
+      }),
+    );
+
+    const next = await updateCard("c1", { title: "Warrior" });
+
+    expect(next).toEqual(
+      expect.objectContaining({
+        name: "Female Barbarian",
+        nameLower: "female barbarian",
+        title: "Warrior",
+        customNameEnabled: true,
+      }),
+    );
+  });
+
+  it("syncs name to title when custom naming is disabled", async () => {
+    await seedNormalizedCard(
+      createCardRecord({
+        id: "c1",
+        name: "Female Barbarian",
+        nameLower: "female barbarian",
+        title: "Barbarian",
+        customNameEnabled: true,
+      }),
+    );
+
+    const next = await updateCard("c1", { customNameEnabled: undefined });
+
+    expect(next).toEqual(
+      expect.objectContaining({
+        name: "Barbarian",
+        nameLower: "barbarian",
+        title: "Barbarian",
+        customNameEnabled: undefined,
+      }),
+    );
   });
 
   it("recomputes nameLower when patch.name is provided", async () => {
@@ -106,7 +154,9 @@ describe("updateCard", () => {
       }),
     );
 
-    const mapped = cardRecordToCardData((await getCard("c1")) as never);
+    const mapped = cardRecordToCardData((await getCard("c1")) as never) as {
+      attackDiceAsterisks?: unknown;
+    };
     expect(mapped.attackDiceAsterisks).toEqual([false, true]);
   });
 

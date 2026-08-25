@@ -24,6 +24,7 @@ export const cardRecordSchema = z.object({
 
   name: z.string(),
   nameLower: z.string(),
+  customNameEnabled: z.boolean().optional(),
   createdAt: z.number(),
   updatedAt: z.number(),
   lastViewedAt: z.number().optional(),

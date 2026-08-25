@@ -8,6 +8,7 @@ import type {
 } from "@/components/Stockpile/types";
 import { cardTemplatesById } from "@/data/card-templates";
 import { resolveEffectiveFace } from "@/lib/card-face";
+import { cardMatchesNameOrTitleSearch } from "@/lib/title-name-linking";
 import type { CollectionRecord } from "@/types/collections-db";
 
 type ActiveFilter =
@@ -152,8 +153,7 @@ export const useStockpileFilters = ({
       let next = base;
 
       if (search.trim()) {
-        const q = search.toLocaleLowerCase();
-        next = next.filter((card) => card.nameLower.includes(q));
+        next = next.filter((card) => cardMatchesNameOrTitleSearch(card, search));
       }
 
       if (showMissingArtworkOnly && missingArtworkIdSet) {

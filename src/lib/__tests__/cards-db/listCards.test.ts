@@ -103,6 +103,27 @@ describe("listCards", () => {
     ]);
   });
 
+  it("matches search against name and title", async () => {
+    await seedNormalizedCard(
+      createCardRecord({
+        id: "custom-name",
+        templateId: "hero",
+        status: "saved",
+        name: "Female Barbarian",
+        nameLower: "female barbarian",
+        title: "Barbarian",
+        customNameEnabled: true,
+      }),
+    );
+
+    await expect(listCards({ search: "female" })).resolves.toEqual([
+      expect.objectContaining({ id: "custom-name" }),
+    ]);
+    await expect(listCards({ search: "barbarian" })).resolves.toEqual([
+      expect.objectContaining({ id: "custom-name" }),
+    ]);
+  });
+
   it("returns normalized-backed summaries when cardsBase rows exist", async () => {
     await seedNormalizedCard(
       createCardRecord({

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookType, Italic, PanelBottom, PanelTop, Tag, Type } from "lucide-react";
+import { BookType, Italic, Link2, PanelBottom, PanelTop, Tag, Type, Unlink2 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -53,6 +53,13 @@ export default function TitleField({
     formState: { errors },
     setValue,
   } = useFormContext();
+  const nameRegistration = register("name", {
+    required: `${t("form.name")} ${t("errors.required")}`,
+    maxLength: {
+      value: 40,
+      message: t("errors.titleMaxLength"),
+    },
+  });
   const titleRegistration = register("title", {
     required: required ? `${label} ${t("errors.required")}` : false,
     maxLength: {
@@ -63,6 +70,9 @@ export default function TitleField({
   const { ref: titleInputRegistrationRef, ...titleInputProps } = titleRegistration;
   const placementValue = useWatch({ name: "titlePlacement" }) as string | undefined;
   const showTitleValue = useWatch({ name: "showTitle" }) as boolean | undefined;
+  const nameValue = useWatch({ name: "name" }) as string | undefined;
+  const titleValue = useWatch({ name: "title" }) as string | undefined;
+  const customNameEnabled = useWatch({ name: "customNameEnabled" }) === true;
   const titleStyleValue = useWatch({ name: "titleStyle" }) as string | undefined;
   const titleTypographyValue = useWatch({ name: "titleTypography" }) as TitleTypography | undefined;
   const titleColorValue = useWatch({ name: "titleColor" }) as string | undefined;
@@ -80,6 +90,7 @@ export default function TitleField({
   const { renderPreviewCanvas } = usePreviewCanvas();
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const rememberedCustomNameRef = useRef<string | undefined>(undefined);
   const { smartGroups, isSmartBusy, requestSmart } = useSmartSwatches({
     renderPreviewCanvas,
     width: 300,
@@ -103,6 +114,36 @@ export default function TitleField({
   );
 
   const fieldError = (errors as Record<string, { message?: string }>).title;
+  const nameError = (errors as Record<string, { message?: string }>).name;
+
+  const handleCustomNameToggle = () => {
+    if (customNameEnabled) {
+      rememberedCustomNameRef.current = nameValue ?? "";
+      setValue("customNameEnabled", undefined, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      return;
+    }
+
+    setValue("customNameEnabled", true, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    if (rememberedCustomNameRef.current !== undefined) {
+      setValue("name", rememberedCustomNameRef.current, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      return;
+    }
+    if (!nameValue?.trim()) {
+      setValue("name", titleValue ?? "", {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+  };
 
   const toolbar = showToolbar ? (
     <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}>
@@ -221,62 +262,105 @@ export default function TitleField({
     ) : null;
 
   const input = (
-    <div className="d-flex align-items-center gap-2">
-      <div style={{ flex: "1 0 auto", minWidth: 0 }}>
-        <input
-          id="title"
-          type="text"
-          ref={setTitleInputRef}
-          className="form-control"
-          disabled={titleDisabled}
-          title={t("tooltip.titleShownOnRibbon")}
-          {...titleInputProps}
-          onChange={(event) => {
-            titleInputProps.onChange(event);
-            setValue("name", event.target.value, {
-              shouldDirty: true,
-              shouldTouch: true,
-            });
-          }}
-        />
-      </div>
-      {showTitleColor ? (
-        <div style={{ flex: "0 1 auto" }}>
-          <ColorPickerField
-            label={t("label.color")}
-            showLabel={false}
-            showInput={false}
-            inputValue={titleColor}
-            selectedValue={titleColor}
-            defaultColor={DEFAULT_TITLE_COLOR}
-            smartGroups={smartGroups}
-            isSmartBusy={isSmartBusy}
-            onRequestSmart={requestSmart}
-            onChange={(value) =>
-              setValue("titleColor", value, { shouldDirty: true, shouldTouch: true })
-            }
-            onSelectDefault={() =>
-              setValue("titleColor", DEFAULT_TITLE_COLOR, {
-                shouldDirty: true,
-                shouldTouch: true,
-              })
-            }
-            onSelectTransparent={() => undefined}
-            canRevert={titleColor !== DEFAULT_TITLE_COLOR}
-            onRevert={() =>
-              setValue("titleColor", DEFAULT_TITLE_COLOR, {
-                shouldDirty: true,
-                shouldTouch: true,
-              })
-            }
-            isOpen={isTitleColorOpen}
-            onToggleOpen={() => setIsTitleColorOpen((prev) => !prev)}
-            onClose={() => setIsTitleColorOpen(false)}
-            popoverAlign="auto"
-            popoverVAlign="center"
-          />
+    <div className={layoutStyles.titleNameControl}>
+      <button
+        type="button"
+        className={`${layoutStyles.titleNameToggle} ${
+          customNameEnabled ? layoutStyles.bodyTextToolbarButtonActive : ""
+        } ${titleDisabled ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+        title={customNameEnabled ? t("tooltip.syncNameToTitle") : t("tooltip.useCustomName")}
+        aria-label={customNameEnabled ? t("tooltip.syncNameToTitle") : t("tooltip.useCustomName")}
+        aria-pressed={customNameEnabled}
+        disabled={titleDisabled}
+        onClick={handleCustomNameToggle}
+      >
+        {customNameEnabled ? (
+          <Unlink2 size={14} aria-hidden="true" />
+        ) : (
+          <Link2 size={14} aria-hidden="true" />
+        )}
+      </button>
+      <div className={layoutStyles.titleNameFields}>
+        {customNameEnabled ? (
+          <div className={layoutStyles.titleNameFieldRow}>
+            <label className={layoutStyles.titleNameInlineLabel} htmlFor="name">
+              {t("form.name")}
+            </label>
+            <input id="name" type="text" className="form-control" {...nameRegistration} />
+            {nameError ? (
+              <div className="form-text text-danger">
+                {nameError.message ?? t("errors.invalidValue")}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        <div className={layoutStyles.titleNameFieldRow}>
+          {customNameEnabled ? (
+            <label className={layoutStyles.titleNameInlineLabel} htmlFor="title">
+              {t("form.title")}
+            </label>
+          ) : null}
+          <div className="d-flex align-items-center gap-2">
+            <div style={{ flex: "1 0 auto", minWidth: 0 }}>
+              <input
+                id="title"
+                type="text"
+                ref={setTitleInputRef}
+                className="form-control"
+                disabled={titleDisabled}
+                title={t("tooltip.titleShownOnRibbon")}
+                {...titleInputProps}
+                onChange={(event) => {
+                  titleInputProps.onChange(event);
+                  if (!customNameEnabled) {
+                    setValue("name", event.target.value, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
+                  }
+                }}
+              />
+            </div>
+            {showTitleColor ? (
+              <div style={{ flex: "0 1 auto" }}>
+                <ColorPickerField
+                  label={t("label.color")}
+                  showLabel={false}
+                  showInput={false}
+                  inputValue={titleColor}
+                  selectedValue={titleColor}
+                  defaultColor={DEFAULT_TITLE_COLOR}
+                  smartGroups={smartGroups}
+                  isSmartBusy={isSmartBusy}
+                  onRequestSmart={requestSmart}
+                  onChange={(value) =>
+                    setValue("titleColor", value, { shouldDirty: true, shouldTouch: true })
+                  }
+                  onSelectDefault={() =>
+                    setValue("titleColor", DEFAULT_TITLE_COLOR, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  onSelectTransparent={() => undefined}
+                  canRevert={titleColor !== DEFAULT_TITLE_COLOR}
+                  onRevert={() =>
+                    setValue("titleColor", DEFAULT_TITLE_COLOR, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  isOpen={isTitleColorOpen}
+                  onToggleOpen={() => setIsTitleColorOpen((prev) => !prev)}
+                  onClose={() => setIsTitleColorOpen(false)}
+                  popoverAlign="auto"
+                  popoverVAlign="center"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 

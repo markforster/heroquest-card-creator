@@ -46,13 +46,13 @@ describe("createCard", () => {
     expect(created).toEqual({
       templateId: "hero",
       status: "saved",
-      name: "My HERO",
+      name: "Title",
       title: "Title",
       showCopyright: true,
       id: "card-1",
       createdAt: 100,
       updatedAt: 100,
-      nameLower: "my hero",
+      nameLower: "title",
       schemaVersion: 2,
     });
     await expect(getCard("card-1")).resolves.toEqual(expect.objectContaining(created));
@@ -61,8 +61,8 @@ describe("createCard", () => {
       expect.objectContaining({
         id: "card-1",
         templateId: "hero",
-        name: "My HERO",
-        nameLower: "my hero",
+        name: "Title",
+        nameLower: "title",
       }),
     );
     await expect(db.cardTitleComponents.get("card-1:hq.2021.title.main")).resolves.toEqual(
@@ -73,6 +73,25 @@ describe("createCard", () => {
     expect(enqueueDbEstimateChange).toHaveBeenCalledWith("cards", "card-1");
 
     if (originalCrypto) Object.defineProperty(globalThis, "crypto", originalCrypto);
+  });
+
+  it("preserves distinct name and title when custom naming is enabled", async () => {
+    const created = await createCard({
+      templateId: "hero",
+      status: "saved",
+      name: "Female Barbarian",
+      title: "Barbarian",
+      customNameEnabled: true,
+    });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        name: "Female Barbarian",
+        nameLower: "female barbarian",
+        title: "Barbarian",
+        customNameEnabled: true,
+      }),
+    );
   });
 
   it("normalizes the thumbnail blob type before persisting", async () => {

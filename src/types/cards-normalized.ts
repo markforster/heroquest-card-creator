@@ -31,6 +31,7 @@ export interface CardBaseRecord {
   status: CardStatus;
   name: string;
   nameLower: string;
+  customNameEnabled?: boolean;
   createdAt: number;
   updatedAt: number;
   lastViewedAt?: number;

@@ -84,9 +84,49 @@ describe("cardRecordToCardData", () => {
       createdAt: 1,
       updatedAt: 1,
       schemaVersion: 2,
+      customNameEnabled: true,
     };
 
     expect(cardRecordToCardData(record).name).toBe("Treasure Deck");
+    expect(cardRecordToCardData(record).customNameEnabled).toBe(true);
+  });
+
+  it("round-trips custom name state through flat card records", () => {
+    const record: CardRecord & { templateId: "hero" } = {
+      id: "custom-name-card",
+      templateId: "hero",
+      status: "saved",
+      name: "Female Barbarian",
+      nameLower: "female barbarian",
+      customNameEnabled: true,
+      title: "Barbarian",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+    };
+
+    const data = cardRecordToCardData(record);
+    const patch = cardDataToCardRecordPatch("hero", "Female Barbarian", data);
+
+    expect(data.customNameEnabled).toBe(true);
+    expect(patch).toEqual(
+      expect.objectContaining({
+        name: "Female Barbarian",
+        customNameEnabled: true,
+        title: "Barbarian",
+      }),
+    );
+  });
+
+  it("syncs the saved name to title when custom naming is disabled", () => {
+    const patch = cardDataToCardRecordPatch("hero", "Female Barbarian", {
+      name: "Female Barbarian",
+      customNameEnabled: false,
+      title: "Barbarian",
+    });
+
+    expect(patch.name).toBe("Barbarian");
+    expect(patch.customNameEnabled).toBeUndefined();
   });
 
   it("maps persisted stat asterisk flags into editor form data", () => {

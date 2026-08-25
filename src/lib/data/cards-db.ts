@@ -24,6 +24,11 @@ import { COPYRIGHT_TEMPLATE_DEFAULTS_KEY } from "@/lib/data/settings-db";
 import { openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import { backfillCardCopyrightComponents } from "@/lib/db/jobs/hqcc-db-copyright-backfill-job";
 import { enqueueDbEstimateChange } from "@/lib/db/maintenance/indexeddb-size-tracker";
+import {
+  cardMatchesNameOrTitleSearch,
+  isCustomNameEnabled,
+  templateSupportsCustomName,
+} from "@/lib/title-name-linking";
 import type { CardRecord, CardStatus } from "@/types/cards-db";
 import type { CardThumbnailRecord } from "@/types/cards-normalized";
 import type { CollectionRecord } from "@/types/collections-db";
@@ -39,6 +44,30 @@ const DECK_SETS_STORE = "deckSets";
 const DECK_ENTRIES_STORE = "deckEntries";
 const COLLECTIONS_STORE = "collections";
 const PAIRS_STORE = "pairs";
+
+function normalizeTitleLinkedName<
+  T extends Pick<CardRecord, "templateId" | "name" | "customNameEnabled"> & {
+    title?: string;
+  },
+>(record: T): T {
+  if (
+    !templateSupportsCustomName(record.templateId) ||
+    isCustomNameEnabled(record.customNameEnabled)
+  ) {
+    return record;
+  }
+  if (typeof record.title !== "string") {
+    return {
+      ...record,
+      customNameEnabled: undefined,
+    };
+  }
+  return {
+    ...record,
+    name: record.title,
+    customNameEnabled: undefined,
+  };
+}
 
 function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
@@ -217,9 +246,10 @@ async function listNormalizedCardRecords(
   dbArg?: Awaited<ReturnType<typeof openHqccDexieDb>>,
 ): Promise<CardRecord[]> {
   const db = dbArg ?? (await openHqccDexieDb());
-  const [baseRecords, thumbnailRecords] = await Promise.all([
+  const [baseRecords, thumbnailRecords, titleRecords] = await Promise.all([
     db.cardsBase.toArray(),
     db.cardThumbnails.toArray(),
+    db.cardTitleComponents.toArray(),
   ]);
   const thumbnailMap = new Map(
     thumbnailRecords.map((record) => [
@@ -227,14 +257,20 @@ async function listNormalizedCardRecords(
       normalizeThumbnailBlob(record.thumbnailBlob) ?? null,
     ]),
   );
+  const titleMap = new Map(
+    titleRecords
+      .filter((record) => typeof record.title === "string")
+      .map((record) => [record.cardId, record.title]),
+  );
 
   return baseRecords.map((baseRecord) =>
-    normalizeCardRecord(
-      assembleNormalizedCardSummaryRecord({
+    normalizeCardRecord({
+      ...assembleNormalizedCardSummaryRecord({
         baseRecord,
         thumbnailBlob: thumbnailMap.get(baseRecord.id) ?? undefined,
       }),
-    ),
+      title: titleMap.get(baseRecord.id),
+    }),
   );
 }
 
@@ -318,7 +354,7 @@ export async function createCard(
   const updatedAt = input.updatedAt ?? createdAt;
   const id = input.id ?? generateId();
   const normalizedThumbnail = normalizeThumbnailBlob(input.thumbnailBlob);
-  let base: CardRecord = {
+  let base: CardRecord = normalizeTitleLinkedName({
     ...persistedInput,
     ...(normalizedThumbnail !== input.thumbnailBlob ? { thumbnailBlob: normalizedThumbnail } : {}),
     id,
@@ -326,7 +362,8 @@ export async function createCard(
     updatedAt,
     nameLower: input.nameLower ?? input.name.toLocaleLowerCase(),
     schemaVersion: input.schemaVersion ?? 2,
-  };
+  });
+  base.nameLower = base.name.toLocaleLowerCase();
 
   const db = await openHqccDexieDb();
   if (typeof base.showCopyright !== "boolean") {
@@ -397,14 +434,17 @@ export async function updateCard(
   }
 
   const now = Date.now();
-  const next: CardRecord = {
+  const next: CardRecord = normalizeTitleLinkedName({
     ...existing,
     ...normalizedPatch,
     updatedAt: now,
-  };
+  });
 
-  if (normalizedPatch.name) {
-    next.nameLower = normalizedPatch.name.toLocaleLowerCase();
+  if (
+    "name" in normalizedPatch ||
+    (!isCustomNameEnabled(next.customNameEnabled) && typeof next.title === "string")
+  ) {
+    next.nameLower = next.name.toLocaleLowerCase();
   }
 
   await writeCardAndNormalizedState(db, next);
@@ -440,13 +480,16 @@ export async function updateCards(
       return;
     }
 
-    const next: CardRecord = {
+    const next: CardRecord = normalizeTitleLinkedName({
       ...existing,
       ...normalizedPatch,
       updatedAt: now,
-    };
-    if (normalizedPatch.name) {
-      next.nameLower = normalizedPatch.name.toLocaleLowerCase();
+    });
+    if (
+      "name" in normalizedPatch ||
+      (!isCustomNameEnabled(next.customNameEnabled) && typeof next.title === "string")
+    ) {
+      next.nameLower = next.name.toLocaleLowerCase();
     }
     updates.push(next);
   });
@@ -571,8 +614,7 @@ export async function listCards(filter: ListCardsFilter = {}): Promise<CardRecor
   }
 
   if (search) {
-    const q = search.toLocaleLowerCase();
-    filtered = filtered.filter((card) => card.nameLower.includes(q));
+    filtered = filtered.filter((card) => cardMatchesNameOrTitleSearch(card, search));
   }
 
   return filtered;

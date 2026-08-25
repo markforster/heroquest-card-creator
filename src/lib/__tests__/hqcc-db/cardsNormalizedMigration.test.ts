@@ -106,6 +106,7 @@ async function seedLegacyDb(): Promise<void> {
         status: "saved",
         name: "Goblin",
         nameLower: "goblin",
+        customNameEnabled: true,
         createdAt: 10,
         updatedAt: 20,
         schemaVersion: 2,
@@ -178,6 +179,7 @@ describe("cards normalized migration", () => {
         status: "saved",
         name: "Goblin",
         nameLower: "goblin",
+        customNameEnabled: true,
         schemaVersion: 1,
       }),
     );
@@ -249,6 +251,7 @@ describe("cards normalized migration", () => {
         id: "monster-1",
         templateId: "monster",
         name: "Goblin",
+        customNameEnabled: true,
         titleTypography: "boldItalic",
         description: "A sneaky foe",
         imageClipEdgeMask: 1,

@@ -470,6 +470,45 @@ describe("useStockpileFilters", () => {
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b"]);
   });
 
+  it("filters search by custom library name and rendered title", () => {
+    const cards = [
+      baseCard({
+        id: "custom",
+        name: "Female Barbarian",
+        nameLower: "female barbarian",
+        title: "Barbarian",
+        customNameEnabled: true,
+      }),
+      baseCard({ id: "other", name: "Elf", nameLower: "elf", title: "Champion" }),
+    ];
+
+    const byName = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "female",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    ).result;
+    const byTitle = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "barbarian",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+      }),
+    ).result;
+
+    expect(byName.current.filteredCards.map((card) => card.id)).toEqual(["custom"]);
+    expect(byTitle.current.filteredCards.map((card) => card.id)).toEqual(["custom"]);
+  });
+
   it("filters by broad pairing status", () => {
     const cards = [
       baseCard({ id: "front-paired", name: "Alpha", nameLower: "alpha", updatedAt: 3 }),

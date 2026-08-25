@@ -12,6 +12,7 @@ import type { TitleTypography } from "./title-typography";
  */
 export interface BaseCardFields {
   name?: string;
+  customNameEnabled?: boolean;
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
