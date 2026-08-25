@@ -57,7 +57,6 @@ export function useDeckBoardsModels({
     activeFilter: rightPanel.backFilter,
     isPairMode: true,
     isPairBacks: sourceFaceMode === "back",
-    showUnpairedOnly: false,
     showMissingArtworkOnly: false,
   });
 

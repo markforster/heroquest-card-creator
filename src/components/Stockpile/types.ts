@@ -66,6 +66,13 @@ export type StockpilePrimaryToolbarGroupOption = {
   label: string;
 };
 
+export type StockpilePrimaryToolbarPairingFilterValue = "all" | "not-paired" | "paired";
+
+export type StockpilePrimaryToolbarPairingFilterOption = {
+  value: StockpilePrimaryToolbarPairingFilterValue;
+  label: string;
+};
+
 export type StockpileCardGroupView = {
   id: string;
   label: string;
@@ -87,9 +94,10 @@ export type StockpilePrimaryToolbarProps = {
   groupValue: StockpilePrimaryToolbarGroupValue;
   onGroupChange: (next: StockpilePrimaryToolbarGroupValue) => void;
   groupOptions: StockpilePrimaryToolbarGroupOption[];
-  showUnpairedOnly?: boolean;
-  onShowUnpairedOnlyChange?: (next: boolean) => void;
-  isUnpairedToggleDisabled?: boolean;
+  pairingFilterValue?: StockpilePrimaryToolbarPairingFilterValue;
+  onPairingFilterChange?: (next: StockpilePrimaryToolbarPairingFilterValue) => void;
+  pairingFilterOptions?: StockpilePrimaryToolbarPairingFilterOption[];
+  isPairingFilterDisabled?: boolean;
   isSearchDisabled?: boolean;
   isFilterDisabled?: boolean;
   isSortDisabled?: boolean;

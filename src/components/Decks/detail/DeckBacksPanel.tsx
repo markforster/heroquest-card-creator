@@ -101,7 +101,6 @@ export default function DeckBacksPanel({
     activeFilter,
     isPairMode: true,
     isPairBacks: filterFaceMode === "back",
-    showUnpairedOnly: false,
     showMissingArtworkOnly: false,
   });
 

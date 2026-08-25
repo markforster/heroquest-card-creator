@@ -470,6 +470,56 @@ describe("useStockpileFilters", () => {
     expect(result.current.filteredCards.map((card) => card.id)).toEqual(["b"]);
   });
 
+  it("filters by broad pairing status", () => {
+    const cards = [
+      baseCard({ id: "front-paired", name: "Alpha", nameLower: "alpha", updatedAt: 3 }),
+      baseCard({
+        id: "back-paired",
+        templateId: "hero-back",
+        name: "Beta",
+        nameLower: "beta",
+        updatedAt: 2,
+      }),
+      baseCard({ id: "unpaired", name: "Gamma", nameLower: "gamma", updatedAt: 1 }),
+    ];
+    const pairedIdSet = new Set(["front-paired", "back-paired"]);
+
+    const pairedResult = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        pairingFilter: "paired",
+        pairedIdSet,
+      }),
+    ).result;
+
+    expect(pairedResult.current.filteredCards.map((card) => card.id)).toEqual([
+      "front-paired",
+      "back-paired",
+    ]);
+
+    const notPairedResult = renderHook(() =>
+      useStockpileFilters({
+        cards,
+        collections: [],
+        search: "",
+        templateFilter: "all",
+        activeFilter: { type: "all" },
+        isPairMode: false,
+        isPairBacks: false,
+        pairingFilter: "not-paired",
+        pairedIdSet,
+      }),
+    ).result;
+
+    expect(notPairedResult.current.filteredCards.map((card) => card.id)).toEqual(["unpaired"]);
+  });
+
   it("keeps All/Unfiled/Collection counts stable when switching to recentlyDeleted (search still applies)", () => {
     const cards = [
       baseCard({ id: "a", nameLower: "alpha" }),

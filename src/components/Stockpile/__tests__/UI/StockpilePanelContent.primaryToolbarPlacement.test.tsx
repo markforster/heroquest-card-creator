@@ -222,7 +222,11 @@ jest.mock("@/components/Stockpile/StockpilePrimaryToolbar", () => ({
         <button
           type="button"
           onClick={() =>
-            (props.onShowUnpairedOnlyChange as ((value: boolean) => void) | undefined)?.(true)
+            (
+              props.onPairingFilterChange as
+                | ((value: "all" | "not-paired" | "paired") => void)
+                | undefined
+            )?.("not-paired")
           }
         >
           Primary not paired
@@ -356,7 +360,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
     expect(lastPrimaryToolbarProps?.viewMode).toBe("table");
 
     fireEvent.click(screen.getByRole("button", { name: "Primary not paired" }));
-    expect(lastPrimaryToolbarProps?.showUnpairedOnly).toBe(true);
+    expect(lastPrimaryToolbarProps?.pairingFilterValue).toBe("not-paired");
     fireEvent.click(screen.getByRole("button", { name: "Primary group change" }));
     expect(lastPrimaryToolbarProps?.groupValue).toBe("type");
     expect(mockSetTip).toHaveBeenLastCalledWith(

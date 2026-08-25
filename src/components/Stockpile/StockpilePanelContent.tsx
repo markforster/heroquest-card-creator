@@ -58,6 +58,7 @@ import type {
   StockpileCardThumb,
   StockpileCardView,
   StockpilePrimaryToolbarGroupValue,
+  StockpilePrimaryToolbarPairingFilterValue,
   StockpilePrimaryToolbarSortValue,
 } from "@/components/Stockpile/types";
 import { ENABLE_CARD_THUMB_CACHE, ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT } from "@/config/flags";
@@ -160,7 +161,8 @@ export default function StockpilePanelContent({
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [sortMode, setSortMode] = useState<StockpilePrimaryToolbarSortValue>("modified");
   const [groupMode, setGroupMode] = useState<StockpilePrimaryToolbarGroupValue>("none");
-  const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
+  const [pairingFilter, setPairingFilter] =
+    useState<StockpilePrimaryToolbarPairingFilterValue>("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useLocalStorageBoolean(
     STOCKPILE_FILTERS_PANEL_OPEN_STORAGE_KEY,
@@ -272,7 +274,7 @@ export default function StockpilePanelContent({
     isPairBacks,
     sortMode,
     groupMode,
-    showUnpairedOnly,
+    pairingFilter,
     pairedIdSet,
     showMissingArtworkOnly,
     missingArtworkIdSet: missingArtworkIds,
@@ -351,7 +353,7 @@ export default function StockpilePanelContent({
     setActiveFilter({ type: "all" });
     setTemplateFilter("all");
     setSelectedIds([]);
-    setShowUnpairedOnly(false);
+    setPairingFilter("all");
     setIsManagingCollections(false);
   }, [isOpen, isPairMode]);
 
@@ -469,7 +471,7 @@ export default function StockpilePanelContent({
   const hasActiveNarrowing =
     search.trim().length > 0 ||
     templateFilter !== "all" ||
-    showUnpairedOnly ||
+    pairingFilter !== "all" ||
     showMissingArtworkOnly ||
     activeFilter.type !== "all";
   const filterLabel =
@@ -516,6 +518,14 @@ export default function StockpilePanelContent({
       { value: "none" as const, label: t("label.none") },
       { value: "type" as const, label: t("label.cardType") },
       { value: "face" as const, label: t("label.cardFace") },
+    ],
+    [t],
+  );
+  const primaryToolbarPairingFilterOptions = useMemo(
+    () => [
+      { value: "all" as const, label: t("label.all") },
+      { value: "not-paired" as const, label: t("warning.notPaired") },
+      { value: "paired" as const, label: t("label.paired") },
     ],
     [t],
   );
@@ -672,6 +682,7 @@ export default function StockpilePanelContent({
     cardById,
     pairedByTargetId,
     backByFrontId,
+    t,
   ]);
   const cardViewsById = useMemo(() => {
     const map = new Map<string, StockpileCardView>();
@@ -1293,9 +1304,10 @@ export default function StockpilePanelContent({
     groupValue: groupMode,
     onGroupChange: setGroupMode,
     groupOptions: primaryToolbarGroupOptions,
-    showUnpairedOnly,
-    onShowUnpairedOnlyChange: setShowUnpairedOnly,
-    isUnpairedToggleDisabled: false,
+    pairingFilterValue: pairingFilter,
+    onPairingFilterChange: setPairingFilter,
+    pairingFilterOptions: primaryToolbarPairingFilterOptions,
+    isPairingFilterDisabled: false,
     isSearchDisabled: false,
     isFilterDisabled: false,
     isSortDisabled:
@@ -1388,8 +1400,10 @@ export default function StockpilePanelContent({
                       isPairMode={isPairMode}
                       isPairBacks={isPairBacks}
                       isPairFronts={isPairFronts}
-                      showUnpairedOnly={showUnpairedOnly}
-                      onShowUnpairedOnlyChange={setShowUnpairedOnly}
+                      showUnpairedOnly={pairingFilter === "not-paired"}
+                      onShowUnpairedOnlyChange={(next) =>
+                        setPairingFilter(next ? "not-paired" : "all")
+                      }
                       showMissingArtworkOnly={showMissingArtworkOnly}
                       onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
                       selectedCount={selectedIds.length}
