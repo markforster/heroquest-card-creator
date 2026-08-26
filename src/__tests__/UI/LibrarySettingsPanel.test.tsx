@@ -102,6 +102,19 @@ describe("LibrarySettingsPanel (UI)", () => {
     expect(screen.queryByText("Card components")).not.toBeInTheDocument();
   });
 
+  it("renders the library settings copy from the active locale", async () => {
+    window.localStorage.setItem("hqcc.language", "fr");
+
+    renderPanel();
+
+    expect(await screen.findByText("Bibliothèque")).toBeInTheDocument();
+    expect(
+      screen.getByText("Gérez la bibliothèque locale de cartes stockée dans ce navigateur."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Cette bibliothèque est déjà vide.")).toBeInTheDocument();
+    expect(screen.queryByText("This library is already empty.")).not.toBeInTheDocument();
+  });
+
   it("runs import from the library settings action row", async () => {
     renderPanel();
 

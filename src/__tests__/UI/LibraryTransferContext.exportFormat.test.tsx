@@ -205,4 +205,35 @@ describe("LibraryTransferProvider export format", () => {
       expect(screen.queryByRole("heading", { name: "Import complete." })).not.toBeInTheDocument();
     });
   });
+
+  it("renders the import result modal from the active locale", async () => {
+    window.localStorage.setItem("hqcc.language", "it");
+    const { container } = renderHarness();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open import" }));
+    fireEvent.click(screen.getByRole("button", { name: "Importa" }));
+
+    const input = container.querySelector('input[type="file"]');
+    const file = new File(["{}"], "library.hqcc.json", { type: "application/json" });
+    Object.defineProperty(file, "slice", {
+      value: () => ({
+        arrayBuffer: async () => new Uint8Array([0x7b, 0x7d, 0x0a, 0x00]).buffer,
+      }),
+    });
+
+    fireEvent.change(input!, {
+      target: {
+        files: [file],
+      },
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: "Importazione completata." }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Carte")).toBeInTheDocument();
+    expect(screen.getByText("Risorse")).toBeInTheDocument();
+    expect(screen.getByText("Raccolte")).toBeInTheDocument();
+    expect(screen.getByText("Mazzi")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Import complete." })).not.toBeInTheDocument();
+  });
 });
