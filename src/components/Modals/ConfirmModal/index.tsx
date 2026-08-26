@@ -24,6 +24,7 @@ type ConfirmModalProps = {
   onCancel: () => void;
   isConfirming?: boolean;
   isExtraConfirming?: boolean;
+  isConfirmDisabled?: boolean;
 };
 
 export default function ConfirmModal({
@@ -40,6 +41,7 @@ export default function ConfirmModal({
   onCancel,
   isConfirming = false,
   isExtraConfirming = false,
+  isConfirmDisabled = false,
 }: ConfirmModalProps) {
   const { t } = useI18n();
   const confirmLabelText = confirmLabel ?? t("actions.confirm");
@@ -70,6 +72,7 @@ export default function ConfirmModal({
                 label={confirmLabelText}
                 onConfirm={onConfirm}
                 isConfirming={isConfirming}
+                disabled={isConfirmDisabled}
               />
             </>
           }

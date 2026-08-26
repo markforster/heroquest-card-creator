@@ -34,6 +34,7 @@ type LibraryTransferContextValue = {
   isExporting: boolean;
   isImporting: boolean;
   openExport: () => void;
+  startExport: () => void;
   openImport: () => void;
 };
 
@@ -495,6 +496,9 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
     isExporting,
     isImporting,
     openExport: handleExportClick,
+    startExport: () => {
+      void handleExport();
+    },
     openImport: handleImportClick,
   };
 

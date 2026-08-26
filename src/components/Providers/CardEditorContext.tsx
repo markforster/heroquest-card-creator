@@ -19,6 +19,7 @@ export type CardEditorContextValue = {
   state: CardEditorState;
   setSelectedTemplateId: (templateId: TemplateId | null) => void;
   setActiveCard: (templateId: TemplateId, id: string | null, status: CardStatus | null) => void;
+  resetActiveCards: () => void;
 };
 
 const CardEditorContext = createContext<CardEditorContextValue | undefined>(undefined);
@@ -122,6 +123,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         if (!id && !status) return;
         payload[templateId] = { id, status: status ?? null };
       });
+      if (Object.keys(payload).length === 0) {
+        window.localStorage.removeItem("hqcc.activeCards.v1");
+        return;
+      }
       window.localStorage.setItem("hqcc.activeCards.v1", JSON.stringify(payload));
     } catch {
       // Ignore localStorage errors
@@ -157,6 +162,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
           ...prev,
           [templateId]: status ?? undefined,
         }));
+      },
+      resetActiveCards: () => {
+        setActiveCardIdByTemplate({});
+        setActiveCardStatusByTemplate({});
       },
     }),
     [selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate],

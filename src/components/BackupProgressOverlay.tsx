@@ -30,7 +30,7 @@ export default function BackupProgressOverlay({
   const secondaryIndeterminate = showSecondary && secondaryPercent == null;
 
   return (
-    <div className={styles.stockpileOverlayBackdrop}>
+    <div className={`${styles.stockpileOverlayBackdrop} ${styles.backupProgressOverlayBackdrop}`}>
       <div className={`${styles.stockpileOverlayPanel} ${styles.uploadProgressPanel}`}>
         <div className={styles.stockpileOverlayHeader}>
           <h3 className={styles.stockpileOverlayTitle}>{title}</h3>

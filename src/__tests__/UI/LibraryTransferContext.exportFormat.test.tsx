@@ -21,12 +21,17 @@ jest.mock("@/lib/tauri", () => ({
 }));
 
 function ExportHarness() {
-  const { openExport } = useLibraryTransfer();
+  const { openExport, startExport } = useLibraryTransfer();
 
   return (
-    <button type="button" onClick={openExport}>
-      Open export
-    </button>
+    <>
+      <button type="button" onClick={openExport}>
+        Open export
+      </button>
+      <button type="button" onClick={startExport}>
+        Start export
+      </button>
+    </>
   );
 }
 
@@ -83,6 +88,22 @@ describe("LibraryTransferProvider export format", () => {
       expect(createBackupHqcc).toHaveBeenCalledWith(
         expect.objectContaining({ format: "legacy-zip-json" }),
       );
+    });
+  });
+
+  it("starts export immediately for nested modal contexts", async () => {
+    renderHarness();
+
+    fireEvent.click(screen.getByRole("button", { name: "Start export" }));
+
+    expect(await screen.findByText("Exporting data...")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(createBackupHqcc).toHaveBeenCalledWith(
+        expect.objectContaining({ format: "compact-zip-v1" }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Exporting data...")).not.toBeInTheDocument();
     });
   });
 });

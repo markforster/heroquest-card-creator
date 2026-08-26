@@ -4871,6 +4871,86 @@
   color: var(--hq-text);
 }
 
+.settingsPanelActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.settingsPanelActionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+.settingsPanelActionLabel {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+}
+
+.libraryActionBar {
+  width: 100%;
+}
+
+.libraryActionBar > div:first-child {
+  flex: 1 1 auto;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.librarySummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.librarySummaryItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  border: 1px solid var(--hq-border-mid);
+  border-radius: var(--radius-sm);
+  background: var(--hq-surface-2);
+  padding: var(--space-6) var(--space-8);
+  font-size: var(--hq-control-text-primary);
+}
+
+.librarySummaryLabel {
+  color: var(--hq-text-muted);
+}
+
+.librarySummaryValue {
+  color: var(--hq-text);
+  font-weight: 700;
+}
+
+.libraryResetAcknowledge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  border: 1px solid color-mix(in srgb, var(--bs-danger) 45%, var(--hq-border-mid));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bs-danger) 8%, transparent);
+  padding: var(--space-10) var(--space-12);
+  color: var(--hq-text);
+}
+
+.libraryResetError {
+  border: 1px solid color-mix(in srgb, var(--bs-danger) 55%, var(--hq-border-mid));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bs-danger) 10%, transparent);
+  padding: var(--space-8) var(--space-10);
+  color: var(--bs-danger);
+  font-size: var(--hq-control-text-primary);
+}
+
 .settingsPanelHeader {
   justify-content: space-between;
   flex: 0 1 auto;
@@ -7396,6 +7476,10 @@
   align-items: center;
   justify-content: center;
   z-index: 70;
+}
+
+.backupProgressOverlayBackdrop {
+  z-index: 120;
 }
 
 .stockpileOverlayPanel {
