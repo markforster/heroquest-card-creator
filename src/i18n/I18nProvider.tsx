@@ -57,14 +57,18 @@ export function I18nProvider({ children }: Props) {
     }
   }, []);
 
-  const t = useCallback((key: MessageKey, options?: TranslateOptions): string => {
-    const namespace = namespaceForMessageKey(key);
-    return i18n.t(key, {
-      ns: namespace,
-      defaultValue: key,
-      ...options,
-    });
-  }, []);
+  const t = useCallback(
+    (key: MessageKey, options?: TranslateOptions): string => {
+      const namespace = namespaceForMessageKey(key);
+      return i18n.t(key, {
+        lng: language,
+        ns: namespace,
+        defaultValue: key,
+        ...options,
+      });
+    },
+    [language],
+  );
 
   const value = useMemo<I18nContextValue>(
     () => ({

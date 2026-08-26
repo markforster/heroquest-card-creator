@@ -95,9 +95,9 @@ describe("LibrarySettingsPanel (UI)", () => {
     renderPanel();
 
     expect(await screen.findByText("This library is already empty.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Export library/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Import library/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Start new library/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Export$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Import$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^New$/i })).toBeDisabled();
     expect(screen.queryByText("Hero Back logos")).not.toBeInTheDocument();
     expect(screen.queryByText("Card components")).not.toBeInTheDocument();
   });
@@ -111,6 +111,9 @@ describe("LibrarySettingsPanel (UI)", () => {
     expect(
       screen.getByText("Gérez la bibliothèque locale de cartes stockée dans ce navigateur."),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Exporter$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Importer$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Nouvelle$/i })).toBeDisabled();
     expect(screen.getByText("Cette bibliothèque est déjà vide.")).toBeInTheDocument();
     expect(screen.queryByText("This library is already empty.")).not.toBeInTheDocument();
   });
@@ -118,7 +121,7 @@ describe("LibrarySettingsPanel (UI)", () => {
   it("runs import from the library settings action row", async () => {
     renderPanel();
 
-    fireEvent.click(await screen.findByRole("button", { name: /Import library/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Import$/i }));
 
     expect(openImport).toHaveBeenCalledTimes(1);
   });
@@ -127,7 +130,7 @@ describe("LibrarySettingsPanel (UI)", () => {
     getLibraryResetSummary.mockResolvedValue(nonEmptySummary);
     renderPanel();
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start new library/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^New$/i }));
 
     const dialogButtons = screen.getAllByRole("button", { name: /Start new library/i });
     const confirmButton = dialogButtons[dialogButtons.length - 1];
@@ -146,7 +149,7 @@ describe("LibrarySettingsPanel (UI)", () => {
     getLibraryResetSummary.mockResolvedValue(nonEmptySummary);
     renderPanel();
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start new library/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^New$/i }));
     const exportButtons = screen.getAllByRole("button", { name: /Export library/i });
     fireEvent.click(exportButtons[exportButtons.length - 1]!);
 
@@ -160,7 +163,7 @@ describe("LibrarySettingsPanel (UI)", () => {
       .mockResolvedValueOnce(emptySummary);
     renderPanel();
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start new library/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^New$/i }));
     fireEvent.click(
       screen.getByLabelText(
         "I understand that starting a new library will permanently clear my current library data.",

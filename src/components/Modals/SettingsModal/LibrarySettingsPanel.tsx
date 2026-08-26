@@ -1,7 +1,15 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Database, Download, RotateCcw, Upload } from "lucide-react";
+import {
+  Database,
+  Download,
+  Image as ImageIcon,
+  Layers,
+  RotateCcw,
+  SquareStack,
+  Upload,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { readApiConfig } from "@/api/config";
@@ -21,15 +29,18 @@ import {
   type LibraryResetSummary,
 } from "@/lib/data/library-reset";
 
+import type { LucideIcon } from "lucide-react";
+
 type ResetModalState = "closed" | "confirm" | "complete";
 
 const SUMMARY_ROWS: Array<{
   key: keyof Pick<LibraryResetSummary, "cards" | "decks" | "assets">;
   labelKey: MessageKey;
+  Icon: LucideIcon;
 }> = [
-  { key: "cards", labelKey: "label.cards" },
-  { key: "decks", labelKey: "actions.decks" },
-  { key: "assets", labelKey: "label.assets" },
+  { key: "cards", labelKey: "label.cards", Icon: SquareStack },
+  { key: "decks", labelKey: "actions.decks", Icon: Layers },
+  { key: "assets", labelKey: "label.assets", Icon: ImageIcon },
 ];
 
 export default function LibrarySettingsPanel() {
@@ -110,117 +121,113 @@ export default function LibrarySettingsPanel() {
   };
 
   const isLibraryEmpty = summary?.isEmpty ?? true;
+  const libraryActions = isRemoteMode ? (
+    <>
+      <button
+        type="button"
+        className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
+        onClick={startExport}
+      >
+        <span className={styles.settingsPanelActionIcon}>
+          <Download size={16} aria-hidden="true" />
+        </span>
+        <span className={styles.settingsPanelActionLabel}>{t("actions.libraryPanelExport")}</span>
+      </button>
+      <button
+        type="button"
+        className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
+        onClick={openImport}
+      >
+        <span className={styles.settingsPanelActionIcon}>
+          <Upload size={16} aria-hidden="true" />
+        </span>
+        <span className={styles.settingsPanelActionLabel}>{t("actions.libraryPanelImport")}</span>
+      </button>
+    </>
+  ) : summary ? (
+    <>
+      <button
+        type="button"
+        className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
+        onClick={startExport}
+      >
+        <span className={styles.settingsPanelActionIcon}>
+          <Download size={16} aria-hidden="true" />
+        </span>
+        <span className={styles.settingsPanelActionLabel}>{t("actions.libraryPanelExport")}</span>
+      </button>
+      <button
+        type="button"
+        className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
+        onClick={openImport}
+      >
+        <span className={styles.settingsPanelActionIcon}>
+          <Upload size={16} aria-hidden="true" />
+        </span>
+        <span className={styles.settingsPanelActionLabel}>{t("actions.libraryPanelImport")}</span>
+      </button>
+      <button
+        type="button"
+        className={`btn btn-outline-danger btn-sm ${styles.settingsPanelActionButton}`}
+        onClick={handleOpenReset}
+        disabled={isLibraryEmpty || isLoadingSummary}
+      >
+        <span className={styles.settingsPanelActionIcon}>
+          <RotateCcw size={16} aria-hidden="true" />
+        </span>
+        <span className={styles.settingsPanelActionLabel}>{t("actions.libraryPanelNew")}</span>
+      </button>
+    </>
+  ) : null;
 
   return (
-    <div className={styles.settingsPanelBody}>
-      <SettingsGroup title={t("heading.librarySettings")} className="d-flex flex-column gap-3">
-        <div className={styles.settingsPanelRow}>{t("label.librarySettingsDescription")}</div>
-        {isRemoteMode ? (
-          <>
-            <div className={styles.settingsPanelRow}>
-              {t("label.libraryResetRemoteUnavailable")}
-            </div>
-            <ActionBar
-              className={styles.libraryActionBar}
-              left={
-                <>
-                  <button
-                    type="button"
-                    className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
-                    onClick={startExport}
-                  >
-                    <span className={styles.settingsPanelActionIcon}>
-                      <Download size={16} aria-hidden="true" />
-                    </span>
-                    <span className={styles.settingsPanelActionLabel}>
-                      {t("actions.exportLibrary")}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
-                    onClick={openImport}
-                  >
-                    <span className={styles.settingsPanelActionIcon}>
-                      <Upload size={16} aria-hidden="true" />
-                    </span>
-                    <span className={styles.settingsPanelActionLabel}>
-                      {t("actions.importLibrary")}
-                    </span>
-                  </button>
-                </>
-              }
-            />
-          </>
-        ) : null}
-        {!isRemoteMode && isLoadingSummary ? (
-          <div className={styles.settingsPanelRow}>{t("status.loading")}</div>
-        ) : null}
-        {!isRemoteMode && errorMessage ? (
-          <div className={styles.libraryResetError} role="alert">
-            {errorMessage}
-          </div>
-        ) : null}
-        {!isRemoteMode && summary ? (
-          <>
-            <div className={styles.librarySummaryGrid} aria-label={t("label.librarySummary")}>
-              {SUMMARY_ROWS.map((row) => (
-                <div key={row.key} className={styles.librarySummaryItem}>
-                  <span className={styles.librarySummaryLabel}>{t(row.labelKey)}</span>
-                  <span className={styles.librarySummaryValue}>{summary[row.key]}</span>
-                </div>
-              ))}
-            </div>
-            {summary.isEmpty ? (
-              <div className={styles.settingsPanelRow}>{t("label.libraryAlreadyEmpty")}</div>
+    <div className={`${styles.settingsPanelBody} ${styles.settingsPanelBodyNoScroll}`}>
+      <div className={styles.librarySettingsScroll}>
+        <div className={styles.librarySettingsContent}>
+          <SettingsGroup title={t("heading.librarySettings")} className="d-flex flex-column gap-3">
+            <div className={styles.settingsPanelRow}>{t("label.librarySettingsDescription")}</div>
+            {isRemoteMode ? (
+              <div className={styles.settingsPanelRow}>
+                {t("label.libraryResetRemoteUnavailable")}
+              </div>
             ) : null}
-            <ActionBar
-              className={styles.libraryActionBar}
-              left={
-                <>
-                  <button
-                    type="button"
-                    className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
-                    onClick={startExport}
-                  >
-                    <span className={styles.settingsPanelActionIcon}>
-                      <Download size={16} aria-hidden="true" />
-                    </span>
-                    <span className={styles.settingsPanelActionLabel}>
-                      {t("actions.exportLibrary")}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-outline-light btn-sm ${styles.settingsPanelActionButton}`}
-                    onClick={openImport}
-                  >
-                    <span className={styles.settingsPanelActionIcon}>
-                      <Upload size={16} aria-hidden="true" />
-                    </span>
-                    <span className={styles.settingsPanelActionLabel}>
-                      {t("actions.importLibrary")}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-outline-danger btn-sm ${styles.settingsPanelActionButton}`}
-                    onClick={handleOpenReset}
-                    disabled={isLibraryEmpty || isLoadingSummary}
-                  >
-                    <span className={styles.settingsPanelActionIcon}>
-                      <RotateCcw size={16} aria-hidden="true" />
-                    </span>
-                    <span className={styles.settingsPanelActionLabel}>
-                      {t("actions.startNewLibrary")}
-                    </span>
-                  </button>
-                </>
-              }
-            />
-          </>
-        ) : null}
-      </SettingsGroup>
+            {!isRemoteMode && isLoadingSummary ? (
+              <div className={styles.settingsPanelRow}>{t("status.loading")}</div>
+            ) : null}
+            {!isRemoteMode && errorMessage ? (
+              <div className={styles.libraryResetError} role="alert">
+                {errorMessage}
+              </div>
+            ) : null}
+            {!isRemoteMode && summary ? (
+              <>
+                <div className={styles.librarySummaryGrid} aria-label={t("label.librarySummary")}>
+                  {SUMMARY_ROWS.map((row) => (
+                    <div key={row.key} className={styles.librarySummaryItem}>
+                      <div className={styles.librarySummaryIconWrap}>
+                        <row.Icon className={styles.librarySummaryIcon} aria-hidden="true" />
+                      </div>
+                      <div className={styles.librarySummaryMeta}>
+                        <span className={styles.librarySummaryLabel}>{t(row.labelKey)}</span>
+                        <span className={styles.librarySummaryValue}>{summary[row.key]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {summary.isEmpty ? (
+                  <div className={styles.settingsPanelRow}>{t("label.libraryAlreadyEmpty")}</div>
+                ) : null}
+              </>
+            ) : null}
+          </SettingsGroup>
+        </div>
+      </div>
+
+      {libraryActions ? (
+        <div className={styles.settingsPanelFooter}>
+          <ActionBar className={styles.libraryActionBar} right={libraryActions} />
+        </div>
+      ) : null}
 
       <ConfirmModal
         isOpen={resetModalState === "confirm"}

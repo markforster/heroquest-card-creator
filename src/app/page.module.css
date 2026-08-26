@@ -4569,7 +4569,7 @@
 }
 
 .settingsPopover {
-  width: min(920px, 100% - 2rem);
+  width: min(1104px, 100% - 2rem);
   min-height: 28rem;
   height: min(820px, calc(100vh - 6rem));
   max-height: calc(100vh - 6rem);
@@ -4655,7 +4655,7 @@
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(260px, 30%) minmax(0, 1fr);
+  grid-template-columns: minmax(312px, 30%) minmax(0, 1fr);
   gap: var(--space-14);
 }
 
@@ -4898,10 +4898,23 @@
   width: 100%;
 }
 
-.libraryActionBar > div:first-child {
+.libraryActionBar > div:last-child {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.librarySettingsScroll {
   flex: 1 1 auto;
-  width: 100%;
-  justify-content: space-between;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.librarySettingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-6) 0;
 }
 
 .librarySummaryGrid {
@@ -4912,14 +4925,39 @@
 
 .librarySummaryItem {
   display: flex;
+  min-height: 8rem;
+  flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-6);
+  gap: var(--space-8);
   border: 1px solid var(--hq-border-mid);
   border-radius: var(--radius-sm);
   background: var(--hq-surface-2);
-  padding: var(--space-6) var(--space-8);
+  padding: var(--space-8);
   font-size: var(--hq-control-text-primary);
+}
+
+.librarySummaryIconWrap {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-text-muted);
+}
+
+.librarySummaryIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  stroke-width: 1.75;
+}
+
+.librarySummaryMeta {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
 }
 
 .librarySummaryLabel {

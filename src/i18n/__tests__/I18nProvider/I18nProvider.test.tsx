@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { useMemo } from "react";
 
 import { LANGUAGE_STORAGE_KEY } from "@/i18n/getInitialLanguage";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -7,11 +8,13 @@ import { renderWithI18n } from "@/test/renderWithI18n";
 
 function Harness() {
   const { language, setLanguage, t } = useI18n();
+  const memoizedSettingsLabel = useMemo(() => t("actions.settings"), [t]);
 
   return (
     <div>
       <div data-testid="language">{language}</div>
       <div data-testid="settings">{t("actions.settings")}</div>
+      <div data-testid="memoized-settings">{memoizedSettingsLabel}</div>
       <div data-testid="missing">{t("__missing__.key" as MessageKey)}</div>
       <button type="button" onClick={() => setLanguage("fr")}>
         set-fr
@@ -43,6 +46,8 @@ describe("I18nProvider", () => {
     fireEvent.click(screen.getByText("set-fr"));
 
     await waitFor(() => expect(screen.getByTestId("language")).toHaveTextContent("fr"));
+    expect(screen.getByTestId("settings")).toHaveTextContent("Options");
+    expect(screen.getByTestId("memoized-settings")).toHaveTextContent("Options");
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("fr");
   });
 
