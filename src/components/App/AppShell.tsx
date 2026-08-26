@@ -28,8 +28,8 @@ export default function AppShell() {
 
   return (
     <div className={`${styles.page} d-flex flex-column`}>
-      <LibraryTransferProvider>
-        <EscapeStackProvider>
+      <EscapeStackProvider>
+        <LibraryTransferProvider>
           <AssetKindBackfillProvider>
             <AppActionsProvider>
               <GlobalAppShortcuts />
@@ -70,9 +70,9 @@ export default function AppShell() {
               </main>
             </AppActionsProvider>
           </AssetKindBackfillProvider>
-        </EscapeStackProvider>
-        <MainFooter />
-      </LibraryTransferProvider>
+          <MainFooter />
+        </LibraryTransferProvider>
+      </EscapeStackProvider>
     </div>
   );
 }

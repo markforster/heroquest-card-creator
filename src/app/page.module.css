@@ -5442,6 +5442,10 @@
   width: min(560px, 100% - 2rem);
 }
 
+.importResultPopover {
+  width: min(420px, 100% - 2rem);
+}
+
 .exportFormatBlock {
   border-radius: var(--radius-md);
   border: 1px solid var(--hq-border-mid);

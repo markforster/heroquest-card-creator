@@ -7,6 +7,7 @@ import { readApiConfig } from "@/api/config";
 import { exportLibrary, importLibrary } from "@/api/library/client";
 import styles from "@/app/page.module.css";
 import BackupProgressOverlay from "@/components/BackupProgressOverlay";
+import ModalShell from "@/components/common/ModalShell";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import {
   useLocalStorageRehydrate,
@@ -52,6 +53,13 @@ type LibraryTransferProviderProps = {
   children: ReactNode;
 };
 
+type ImportResultSummary = {
+  cardsCount: number;
+  assetsCount: number;
+  collectionsCount: number;
+  decksCount: number;
+};
+
 export function LibraryTransferProvider({ children }: LibraryTransferProviderProps) {
   const { t } = useI18n();
   const [isExporting, setIsExporting] = useState(false);
@@ -64,6 +72,7 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
   const [backupSecondaryPercent, setBackupSecondaryPercent] = useState<number | null>(null);
   const backupSecondaryModeRef = useRef<"worker" | "fallback" | null>(null);
   const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+  const [importResultSummary, setImportResultSummary] = useState<ImportResultSummary | null>(null);
   const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
@@ -468,13 +477,12 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
         window.dispatchEvent(new CustomEvent("hqcc-cards-updated"));
         window.dispatchEvent(new CustomEvent("hqcc-assets-updated"));
       }
-      window.alert(
-        `${t("alert.importComplete")}\n${t("label.cards")}: ${result.cardsCount}\n${t(
-          "label.assets",
-        )}: ${result.assetsCount}\n${t("label.collections")}: ${result.collectionsCount}\nDecks: ${
-          result.decksCount
-        }`,
-      );
+      setImportResultSummary({
+        cardsCount: result.cardsCount,
+        assetsCount: result.assetsCount,
+        collectionsCount: result.collectionsCount,
+        decksCount: result.decksCount,
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("[LibraryTransferProvider] Failed to import backup", error);
@@ -533,6 +541,37 @@ export function LibraryTransferProvider({ children }: LibraryTransferProviderPro
       >
         {t("confirm.importReplaceData")}
       </ConfirmModal>
+      <ModalShell
+        isOpen={Boolean(importResultSummary)}
+        title={t("alert.importComplete")}
+        onClose={() => setImportResultSummary(null)}
+        contentClassName={styles.importResultPopover}
+        footer={
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => setImportResultSummary(null)}
+          >
+            {t("actions.close")}
+          </button>
+        }
+      >
+        {importResultSummary ? (
+          <div className="d-flex flex-column gap-2">
+            <div className={styles.settingsPanelRow}>{t("alert.importComplete")}</div>
+            <dl className="row mb-0">
+              <dt className="col-6">{t("label.cards")}</dt>
+              <dd className="col-6 text-end">{importResultSummary.cardsCount}</dd>
+              <dt className="col-6">{t("label.assets")}</dt>
+              <dd className="col-6 text-end">{importResultSummary.assetsCount}</dd>
+              <dt className="col-6">{t("label.collections")}</dt>
+              <dd className="col-6 text-end">{importResultSummary.collectionsCount}</dd>
+              <dt className="col-6">{t("actions.decks")}</dt>
+              <dd className="col-6 text-end">{importResultSummary.decksCount}</dd>
+            </dl>
+          </div>
+        ) : null}
+      </ModalShell>
       <ConfirmModal
         isOpen={isExportConfirmOpen}
         title={t("heading.exportData")}
