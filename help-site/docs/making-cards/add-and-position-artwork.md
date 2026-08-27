@@ -47,6 +47,13 @@ Hero and Monster main artwork can also offer an **Artwork lower clip** control. 
 
 Turn on the lower clip, then move the slider to choose where the visible artwork should stop. When the artwork is selected in the preview, you can also drag the horizontal clip guide directly on the card.
 
+<!-- help-visual:p123:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--wide" markdown="span">
+  ![Hero artwork selected with the lower clip guide, scissors handles, and lower clip controls visible.](../assets/placements/p123--making-cards-add-and-position-artwork--clip-lower-artwork-on-hero-and-monster-cards.jpg)
+  <figcaption>The lower clip guide shows where Hero and Monster main artwork will stop, while the inspector gives a precise slider for the same position.</figcaption>
+</figure>
+<!-- help-visual:p123:end -->
+
 While editing, the hidden part of the image may appear faintly below the guide so you can see what is being clipped away. That faint preview is only an editing aid. It is not included in exported card images or PDFs.
 
 The clip changes only artwork visibility. It does not move, resize, rotate, or crop the source asset.
