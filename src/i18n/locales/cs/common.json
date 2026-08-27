@@ -439,6 +439,7 @@
   "status.done": "Hotovo",
   "status.currentFile": "Aktuální soubor",
   "status.working": "Probíhá…",
+  "status.checking": "Kontrola...",
   "status.renamed": "Přejmenováno",
   "status.skipped": "Přeskočeno",
   "status.errors": "Chyby",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Knihovnu se nepodařilo vyprázdnit. Zkuste to prosím znovu.",
   "confirm.startNewLibraryBody": "Tímto trvale vymažete karty, zdroje, loga zad hrdinů, párování, sbírky, balíčky a související data karet z tohoto prohlížeče. Nastavení a předvolby aplikace zůstanou zachovány. Pokud si chcete ponechat zálohu, nejprve knihovnu exportujte.",
   "confirm.startNewLibraryAcknowledgement": "Rozumím, že zahájení nové knihovny trvale vymaže data mé aktuální knihovny.",
-  "label.pairs": "Páry"
+  "label.pairs": "Páry",
+  "label.storagePersistenceIntro": "Aplikace požádá prohlížeč o dodatečnou ochranu dat místní knihovny tam, kde je podporována. Chování se liší podle prohlížeče, takže pravidelné exporty knihovny zůstávají nejbezpečnějším způsobem ochrany karet, balíčků a zdrojů.",
+  "label.storagePersistenceBrowserHelp": "Nápověda k úložišti prohlížeče:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

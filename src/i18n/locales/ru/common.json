@@ -439,6 +439,7 @@
   "status.done": "Готово",
   "status.currentFile": "Текущий файл",
   "status.working": "Выполняется...",
+  "status.checking": "Проверка...",
   "status.renamed": "Переименовано",
   "status.skipped": "Пропущено",
   "status.errors": "Ошибки",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Не удалось очистить библиотеку. Повторите попытку.",
   "confirm.startNewLibraryBody": "Это навсегда удалит из этого браузера карты, ресурсы, логотипы обратной стороны героя, пары, коллекции, колоды и связанные данные карт. Настройки и предпочтения приложения будут сохранены. Сначала экспортируйте библиотеку, если хотите сохранить резервную копию.",
   "confirm.startNewLibraryAcknowledgement": "Я понимаю, что создание новой библиотеки навсегда очистит данные моей текущей библиотеки.",
-  "label.pairs": "Пары"
+  "label.pairs": "Пары",
+  "label.storagePersistenceIntro": "Приложение просит браузер включить дополнительную защиту данных локальной библиотеки там, где это поддерживается. Поведение зависит от браузера, поэтому регулярный экспорт библиотеки остается самым надежным способом защитить карты, колоды и ресурсы.",
+  "label.storagePersistenceBrowserHelp": "Справка по хранилищу браузера:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

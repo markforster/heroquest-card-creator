@@ -439,6 +439,7 @@
   "status.done": "Ολοκληρώθηκε",
   "status.currentFile": "Τρέχον αρχείο",
   "status.working": "Εργασία...",
+  "status.checking": "Έλεγχος...",
   "status.renamed": "Μετονομάστηκε",
   "status.skipped": "Παραλείφθηκαν",
   "status.errors": "Σφάλματα",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Δεν ήταν δυνατή η εκκαθάριση της βιβλιοθήκης. Δοκιμάστε ξανά.",
   "confirm.startNewLibraryBody": "Αυτό θα διαγράψει οριστικά κάρτες, στοιχεία, λογότυπα Hero Back, ζεύγη, συλλογές, δέσμες και σχετικά δεδομένα καρτών από αυτό το πρόγραμμα περιήγησης. Οι ρυθμίσεις και οι προτιμήσεις της εφαρμογής θα διατηρηθούν. Εξαγάγετε πρώτα τη βιβλιοθήκη σας αν θέλετε να κρατήσετε αντίγραφο ασφαλείας.",
   "confirm.startNewLibraryAcknowledgement": "Κατανοώ ότι η έναρξη νέας βιβλιοθήκης θα διαγράψει οριστικά τα δεδομένα της τρέχουσας βιβλιοθήκης μου.",
-  "label.pairs": "Ζεύγη"
+  "label.pairs": "Ζεύγη",
+  "label.storagePersistenceIntro": "Η εφαρμογή ζητά από τον browser επιπλέον προστασία για τα δεδομένα της τοπικής βιβλιοθήκης σας όπου υποστηρίζεται. Η συμπεριφορά διαφέρει ανά browser, επομένως οι τακτικές εξαγωγές βιβλιοθήκης παραμένουν ο ασφαλέστερος τρόπος προστασίας των καρτών, των deck και των πόρων σας.",
+  "label.storagePersistenceBrowserHelp": "Βοήθεια αποθήκευσης browser:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

@@ -439,6 +439,7 @@
   "status.done": "Valmis",
   "status.currentFile": "Nykyinen tiedosto",
   "status.working": "Työskennellään…",
+  "status.checking": "Tarkistetaan...",
   "status.renamed": "Uudelleennimetty",
   "status.skipped": "Ohitettu",
   "status.errors": "Virheet",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Kirjastoa ei voitu tyhjentää. Yritä uudelleen.",
   "confirm.startNewLibraryBody": "Tämä tyhjentää pysyvästi kortit, resurssit, Hero Back -logot, paritukset, kokoelmat, pakat ja niihin liittyvät korttitiedot tästä selaimesta. Asetukset ja sovelluksen mieltymykset säilytetään. Vie kirjasto ensin, jos haluat säilyttää varmuuskopion.",
   "confirm.startNewLibraryAcknowledgement": "Ymmärrän, että uuden kirjaston aloittaminen tyhjentää nykyisen kirjastoni tiedot pysyvästi.",
-  "label.pairs": "Parit"
+  "label.pairs": "Parit",
+  "label.storagePersistenceIntro": "Sovellus pyytää selaimelta lisäsuojaa paikallisen kirjastosi tiedoille silloin, kun se on tuettua. Selainten toiminta vaihtelee, joten säännölliset kirjaston viennit ovat edelleen turvallisin tapa suojata kortit, pakat ja resurssit.",
+  "label.storagePersistenceBrowserHelp": "Selaimen tallennustilan ohje:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

@@ -439,6 +439,7 @@
   "status.done": "Klar",
   "status.currentFile": "Aktuell fil",
   "status.working": "Arbetar…",
+  "status.checking": "Kontrollerar...",
   "status.renamed": "Omdöpt",
   "status.skipped": "Hoppad över",
   "status.errors": "Fel",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Det gick inte att rensa biblioteket. Försök igen.",
   "confirm.startNewLibraryBody": "Detta rensar permanent kort, resurser, Hero Back-logotyper, parkopplingar, samlingar, kortlekar och relaterade kortdata från den här webbläsaren. Inställningar och appinställningar behålls. Exportera biblioteket först om du vill behålla en säkerhetskopia.",
   "confirm.startNewLibraryAcknowledgement": "Jag förstår att ett nytt bibliotek permanent rensar mina nuvarande biblioteksdata.",
-  "label.pairs": "Par"
+  "label.pairs": "Par",
+  "label.storagePersistenceIntro": "Appen ber webbläsaren om extra skydd för dina lokala biblioteksdata där det stöds. Webbläsare beter sig olika, så regelbundna biblioteksexporter är fortfarande det säkraste sättet att skydda dina kort, lekar och resurser.",
+  "label.storagePersistenceBrowserHelp": "Hjälp för webbläsarlagring:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

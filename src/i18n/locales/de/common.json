@@ -439,6 +439,7 @@
   "status.done": "Fertig",
   "status.currentFile": "Aktuelle Datei",
   "status.working": "Arbeitet...",
+  "status.checking": "Prüfung...",
   "status.renamed": "Umbenannt",
   "status.skipped": "Übersprungen",
   "status.errors": "Fehler",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Die Bibliothek konnte nicht geleert werden. Bitte versuche es erneut.",
   "confirm.startNewLibraryBody": "Dadurch werden Karten, Assets, Hero Back-Logos, Paarungen, Sammlungen, Decks und zugehörige Kartendaten dauerhaft aus diesem Browser entfernt. Einstellungen und App-Präferenzen bleiben erhalten. Exportiere deine Bibliothek zuerst, wenn du eine Sicherung behalten möchtest.",
   "confirm.startNewLibraryAcknowledgement": "Ich verstehe, dass das Starten einer neuen Bibliothek meine aktuellen Bibliotheksdaten dauerhaft löscht.",
-  "label.pairs": "Paare"
+  "label.pairs": "Paare",
+  "label.storagePersistenceIntro": "Die App bittet Ihren Browser, die lokalen Bibliotheksdaten nach Möglichkeit zusätzlich zu schützen. Das Verhalten unterscheidet sich je nach Browser, daher bleiben regelmäßige Bibliotheksexporte der sicherste Weg, Ihre Karten, Decks und Ressourcen zu schützen.",
+  "label.storagePersistenceBrowserHelp": "Hilfe zum Browser-Speicher:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

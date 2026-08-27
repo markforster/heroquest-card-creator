@@ -15,10 +15,18 @@ describe("CardEditorProvider", () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <CardEditorProvider>{children}</CardEditorProvider>
   );
+  const originalNavigator = global.navigator;
 
   beforeEach(() => {
     window.localStorage.clear();
     touchCardLastViewed.mockReset().mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    Object.defineProperty(global, "navigator", {
+      configurable: true,
+      value: originalNavigator,
+    });
   });
 
   it("hydrates and persists active card state", async () => {
@@ -53,6 +61,26 @@ describe("CardEditorProvider", () => {
     expect(result.current.state.activeCardStatusByTemplate).toEqual({});
     expect(result.current.state.selectedTemplateId).toBe(templateId);
     await waitFor(() => expect(window.localStorage.getItem("hqcc.activeCards.v1")).toBeNull());
+  });
+
+  it("does not request browser storage persistence during hydration", async () => {
+    const persisted = jest.fn().mockResolvedValue(false);
+    const persist = jest.fn().mockResolvedValue(true);
+    Object.defineProperty(global, "navigator", {
+      configurable: true,
+      value: {
+        storage: {
+          persisted,
+          persist,
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useCardEditor(), { wrapper });
+    await waitFor(() => expect(result.current.state.selectedTemplateId).not.toBeNull());
+
+    expect(persisted).not.toHaveBeenCalled();
+    expect(persist).not.toHaveBeenCalled();
   });
 
   it("rejects hook usage outside the provider", () => {

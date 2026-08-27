@@ -439,6 +439,7 @@
   "status.done": "Kész",
   "status.currentFile": "Aktuális fájl",
   "status.working": "Dolgozunk…",
+  "status.checking": "Ellenőrzés...",
   "status.renamed": "Átnevezve",
   "status.skipped": "Kihagyva",
   "status.errors": "Hibák",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Nem sikerült törölni a könyvtárat. Próbálja újra.",
   "confirm.startNewLibraryBody": "Ez véglegesen törli ebből a böngészőből a kártyákat, erőforrásokat, hőshátlap-logókat, párosításokat, gyűjteményeket, paklikat és kapcsolódó kártyaadatokat. A beállítások és az alkalmazás-preferenciák megmaradnak. Először exportálja a könyvtárat, ha biztonsági másolatot szeretne megtartani.",
   "confirm.startNewLibraryAcknowledgement": "Megértem, hogy egy új könyvtár indítása véglegesen törli a jelenlegi könyvtáram adatait.",
-  "label.pairs": "Párok"
+  "label.pairs": "Párok",
+  "label.storagePersistenceIntro": "Az alkalmazás megkéri a böngészőt, hogy ahol támogatott, adjon extra védelmet a helyi könyvtár adataihoz. A böngészők eltérően viselkednek, ezért a rendszeres könyvtárexport továbbra is a legbiztonságosabb módja a kártyák, paklik és erőforrások védelmének.",
+  "label.storagePersistenceBrowserHelp": "Böngészőtárhely súgó:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

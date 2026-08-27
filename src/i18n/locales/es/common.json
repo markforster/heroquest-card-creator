@@ -439,6 +439,7 @@
   "status.done": "Listo",
   "status.currentFile": "Archivo actual",
   "status.working": "Trabajando...",
+  "status.checking": "Comprobando...",
   "status.renamed": "Renombrados",
   "status.skipped": "Omitidos",
   "status.errors": "Errores",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "No se pudo vaciar la biblioteca. Inténtalo de nuevo.",
   "confirm.startNewLibraryBody": "Esto eliminará permanentemente de este navegador las cartas, recursos, logotipos de reverso de héroe, emparejamientos, colecciones, mazos y datos relacionados de cartas. Se conservarán los ajustes y preferencias de la aplicación. Exporta primero tu biblioteca si quieres conservar una copia de seguridad.",
   "confirm.startNewLibraryAcknowledgement": "Entiendo que iniciar una nueva biblioteca eliminará permanentemente los datos de mi biblioteca actual.",
-  "label.pairs": "Parejas"
+  "label.pairs": "Parejas",
+  "label.storagePersistenceIntro": "La app pide al navegador protección adicional para los datos de tu biblioteca local cuando es compatible. El comportamiento varía según el navegador, así que las exportaciones periódicas de la biblioteca siguen siendo la forma más segura de proteger tus cartas, mazos y recursos.",
+  "label.storagePersistenceBrowserHelp": "Ayuda sobre el almacenamiento del navegador:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

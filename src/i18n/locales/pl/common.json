@@ -439,6 +439,7 @@
   "status.done": "Gotowe",
   "status.currentFile": "Bieżący plik",
   "status.working": "Praca…",
+  "status.checking": "Sprawdzanie...",
   "status.renamed": "Zmieniono nazwę",
   "status.skipped": "Pominięto",
   "status.errors": "Błędy",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Nie udało się wyczyścić biblioteki. Spróbuj ponownie.",
   "confirm.startNewLibraryBody": "Spowoduje to trwałe usunięcie z tej przeglądarki kart, zasobów, logotypów tyłu bohatera, parowań, kolekcji, talii i powiązanych danych kart. Ustawienia i preferencje aplikacji zostaną zachowane. Najpierw wyeksportuj bibliotekę, jeśli chcesz zachować kopię zapasową.",
   "confirm.startNewLibraryAcknowledgement": "Rozumiem, że rozpoczęcie nowej biblioteki trwale wyczyści dane mojej obecnej biblioteki.",
-  "label.pairs": "Pary"
+  "label.pairs": "Pary",
+  "label.storagePersistenceIntro": "Aplikacja prosi przeglądarkę o dodatkową ochronę danych lokalnej biblioteki tam, gdzie jest to obsługiwane. Zachowanie zależy od przeglądarki, dlatego regularny eksport biblioteki pozostaje najbezpieczniejszym sposobem ochrony kart, talii i zasobów.",
+  "label.storagePersistenceBrowserHelp": "Pomoc dotycząca pamięci przeglądarki:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

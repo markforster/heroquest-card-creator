@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Database,
   Download,
+  ExternalLink,
   Image as ImageIcon,
   Layers,
   RotateCcw,
@@ -32,7 +33,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 type ResetModalState = "closed" | "confirm" | "complete";
-
 const SUMMARY_ROWS: Array<{
   key: keyof Pick<LibraryResetSummary, "cards" | "decks" | "assets">;
   labelKey: MessageKey;
@@ -41,6 +41,25 @@ const SUMMARY_ROWS: Array<{
   { key: "cards", labelKey: "label.cards", Icon: SquareStack },
   { key: "decks", labelKey: "actions.decks", Icon: Layers },
   { key: "assets", labelKey: "label.assets", Icon: ImageIcon },
+];
+
+const STORAGE_HELP_LINKS: Array<{ labelKey: MessageKey; href: string }> = [
+  {
+    labelKey: "label.storagePersistenceChromeHelp",
+    href: "https://support.google.com/chrome/answer/14114868?hl=en",
+  },
+  {
+    labelKey: "label.storagePersistenceEdgeHelp",
+    href: "https://support.microsoft.com/en-US/edge/temporarily-allow-cookies-and-site-data-in-microsoft-edge",
+  },
+  {
+    labelKey: "label.storagePersistenceSafariHelp",
+    href: "https://support.apple.com/guide/safari/manage-cookies-sfri11471/mac",
+  },
+  {
+    labelKey: "label.storagePersistenceFirefoxHelp",
+    href: "https://support.mozilla.org/en-US/kb/storage",
+  },
 ];
 
 export default function LibrarySettingsPanel() {
@@ -217,6 +236,28 @@ export default function LibrarySettingsPanel() {
                 {summary.isEmpty ? (
                   <div className={styles.settingsPanelRow}>{t("label.libraryAlreadyEmpty")}</div>
                 ) : null}
+                <div className={styles.storagePersistenceRow}>
+                  <p className={styles.storagePersistenceIntro}>
+                    {t("label.storagePersistenceIntro")}
+                  </p>
+                  <div className={styles.storagePersistenceLinks}>
+                    <span className={styles.storagePersistenceLead}>
+                      {t("label.storagePersistenceBrowserHelp")}
+                    </span>
+                    {STORAGE_HELP_LINKS.map((link) => (
+                      <a
+                        key={link.href}
+                        className={styles.storagePersistenceLink}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span>{t(link.labelKey)}</span>
+                        <ExternalLink size={14} aria-hidden="true" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
               </>
             ) : null}
           </SettingsGroup>

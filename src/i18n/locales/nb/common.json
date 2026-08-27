@@ -439,6 +439,7 @@
   "status.done": "Ferdig",
   "status.currentFile": "Gjeldende fil",
   "status.working": "Jobber...",
+  "status.checking": "Kontrollerer...",
   "status.renamed": "Omdøpt",
   "status.skipped": "Hoppet over",
   "status.errors": "Fejl",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Kunne ikke tømme biblioteket. Prøv igjen.",
   "confirm.startNewLibraryBody": "Dette vil permanent fjerne kort, ressurser, Hero Back-logoer, paringer, samlinger, kortstokker og relaterte kortdata fra denne nettleseren. Innstillinger og app-preferanser beholdes. Eksporter biblioteket først hvis du vil beholde en sikkerhetskopi.",
   "confirm.startNewLibraryAcknowledgement": "Jeg forstår at å starte et nytt bibliotek permanent vil tømme mine nåværende biblioteksdata.",
-  "label.pairs": "Par"
+  "label.pairs": "Par",
+  "label.storagePersistenceIntro": "Appen ber nettleseren om ekstra beskyttelse for de lokale bibliotekdataene dine der det støttes. Nettlesere oppfører seg forskjellig, så regelmessige bibliotekeksporter er fortsatt den tryggeste måten å beskytte kort, kortstokker og ressurser på.",
+  "label.storagePersistenceBrowserHelp": "Hjelp for nettleserlagring:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

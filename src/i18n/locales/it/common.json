@@ -439,6 +439,7 @@
   "status.done": "Fatto",
   "status.currentFile": "File corrente",
   "status.working": "In corso...",
+  "status.checking": "Controllo...",
   "status.renamed": "Rinominati",
   "status.skipped": "Saltati",
   "status.errors": "Errori",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Impossibile svuotare la libreria. Riprova.",
   "confirm.startNewLibraryBody": "Questa operazione cancellerà definitivamente da questo browser carte, risorse, loghi del retro eroe, abbinamenti, raccolte, mazzi e dati delle carte correlati. Le impostazioni e le preferenze dell’app verranno conservate. Esporta prima la libreria se vuoi conservare un backup.",
   "confirm.startNewLibraryAcknowledgement": "Comprendo che creare una nuova libreria cancellerà definitivamente i dati della mia libreria attuale.",
-  "label.pairs": "Coppie"
+  "label.pairs": "Coppie",
+  "label.storagePersistenceIntro": "L’app chiede al browser una protezione extra per i dati della libreria locale dove supportata. Il comportamento varia tra i browser, quindi le esportazioni regolari della libreria restano il modo più sicuro per proteggere carte, mazzi e risorse.",
+  "label.storagePersistenceBrowserHelp": "Aiuto sull’archiviazione del browser:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

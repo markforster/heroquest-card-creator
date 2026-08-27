@@ -439,6 +439,7 @@
   "status.done": "Concluído",
   "status.currentFile": "Arquivo atual",
   "status.working": "Trabalhando...",
+  "status.checking": "Verificando...",
   "status.renamed": "Renomeados",
   "status.skipped": "Ignorados",
   "status.errors": "Erros",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Não foi possível limpar a biblioteca. Tente novamente.",
   "confirm.startNewLibraryBody": "Isso apagará permanentemente deste navegador as cartas, recursos, logos do verso de herói, pareamentos, coleções, decks e dados relacionados das cartas. As configurações e preferências do app serão preservadas. Exporte sua biblioteca primeiro se quiser manter um backup.",
   "confirm.startNewLibraryAcknowledgement": "Entendo que iniciar uma nova biblioteca apagará permanentemente os dados da minha biblioteca atual.",
-  "label.pairs": "Pares"
+  "label.pairs": "Pares",
+  "label.storagePersistenceIntro": "O app pede ao navegador proteção extra para os dados da sua biblioteca local quando há suporte. O comportamento varia entre navegadores, então exportar a biblioteca regularmente continua sendo a forma mais segura de proteger suas cartas, decks e recursos.",
+  "label.storagePersistenceBrowserHelp": "Ajuda sobre armazenamento do navegador:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

@@ -439,6 +439,7 @@
   "status.done": "Færdig",
   "status.currentFile": "Aktuel fil",
   "status.working": "Arbejder...",
+  "status.checking": "Kontrollerer...",
   "status.renamed": "Omdøbt",
   "status.skipped": "Sprunget over",
   "status.errors": "Fejl",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Biblioteket kunne ikke ryddes. Prøv igen.",
   "confirm.startNewLibraryBody": "Dette rydder permanent kort, ressourcer, Hero Back-logoer, parringer, samlinger, kortspil og relaterede kortdata fra denne browser. Indstillinger og app-præferencer bevares. Eksporter dit bibliotek først, hvis du vil beholde en sikkerhedskopi.",
   "confirm.startNewLibraryAcknowledgement": "Jeg forstår, at start af et nyt bibliotek permanent rydder mine aktuelle biblioteksdata.",
-  "label.pairs": "Par"
+  "label.pairs": "Par",
+  "label.storagePersistenceIntro": "Appen beder browseren om ekstra beskyttelse af dine lokale biblioteksdata, hvor det understøttes. Browseres adfærd varierer, så regelmæssige bibliotekseksporter er stadig den sikreste måde at beskytte dine kort, decks og ressourcer på.",
+  "label.storagePersistenceBrowserHelp": "Hjælp til browserlagring:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

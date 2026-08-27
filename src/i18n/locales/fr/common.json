@@ -439,6 +439,7 @@
   "status.done": "Terminé",
   "status.currentFile": "Fichier actuel",
   "status.working": "En cours...",
+  "status.checking": "Vérification...",
   "status.renamed": "Renommés",
   "status.skipped": "Ignorés",
   "status.errors": "Erreurs",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Impossible d’effacer la bibliothèque. Veuillez réessayer.",
   "confirm.startNewLibraryBody": "Cette action effacera définitivement de ce navigateur les cartes, ressources, logos de dos de héros, appariements, collections, paquets et données de cartes associées. Les réglages et préférences de l’application seront conservés. Exportez d’abord votre bibliothèque si vous souhaitez garder une sauvegarde.",
   "confirm.startNewLibraryAcknowledgement": "Je comprends que créer une nouvelle bibliothèque effacera définitivement les données de ma bibliothèque actuelle.",
-  "label.pairs": "Paires"
+  "label.pairs": "Paires",
+  "label.storagePersistenceIntro": "L’application demande à votre navigateur une protection supplémentaire pour les données de votre bibliothèque locale lorsque c’est possible. Le comportement varie selon les navigateurs, donc les exports réguliers restent la manière la plus sûre de protéger vos cartes, paquets et ressources.",
+  "label.storagePersistenceBrowserHelp": "Aide sur le stockage du navigateur :",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

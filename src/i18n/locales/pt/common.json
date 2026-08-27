@@ -439,6 +439,7 @@
   "status.done": "Concluído",
   "status.currentFile": "Arquivo atual",
   "status.working": "Trabalhando...",
+  "status.checking": "A verificar...",
   "status.renamed": "Renomeados",
   "status.skipped": "Ignorados",
   "status.errors": "Erros",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Não foi possível limpar a biblioteca. Tente novamente.",
   "confirm.startNewLibraryBody": "Isto irá limpar permanentemente deste navegador as cartas, recursos, logótipos do verso do herói, emparelhamentos, coleções, baralhos e dados de cartas relacionados. As definições e preferências da aplicação serão preservadas. Exporte primeiro a biblioteca se quiser manter uma cópia de segurança.",
   "confirm.startNewLibraryAcknowledgement": "Compreendo que iniciar uma nova biblioteca irá limpar permanentemente os dados da minha biblioteca atual.",
-  "label.pairs": "Pares"
+  "label.pairs": "Pares",
+  "label.storagePersistenceIntro": "A aplicação pede ao navegador proteção extra para os dados da biblioteca local quando suportado. O comportamento varia entre navegadores, por isso as exportações regulares da biblioteca continuam a ser a forma mais segura de proteger cartas, baralhos e recursos.",
+  "label.storagePersistenceBrowserHelp": "Ajuda sobre armazenamento do navegador:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

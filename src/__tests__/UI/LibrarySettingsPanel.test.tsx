@@ -118,6 +118,24 @@ describe("LibrarySettingsPanel (UI)", () => {
     expect(screen.queryByText("This library is already empty.")).not.toBeInTheDocument();
   });
 
+  it("shows browser storage guidance with official help links", async () => {
+    renderPanel();
+
+    expect(
+      await screen.findByText(
+        "The app asks your browser for extra protection for your local library data where supported. Browser behavior varies, so regular library exports are still the safest way to protect your cards, decks, and assets.",
+      ),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("Browser storage help:")).toBeInTheDocument();
+    for (const browser of ["Chrome", "Edge", "Safari", "Firefox"]) {
+      const link = screen.getByRole("link", { name: new RegExp(browser, "i") });
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    expect(screen.queryByRole("button", { name: "Protect local data" })).not.toBeInTheDocument();
+  });
+
   it("runs import from the library settings action row", async () => {
     renderPanel();
 

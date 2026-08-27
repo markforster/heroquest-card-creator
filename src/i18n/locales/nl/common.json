@@ -439,6 +439,7 @@
   "status.done": "Klaar",
   "status.currentFile": "Huidig bestand",
   "status.working": "Bezig...",
+  "status.checking": "Controleren...",
   "status.renamed": "Hernoemd",
   "status.skipped": "Overgeslagen",
   "status.errors": "Fouten",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Kon de bibliotheek niet wissen. Probeer het opnieuw.",
   "confirm.startNewLibraryBody": "Hiermee worden kaarten, middelen, Hero Back-logo’s, koppelingen, collecties, decks en gerelateerde kaartgegevens permanent uit deze browser gewist. Instellingen en appvoorkeuren blijven behouden. Exporteer eerst je bibliotheek als je een back-up wilt bewaren.",
   "confirm.startNewLibraryAcknowledgement": "Ik begrijp dat het starten van een nieuwe bibliotheek mijn huidige bibliotheekgegevens permanent wist.",
-  "label.pairs": "Paren"
+  "label.pairs": "Paren",
+  "label.storagePersistenceIntro": "De app vraagt je browser waar mogelijk om extra bescherming voor je lokale bibliotheekgegevens. Browsergedrag verschilt, dus regelmatige bibliotheekexports blijven de veiligste manier om je kaarten, decks en assets te beschermen.",
+  "label.storagePersistenceBrowserHelp": "Hulp voor browseropslag:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }

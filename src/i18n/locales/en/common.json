@@ -450,6 +450,7 @@
   "status.done": "Done",
   "status.currentFile": "Current file",
   "status.working": "Working...",
+  "status.checking": "Checking...",
   "status.renamed": "Renamed",
   "status.skipped": "Skipped",
   "status.errors": "Errors",
@@ -817,5 +818,11 @@
   "alert.libraryResetFailed": "Could not clear the library. Please try again.",
   "confirm.startNewLibraryBody": "This will permanently clear cards, assets, Hero Back logos, pairings, collections, decks, and related card data from this browser. Settings and app preferences will be preserved. Export your library first if you want to keep a backup.",
   "confirm.startNewLibraryAcknowledgement": "I understand that starting a new library will permanently clear my current library data.",
-  "label.pairs": "Pairs"
+  "label.pairs": "Pairs",
+  "label.storagePersistenceIntro": "The app asks your browser for extra protection for your local library data where supported. Browser behavior varies, so regular library exports are still the safest way to protect your cards, decks, and assets.",
+  "label.storagePersistenceBrowserHelp": "Browser storage help:",
+  "label.storagePersistenceChromeHelp": "Chrome",
+  "label.storagePersistenceEdgeHelp": "Edge",
+  "label.storagePersistenceSafariHelp": "Safari",
+  "label.storagePersistenceFirefoxHelp": "Firefox"
 }
