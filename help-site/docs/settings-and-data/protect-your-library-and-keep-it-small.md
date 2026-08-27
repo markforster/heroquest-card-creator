@@ -17,13 +17,14 @@ Browsers normally try to keep local site data, and the app requests extra protec
 
 Your local library can still disappear if browser data is cleared, a private window is closed, a different browser profile or app copy is used, or the browser decides it needs to recover space. Some browsers ask before granting stronger local-storage protection; others decide automatically based on how often and how recently you use the site.
 
-Learn more from:
+For browser-specific site data settings, see:
 
-- <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage_API" target="_blank" rel="noreferrer noopener">MDN's Storage API overview</a>
-- <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria" target="_blank" rel="noreferrer noopener">MDN's storage quotas and cleanup guide</a>
-- <a href="https://web.dev/articles/persistent-storage" target="_blank" rel="noreferrer noopener">web.dev's persistent storage guide</a>
+- <a href="https://support.google.com/chrome/answer/14114868?hl=en" target="_blank" rel="noreferrer noopener">Chrome on-device site data help</a>
+- <a href="https://support.microsoft.com/en-US/edge/temporarily-allow-cookies-and-site-data-in-microsoft-edge" target="_blank" rel="noreferrer noopener">Edge cookies and site data help</a>
+- <a href="https://support.apple.com/guide/safari/manage-cookies-sfri11471/mac" target="_blank" rel="noreferrer noopener">Safari website data help</a>
 - <a href="https://support.mozilla.org/en-US/kb/storage" target="_blank" rel="noreferrer noopener">Firefox local site storage settings</a>
-- <a href="https://support.google.com/chrome/answer/114662" target="_blank" rel="noreferrer noopener">Chrome site settings permissions</a>
+
+For more technical background, see <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage_API" target="_blank" rel="noreferrer noopener">MDN's Storage API overview</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria" target="_blank" rel="noreferrer noopener">MDN's storage quotas and cleanup guide</a>, and <a href="https://web.dev/articles/persistent-storage" target="_blank" rel="noreferrer noopener">web.dev's persistent storage guide</a>.
 
 ## Keep image files sensible
 

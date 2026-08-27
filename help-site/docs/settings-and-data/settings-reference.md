@@ -171,9 +171,11 @@ It also provides three actions:
 - **Import** restores a `.hqcc` backup and replaces the current library.
 - **New** starts a new empty library after a destructive confirmation.
 
+Library also includes browser storage guidance. The app asks the browser for extra local data protection where supported, but regular `.hqcc` exports remain the backup you control.
+
 Choose **New** only when you want to remove the current local library. The confirmation window offers another export opportunity, requires an acknowledgement checkbox, and then shows a completion message when the reset has finished.
 
-For the full safety flow, see [Start a New Library](./start-a-new-library.md). For backup and restore steps, see [Back Up and Restore Your Library](./back-up-and-restore-your-library.md).
+For the full safety flow, see [Start a New Library](./start-a-new-library.md). For backup and restore steps, see [Back Up and Restore Your Library](./back-up-and-restore-your-library.md). For browser storage guidance, see [Protect Your Library and Keep It Small](./protect-your-library-and-keep-it-small.md).
 
 ## Credit the developer
 
