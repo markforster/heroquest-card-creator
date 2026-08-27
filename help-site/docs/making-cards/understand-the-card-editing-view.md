@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0090, Q-0091, Q-0092, Q-0093, Q-0094, Q-0095, Q-0096, Q-0097, Q-0098]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Understand the Card Editing View
 
@@ -34,7 +34,9 @@ The Properties panel beside the card contains the fields supported by the chosen
 
 You can also click parts of the card to move directly to their matching field in the Properties panel. For example, clicking the title selects the title field. The same direct selection can be available for text, statistics, colours, and other editable parts supported by the template.
 
-Clicking the artwork selects the image and displays controls over the card for moving, scaling, and rotating it. The Properties panel also provides sliders, nudge buttons, centring, automatic scaling, and rotation controls. See [Add and Position Artwork](./add-and-position-artwork.md) for the full artwork guide.
+Clicking the artwork selects the image and displays controls over the card for moving, scaling, and rotating it. The Properties panel also provides image toolbar controls for choosing artwork, adjusting position, centring, automatic scaling, rotation, and lower clipping where the template supports it. See [Add and Position Artwork](./add-and-position-artwork.md) for the full artwork guide.
+
+When selected Hero or Monster artwork has a lower clip enabled, the Standard preview can show a horizontal guide and a faint view of the clipped-away artwork. These guides help editing only; they are not part of the exported card.
 
 Some card parts have a useful double-click action. For example, double-clicking an image can open the image chooser so you can replace it.
 
@@ -65,11 +67,11 @@ For a template-by-template comparison and the less obvious stat, colour, icon, c
 
 | Field | What it is for |
 | --- | --- |
-| **Name, title, or label** | Sets the main identifying text. Some back templates can hide the title or change its position, colour, and ribbon style. |
-| **Image** | Chooses reusable artwork from Assets and controls its position, scale, and rotation. |
+| **Name, title, or label** | Sets the main identifying text. Title-bearing cards can keep name and title linked or show a separate library name above the printed title. Some back templates can hide the title or change its position, colour, ribbon style, and typography. |
+| **Image** | Chooses reusable artwork from Assets and controls its position, scale, rotation, and lower clipping where supported. |
 | **Stats** | Sets values such as Attack, Defend, Body, and Mind on templates that use statistics. |
 | **Card, rules, or back text** | Holds the main written content and offers the text helpers supported by that template. |
-| **Background tint** | Changes the colour treatment behind the card content. |
+| **Background tint** | Changes the colour treatment behind the card content and can offer blend-mode choices. |
 | **Border colour** | Changes the outer border on templates that provide a configurable border. |
 | **Monster icon** | Chooses the icon used by a Monster card. |
 | **Hero Back logo** | Chooses or changes the logo used on supported back templates. |

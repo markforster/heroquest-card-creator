@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0003, Q-0055, Q-0056, Q-0057, Q-0166, Q-0178, Q-0179, Q-0180, Q-0181, Q-0182, Q-0183, Q-0184, Q-0185, Q-0186, Q-0188]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Back Up and Restore Your Library
 
@@ -22,7 +22,7 @@ The backup includes library-related settings such as export profiles, custom sta
 <!-- help-visual:p098:end -->
 
 
-1. Choose **Export library** in the left navigation.
+1. Choose **Export library** in the left navigation, or open **Settings > Library** and choose **Export**.
 2. Leave **New HQCC format (recommended)** selected for current versions.
 3. Choose **Export**.
 4. Wait for **Preparing**, **Exporting data**, and **Finalizing** to finish.
@@ -41,11 +41,11 @@ Use **HQCC 0.5.5 compatibility format** only when you may need to return to app 
 
 
 1. Export the current library first if anything in it must be preserved.
-2. Choose **Import library**.
+2. Choose **Import library**, or open **Settings > Library** and choose **Import**.
 3. Read the replacement warning and choose **Import**.
 4. Select one `.hqcc` backup file.
 5. Wait for validation and restoration to finish before closing the app.
-6. When **Import complete** appears, review the reported card, asset, collection, and deck totals.
+6. When the import result window appears, review the reported card, asset, collection, and deck totals.
 7. Open the main workspaces and confirm that the expected library is present.
 
 The same process can move a library to another browser profile, computer, or installed app copy: export in the source location, transfer the `.hqcc` file, and import it in the destination.
@@ -57,6 +57,8 @@ Import replaces all existing cards, assets, and related data in the current brow
 Older backup imports remain supported, but the recommended export format is the current compact `.hqcc` format.
 
 If an import reports an error after processing has begun, treat the current library as incomplete and restore the safety backup you made before starting. See [Fix Backup and Restore Problems](../troubleshooting/fix-backup-and-restore-problems.md).
+
+If you want to empty the current app location rather than restore another backup, use [Start a New Library](./start-a-new-library.md) after creating a backup.
 
 ## When to back up
 

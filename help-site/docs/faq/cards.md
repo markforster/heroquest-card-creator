@@ -67,13 +67,13 @@ Saved cards gain Duplicate and pairing/collection/deck context in addition to Ex
 
 ## How do I put an uploaded image on a card?
 
-In the editor choose Choose image, select an asset, confirm, then save.
+In the editor use the image field's toolbar button, select an asset, confirm, then save.
 
 [Read the full guidance](../making-cards/add-and-position-artwork.md)
 
 ## How do I reposition, resize, or rotate card artwork?
 
-Image adjustments provide axis movement, nudging, centring, scale, auto-fit, and rotation.
+Image adjustments provide axis movement, nudging, centring, scale, auto-fit, rotation, and lower clipping on supported Hero and Monster artwork.
 
 [Read the full guidance](../making-cards/add-and-position-artwork.md)
 
@@ -243,7 +243,7 @@ Choose Hero Back for a character-deck treatment, Logo Back for a vertical logo-l
 
 ## How do I create a card from a template?
 
-Choose New, select a template preview, complete its required name/title/label, add optional content, and Save the draft.
+Choose New, select a template preview, complete its required name, title, or label, add optional content, and Save the draft. Title-bearing cards can also show a separate library name when needed.
 
 [Read the full guidance](../making-cards/choose-a-card-template.md)
 
@@ -375,7 +375,7 @@ Select an image in Monster icon, then adjust its horizontal and vertical positio
 
 ## How do I change a card title's colour?
 
-Choose the title field's colour swatch, select or enter a colour, and save the card.
+Choose the title field's colour swatch, select or enter a colour, and save the card. Use the title toolbar when you need a separate library name or bold italic title style.
 
 [Read the full guidance](../making-cards/customize-titles-colours-and-copyright.md)
 
@@ -405,7 +405,7 @@ Border colour is available on Small Artwork, Large Artwork, and Labelled Back.
 
 ## Which templates let me change the background tint?
 
-Background tint is available on Hero, Monster, Small Artwork, Large Artwork, Hero Back, Logo Back, and Labelled Back.
+Background tint is available on Hero, Monster, Small Artwork, Large Artwork, Rules, Hero Back, Logo Back, and Labelled Back. The tint window also lets you try blend modes, with Multiply as the default.
 
 [Read the full guidance](../making-cards/customize-titles-colours-and-copyright.md)
 

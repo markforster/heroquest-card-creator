@@ -4,7 +4,7 @@ type: screen-guide
 status: first-draft
 source_questions: [Q-0176, Q-0177, Q-0178, Q-0179, Q-0180, Q-0187, Q-0188]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Understand Backups and Local Data
 
@@ -16,6 +16,8 @@ The left navigation contains two related actions:
 
 - **Export library** creates a downloadable `.hqcc` backup.
 - **Import library** reads a backup and replaces the library in the current app location.
+
+The same backup and import actions are also available from **Settings > Library**.
 
 These actions concern your editable library. They are different from exporting card images or a printable PDF.
 
@@ -61,6 +63,12 @@ After importing on another browser profile or app copy, review [Settings Referen
 Each browser profile and installed app copy has its own local working area. A different browser, a private window, another browser profile, cleared site data, or a separately installed copy can therefore open with an empty library even though your work still exists elsewhere.
 
 Use **Export library** in the location containing your work, then **Import library** in the destination. Keep the `.hqcc` file somewhere outside the app so it remains available if that local working area is cleared.
+
+## How do I start fresh?
+
+Open **Settings > Library** and use **New** when you want the current app location to become empty again. Export a backup first if there is anything you may need later.
+
+See [Start a New Library](./start-a-new-library.md) for what is removed, what stays, and how the confirmation works.
 
 ## What does System storage show?
 

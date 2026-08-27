@@ -4,11 +4,11 @@ type: screen-guide
 status: first-draft
 source_questions: [Q-0058, Q-0059, Q-0060, Q-0064, Q-0147, Q-0148, Q-0149, Q-0159, Q-0160, Q-0161]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Understand the Settings Window
 
-**Settings** controls app-wide preferences. Use it when you want a choice to affect more than the card currently open, such as export defaults, card-label wording, collection organization, text fitting, copyright defaults, asset classification, or appearance.
+**Settings** controls app-wide preferences and local library management. Use it when you want a choice to affect more than the card currently open, such as export defaults, card-label wording, collection organization, text fitting, copyright defaults, asset classification, appearance, or backups.
 
 Open **Settings** from the left navigation. You can also press **Q** when keyboard shortcuts are available.
 
@@ -37,9 +37,12 @@ The normal categories are:
 - **Copyright Defaults**
 - **Assets**
 - **Appearance**
+- **Library**
 - **System**
 
 **Debug Tools** can also appear in builds where diagnostics are enabled. It contains maintenance and destructive actions rather than normal card-creation preferences.
+
+The **Library** category shows a summary of saved cards, decks, and assets. It also provides export, import, and start-new-library actions for the current local library.
 
 ## How changes are saved
 
@@ -80,3 +83,4 @@ The **Language** and quick **Theme** menus are in the left navigation rather tha
 - [Configure Export Defaults and Profiles](./configure-export-defaults-and-profiles.md)
 - [Fix Settings Problems](../troubleshooting/fix-settings-problems.md)
 - [Back Up and Restore Your Library](./back-up-and-restore-your-library.md)
+- [Start a New Library](./start-a-new-library.md)

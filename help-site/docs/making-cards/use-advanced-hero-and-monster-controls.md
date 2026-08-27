@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0255, Q-0256, Q-0257, Q-0258, Q-0259, Q-0260, Q-0261]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Use Advanced Hero and Monster Controls
 
@@ -39,6 +39,12 @@ The card preview updates immediately. Remove the second value when the card shou
 
 Split values are useful when a rule needs two states, such as a normal and enhanced value. The app does not assign a meaning to the two numbers; explain that meaning in the card text when readers need it.
 
+## Keep lower text readable over artwork
+
+Hero and Monster main artwork can extend behind the lower card area. When that makes the lower text harder to read, use the image field's **Artwork lower clip** control to choose where the visible artwork stops.
+
+The clip guide can be adjusted from the image field toolbar or by dragging the horizontal guide on the selected artwork. See [Add and Position Artwork](./add-and-position-artwork.md) for the full artwork workflow.
+
 ## Choose a Monster icon
 
 Monster cards include a separate **Monster icon** field. Search by the image filename or open the full asset chooser, select an image, then adjust its horizontal position, vertical position, scale, or rotation as required.
@@ -52,5 +58,7 @@ Monster cards include a separate **Monster icon** field. Search by the image fil
 
 
 Assets classified as **Icon** appear before Artwork and unclassified images in the quick results. Classification improves the order; it does not prevent another image type from being selected. Clear the field to remove the icon or use its restore action to return the adjustments to their previous state.
+
+Monster icon framing uses position, scale, and rotation. The lower artwork clip control applies to the main Hero or Monster artwork, not the Monster icon.
 
 For full image framing controls and asset organization, see [Add and Position Artwork](./add-and-position-artwork.md) and [Upload and Organize Assets](../managing-your-library/assets/upload-and-organize-assets.md).

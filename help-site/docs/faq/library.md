@@ -89,7 +89,7 @@ A fully opaque PNG exposes Convert to JPEG and the file type changes, but v0.8.0
 
 ## How do I search for a saved card?
 
-Use Search saved cards by name in Cards.
+Use the saved-card search in Cards. It matches the saved library name and, where different, the printed card title.
 
 [Read the full guidance](../managing-your-library/collections/filter-and-export-a-collection.md)
 
@@ -265,9 +265,9 @@ Cards contains find-and-arrange controls, Grid or Table results, contextual sele
 
 [Read the full guidance](../managing-your-library/understand-the-cards-workspace.md)
 
-## What does the Not paired filter show?
+## What does the pairing-status filter show?
 
-Not paired adds a filter that shows cards without a current pairing; it does not remove or change any pairing.
+Pairing status can show All cards, cards without a current pairing, or cards that are already paired. Changing the filter does not remove or change any pairing.
 
 [Read the full guidance](../managing-your-library/understand-the-cards-workspace.md)
 
@@ -443,13 +443,13 @@ Classifying means the image is stored while its Artwork or Icon suggestion is st
 
 ## Why does the Cards workspace say No cards found?
 
-The current collection scope, saved-name search, face or template filter, or Not paired filter has narrowed the results to zero.
+The current collection scope, card search, face or template filter, or pairing-status filter has narrowed the results to zero.
 
 [Read the full guidance](../troubleshooting/fix-cards-workspace-problems.md)
 
 ## Why do collection counts change while I search or filter?
 
-Search and Not paired can narrow the count shown for each collection; sorting, grouping, and Grid or Table do not.
+Search and pairing status can narrow the count shown for each collection; sorting, grouping, and Grid or Table do not.
 
 [Read the full guidance](../troubleshooting/fix-cards-workspace-problems.md)
 
