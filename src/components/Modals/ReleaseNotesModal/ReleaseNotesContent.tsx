@@ -8,6 +8,7 @@ export const releaseNotesSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-1", "Update 29/08/2026 (v0.8.1)"],
   ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
   ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
   ["about-update-v0-7-0", "Update 05/07/2026 (v0.7.0)"],
@@ -225,6 +226,53 @@ export default function ReleaseNotesContent() {
             svg icons
           </a>
           &nbsp;is licensed by CC BY 4.0
+        </DocParagraph>
+      </DocSection>
+
+      <DocSection
+        id="about-update-v0-8-1"
+        title="Update 29/08/2026 (v0.8.1)"
+        className={docStyles.docSectionSpaced}
+      >
+        <DocParagraph>
+          v0.8.1 is a focused quality-of-life release built around more flexible card appearance
+          controls and safer local library management. It keeps the existing editing workflow
+          familiar, but gives you more room to make cards look right when the standard defaults are
+          not quite enough.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          The card editor now supports separate library names and printed titles, so duplicate or
+          variant cards can be easier to find without changing what appears on the card itself.
+          Labelled Back title typography is closer to the original cards, Rules cards now support
+          background tint, and tint colors can use different blend modes for more creative control.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Hero and Monster main artwork also gained a lower clipping guide, with inspector controls
+          and direct preview dragging. Around the library, the Stockpile can filter by pairing
+          status, Settings has a clearer Library panel for export, import, and starting fresh, and
+          import completion now uses an in-app results modal instead of a browser alert.
+        </DocParagraph>
+        <DocList className={docStyles.docListSpaced}>
+          <li>Optional separate card name and printed title for title-bearing cards.</li>
+          <li>Bold italic title typography support, including Labelled Back defaults.</li>
+          <li>Rules background tint support and selectable tint blend modes.</li>
+          <li>Adjustable lower clipping for Hero and Monster main artwork.</li>
+          <li>Pairing-status filtering in the Stockpile: All, Not paired, and Paired.</li>
+          <li>Settings Library panel with export, import, and a guarded start-new-library flow.</li>
+          <li>
+            Import results now appear in the app modal system with consistent dismissal behavior.
+          </li>
+        </DocList>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Full release notes:{" "}
+          <a
+            href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.8.1"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={docStyles.docLink}
+          >
+            v0.8.1
+          </a>
         </DocParagraph>
       </DocSection>
 
