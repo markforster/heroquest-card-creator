@@ -64,6 +64,8 @@ Each browser profile and installed app copy has its own local working area. A di
 
 Use **Export library** in the location containing your work, then **Import library** in the destination. Keep the `.hqcc` file somewhere outside the app so it remains available if that local working area is cleared.
 
+For more about why local browser data can be cleared and how smaller image files help keep a library manageable, see [Protect Your Library and Keep It Small](./protect-your-library-and-keep-it-small.md).
+
 ## How do I start fresh?
 
 Open **Settings > Library** and use **New** when you want the current app location to become empty again. Export a backup first if there is anything you may need later.
@@ -88,5 +90,6 @@ This display is informational. It is not a backup, does not create a recovery fi
 
 - [What Is a Library Backup?](../concepts/what-is-a-library-backup.md)
 - [Back Up and Restore Your Library](./back-up-and-restore-your-library.md)
+- [Protect Your Library and Keep It Small](./protect-your-library-and-keep-it-small.md)
 - [Fix Backup and Restore Problems](../troubleshooting/fix-backup-and-restore-problems.md)
 - [Use a Downloaded Copy](../getting-started/use-a-downloaded-copy.md)

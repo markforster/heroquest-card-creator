@@ -21,6 +21,7 @@ Change app preferences, understand local storage, and protect your work with bac
 - [Back Up and Restore Your Library](./back-up-and-restore-your-library.md)
 - [Change Language and Appearance](./change-language-and-appearance.md)
 - [Configure Export Defaults and Profiles](./configure-export-defaults-and-profiles.md)
+- [Protect Your Library and Keep It Small](./protect-your-library-and-keep-it-small.md)
 - [Settings Reference](./settings-reference.md)
 - [Start a New Library](./start-a-new-library.md)
 - [Understand Backups and Local Data](./understand-backups-and-local-data.md)

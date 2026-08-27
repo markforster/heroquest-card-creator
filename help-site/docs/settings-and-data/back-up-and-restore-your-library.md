@@ -67,11 +67,14 @@ If you want to empty the current app location rather than restore another backup
 - Before a major app upgrade if the library is important.
 - After a substantial card, asset, or deck-building session.
 - Before testing deletion or large reorganization workflows.
+- After uploading or replacing a large batch of artwork.
 
 ## What a backup does not replace
 
 A backup is not the same as a PNG, ZIP, or PDF card export. It also does not replace keeping the downloaded `.hqcc` file somewhere safe: a backup left only in the same browser or device is not useful if that local data is cleared or the device fails.
 
 See [Understand Backups and Local Data](./understand-backups-and-local-data.md) for the complete contents and the preferences that remain local to each app location.
+
+See [Protect Your Library and Keep It Small](./protect-your-library-and-keep-it-small.md) for guidance on browser-managed local data and preparing smaller image assets.
 
 See [Use a Downloaded Copy](../getting-started/use-a-downloaded-copy.md) when moving between the hosted app, a directly opened download, and a locally served copy.

@@ -100,6 +100,7 @@ nav:
       - Configure Export Defaults and Profiles: settings-and-data/configure-export-defaults-and-profiles.md
       - Understand Backups and Local Data: settings-and-data/understand-backups-and-local-data.md
       - Back Up and Restore Your Library: settings-and-data/back-up-and-restore-your-library.md
+      - Protect Your Library and Keep It Small: settings-and-data/protect-your-library-and-keep-it-small.md
       - Start a New Library: settings-and-data/start-a-new-library.md
   - Concepts:
       - concepts/index.md

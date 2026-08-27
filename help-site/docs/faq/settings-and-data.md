@@ -17,7 +17,7 @@ Download the sample file, choose Import library, accept the replacement warning,
 
 ## How do I back up my complete library?
 
-Export library creates a portable `.hqcc` backup of local app data. You can start it from the left navigation or from Settings > Library.
+Export library creates a portable `.hqcc` backup of local app data. You can start it from the left navigation or from Settings > Library. Keep the downloaded file somewhere outside the app.
 
 [Read the full guidance](../settings-and-data/back-up-and-restore-your-library.md)
 
@@ -207,9 +207,9 @@ A `.hqcc` backup includes export profiles and selected library-related settings,
 
 ## Where does the app keep my working library?
 
-The working library belongs to the current browser profile or installed app copy and is not automatically synchronized through an online account.
+The working library belongs to the current browser profile or installed app copy and is not automatically synchronized through an online account. The app asks the browser to protect local data where supported, but a `.hqcc` export is still the safety copy you control.
 
-[Read the full guidance](../settings-and-data/understand-backups-and-local-data.md)
+[Read the full guidance](../settings-and-data/protect-your-library-and-keep-it-small.md)
 
 ## What is included in a library backup?
 
@@ -273,13 +273,13 @@ Compare the completion totals, clear workspace filters, check Recently deleted a
 
 ## Why is my library empty in another browser, profile, or app copy?
 
-A different browser, profile, private window, cleared app location, or installed copy can have a separate empty library; use backup export/import to move work.
+A different browser, profile, private window, cleared app location, or installed copy can have a separate empty library. Local browser data can also be cleared, so use backup export/import to move or protect work.
 
-[Read the full guidance](../settings-and-data/back-up-and-restore-your-library.md)
+[Read the full guidance](../settings-and-data/protect-your-library-and-keep-it-small.md)
 
 ## Why is my downloaded copy showing an empty library?
 
-The library belongs to the browser and exact app location, so a different launch method, address, port, profile, or browser can open a separate empty library.
+The library belongs to the browser and exact app location, so a different launch method, address, port, profile, or browser can open a separate empty library. Export from the source location before switching.
 
 [Read the full guidance](../getting-started/use-a-downloaded-copy.md)
 

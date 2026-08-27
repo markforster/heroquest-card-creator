@@ -65,6 +65,8 @@ If **Replace** is disabled, clear the selection and choose one image. Replacemen
 
 The asset remains the same reusable library item and its file type becomes `image/jpeg`, so cards can continue using it. In version 0.8.0, the stored display name still ended in `.png` after conversion even though the inspector correctly reported `image/jpeg`. This filename mismatch is a known issue.
 
+Conversion is useful for reducing library size when transparency is not needed. For full-card or background-style artwork, preparing an optimized JPEG before upload is often even cleaner.
+
 ## Delete assets
 
 <!-- help-visual:p056:start -->
@@ -91,4 +93,5 @@ Deletion permanently removes the selected images from Assets. It is intended to 
 - [Upload and Organize Assets](./upload-and-organize-assets.md)
 - [Fix Missing Artwork](../../troubleshooting/fix-missing-artwork.md)
 - [Add and Position Artwork](../../making-cards/add-and-position-artwork.md)
+- [Protect Your Library and Keep It Small](../../settings-and-data/protect-your-library-and-keep-it-small.md)
 - [Back Up and Restore Your Library](../../settings-and-data/back-up-and-restore-your-library.md)
