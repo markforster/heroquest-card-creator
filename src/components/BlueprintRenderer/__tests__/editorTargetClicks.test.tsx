@@ -48,6 +48,7 @@ jest.mock("@/components/Cards/CardEditor/EditorTargetsContext", () => ({
   useEditorTargets: () => ({
     hoveredTargetId: null,
   }),
+  useOptionalEditorTargets: () => null,
   useRegisterHoverAdornment: () => undefined,
   useRegisterHoverAdornments: () => undefined,
   useSvgFocusTarget: (targetId: string) => ({

@@ -211,7 +211,7 @@ jest.mock("@/components/Cards/CardInspector/CardInspector", () => ({
       "react-hook-form",
     ) as typeof import("react-hook-form");
     const { register } = useFormContext();
-    return <input aria-label="Name" {...register("name")} />;
+    return <input aria-label="Title" {...register("title")} />;
   },
 }));
 jest.mock("@/components/Cards/CardInspector/TemplateChooser", () => ({
