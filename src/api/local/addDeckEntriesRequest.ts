@@ -1,9 +1,12 @@
 import { deckEntryAddFrontsInputSchema } from "@/api/decks";
-import { addFrontsToSet } from "@/lib/decks-service";
+import { addFrontsToSet } from "@/lib/data/decks-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local add-deck-entries endpoint through the IndexedDB-backed service layer.
+ */
 export const addDeckEntriesRequestPlugin: ZodiosPlugin = {
   name: "local-add-deck-entries",
   request: async (apiDefinitions, config) => {

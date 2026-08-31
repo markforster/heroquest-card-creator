@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
+import type { CardRecord } from "@/api/cards";
 import RecentCardsList from "@/components/Modals/RecentCardsModal/RecentCardsList";
 import type { RecentCardGroup } from "@/components/Modals/RecentCardsModal/useRecentCards";
-import type { CardRecord } from "@/api/cards";
 
 jest.mock("@/components/common/CardThumbnail", () => ({
   __esModule: true,

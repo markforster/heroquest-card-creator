@@ -1,16 +1,10 @@
 "use client";
 
-import {
-  BlobReader,
-  BlobWriter,
-  TextReader,
-  ZipWriter,
-} from "@zip.js/zip.js";
+import { BlobReader, BlobWriter, TextReader, ZipWriter } from "@zip.js/zip.js";
 
 import { configureZipJs } from "@/lib/zip-config";
 
 import type { ZipWriterCloseOptions } from "@zip.js/zip.js";
-
 
 type ZipFileEntry = {
   name: string;

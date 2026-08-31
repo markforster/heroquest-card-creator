@@ -7,6 +7,7 @@ import { ToggleButton, ToggleButtonGroup } from "react-bootstrap";
 import styles from "@/app/page.module.css";
 import StockpileToolbarFilterSelect from "@/components/Stockpile/StockpileToolbarFilterSelect";
 import StockpileToolbarGroupSelect from "@/components/Stockpile/StockpileToolbarGroupSelect";
+import StockpileToolbarPairingFilterSelect from "@/components/Stockpile/StockpileToolbarPairingFilterSelect";
 import StockpileToolbarSortSelect from "@/components/Stockpile/StockpileToolbarSortSelect";
 import StockpileToolbarSpacer from "@/components/Stockpile/StockpileToolbarSpacer";
 import type { StockpilePrimaryToolbarProps } from "@/components/Stockpile/types";
@@ -27,9 +28,10 @@ export default function StockpilePrimaryToolbar({
   groupValue,
   onGroupChange,
   groupOptions,
-  showUnpairedOnly = false,
-  onShowUnpairedOnlyChange,
-  isUnpairedToggleDisabled = false,
+  pairingFilterValue = "all",
+  onPairingFilterChange,
+  pairingFilterOptions = [],
+  isPairingFilterDisabled = false,
   isSearchDisabled = false,
   isFilterDisabled = false,
   isSortDisabled = false,
@@ -42,7 +44,7 @@ export default function StockpilePrimaryToolbar({
   const filterLabel = t("tooltip.filterCards");
   const sortLabel = t("tooltip.sortCards");
   const groupLabel = t("tooltip.groupCards");
-  const notPairedLabel = t("warning.notPaired");
+  const pairingFilterLabel = t("tooltip.filterCardsByPairingStatus");
   const gridViewLabel = t("label.gridView");
   const tableViewLabel = t("label.tableView");
   const viewGroupLabel = t("aria.viewMode");
@@ -108,22 +110,16 @@ export default function StockpilePrimaryToolbar({
             disabled={isGroupDisabled}
             ariaLabel={groupLabel}
           />
-          {onShowUnpairedOnlyChange ? (
+          {onPairingFilterChange && pairingFilterOptions.length > 0 ? (
             <>
               <StockpileToolbarSpacer />
-              <button
-                type="button"
-                disabled={isUnpairedToggleDisabled}
-                aria-pressed={showUnpairedOnly}
-                aria-label={notPairedLabel}
-                title={notPairedLabel}
-                className={`${styles.stockpilePrimaryToolbarTextToggle} ${
-                  showUnpairedOnly ? styles.stockpilePrimaryToolbarTextToggleActive : ""
-                }`}
-                onClick={() => onShowUnpairedOnlyChange(!showUnpairedOnly)}
-              >
-                {notPairedLabel}
-              </button>
+              <StockpileToolbarPairingFilterSelect
+                value={pairingFilterValue}
+                onChange={onPairingFilterChange}
+                options={pairingFilterOptions}
+                disabled={isPairingFilterDisabled}
+                ariaLabel={pairingFilterLabel}
+              />
             </>
           ) : null}
           <StockpileToolbarSpacer />

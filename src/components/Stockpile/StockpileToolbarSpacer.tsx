@@ -6,9 +6,7 @@ type StockpileToolbarSpacerProps = {
   grow?: boolean;
 };
 
-export default function StockpileToolbarSpacer({
-  grow = false,
-}: StockpileToolbarSpacerProps) {
+export default function StockpileToolbarSpacer({ grow = false }: StockpileToolbarSpacerProps) {
   return (
     <div
       aria-hidden="true"

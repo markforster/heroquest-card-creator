@@ -1,13 +1,20 @@
 import { getImageLayerBounds, normalizeLegacyImageScale } from "@/lib/image-scale";
 import { normalizeStatAsteriskFlags } from "@/lib/stat-asterisks";
+import { resolveLinkedTitleName } from "@/lib/title-name-linking";
+import {
+  getTemplateTitleTypographyDefault,
+  normalizeTitleTypographyForStorage,
+} from "@/lib/title-typography";
+import { normalizeBackgroundTintBlendModeForStorage } from "@/types/background-tint";
 import type { BodyTextStyle, CardDataByTemplate } from "@/types/card-data";
 import type { CardRecord } from "@/types/cards-db";
 import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
 
-function normalizeImageScale(
-  record: CardRecord & { templateId: TemplateId },
-): { imageScale?: number; imageScaleMode?: "absolute" | "relative" } {
+function normalizeImageScale(record: CardRecord & { templateId: TemplateId }): {
+  imageScale?: number;
+  imageScaleMode?: "absolute" | "relative";
+} {
   const bounds = getImageLayerBounds(record.templateId, "imageAssetId");
   return normalizeLegacyImageScale({
     imageScale: record.imageScale,
@@ -24,9 +31,11 @@ export function cardRecordToCardData<T extends TemplateId>(
   const normalizedScale = normalizeImageScale(record as CardRecord & { templateId: TemplateId });
   const base = {
     name: record.name,
+    customNameEnabled: record.customNameEnabled,
     title: record.title,
     showTitle: record.showTitle ?? true,
     titleStyle: record.titleStyle,
+    titleTypography: record.titleTypography,
     titleColor: record.titleColor,
     bodyTextColor: record.bodyTextColor,
     bodyTextFitToBounds: record.bodyTextFitToBounds ?? false,
@@ -44,10 +53,13 @@ export function cardRecordToCardData<T extends TemplateId>(
     imageOffsetX: record.imageOffsetX,
     imageOffsetY: record.imageOffsetY,
     imageRotation: record.imageRotation,
+    imageClipEdgeMask: record.imageClipEdgeMask,
+    imageClipBottom: record.imageClipBottom,
     imageOriginalWidth: record.imageOriginalWidth,
     imageOriginalHeight: record.imageOriginalHeight,
     borderColor: record.borderColor,
     backgroundTint: record.backgroundTint,
+    backgroundTintBlendMode: record.backgroundTintBlendMode,
   };
 
   switch (record.templateId) {
@@ -69,7 +81,9 @@ export function cardRecordToCardData<T extends TemplateId>(
       const data: CardDataByTemplate["monster"] = {
         ...base,
         movementSquares: record.monsterMovementSquares,
-        movementSquaresAsterisks: normalizeStatAsteriskFlags(record.monsterMovementSquaresAsterisks),
+        movementSquaresAsterisks: normalizeStatAsteriskFlags(
+          record.monsterMovementSquaresAsterisks,
+        ),
         attackDice: record.monsterAttackDice,
         attackDiceAsterisks: normalizeStatAsteriskFlags(record.monsterAttackDiceAsterisks),
         defendDice: record.monsterDefendDice,
@@ -136,12 +150,19 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
   data: CardDataByTemplate[T],
 ): Partial<CardRecord> {
   const face = data.face;
+  const defaultTitleTypography = getTemplateTitleTypographyDefault(templateId);
+  const titleName = resolveLinkedTitleName(templateId, data);
   const basePatch: Partial<CardRecord> = {
     templateId,
-    name,
+    name: titleName.name || name,
+    customNameEnabled: titleName.customNameEnabled,
     title: data.title,
     showTitle: data.showTitle,
     titleStyle: data.titleStyle,
+    titleTypography: normalizeTitleTypographyForStorage({
+      value: data.titleTypography,
+      defaultTypography: defaultTitleTypography,
+    }),
     titleColor: data.titleColor,
     bodyTextColor: data.bodyTextColor,
     bodyTextFitToBounds: data.bodyTextFitToBounds,
@@ -159,10 +180,15 @@ export function cardDataToCardRecordPatch<T extends TemplateId>(
     imageOffsetX: data.imageOffsetX,
     imageOffsetY: data.imageOffsetY,
     imageRotation: data.imageRotation,
+    imageClipEdgeMask: data.imageClipEdgeMask,
+    imageClipBottom: data.imageClipBottom,
     imageOriginalWidth: data.imageOriginalWidth,
     imageOriginalHeight: data.imageOriginalHeight,
     borderColor: data.borderColor,
     backgroundTint: data.backgroundTint,
+    backgroundTintBlendMode: normalizeBackgroundTintBlendModeForStorage(
+      data.backgroundTintBlendMode,
+    ),
   };
 
   switch (templateId) {
@@ -240,12 +266,7 @@ function normalizeStatValueForSave(value?: StatValue): StatValue | undefined {
         string | undefined,
       ];
       if (splitFormat) {
-        return [
-          primary,
-          secondary,
-          splitFlag,
-          splitFormat as "slash" | "paren" | "paren-leading",
-        ];
+        return [primary, secondary, splitFlag, splitFormat as "slash" | "paren" | "paren-leading"];
       }
       return [primary, secondary, splitFlag];
     }

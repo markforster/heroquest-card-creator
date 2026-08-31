@@ -1,14 +1,14 @@
 import { z } from "zod";
+
 import { TEMPLATE_IDS } from "@/types/templates";
 
 export const borderSwatchesSchema = z.array(z.string());
 export const defaultCopyrightSchema = z.string();
 export const copyrightTemplateDefaultsSchema = z
   .object(
-    Object.fromEntries(TEMPLATE_IDS.map((templateId) => [templateId, z.boolean().optional()])) as Record<
-      string,
-      z.ZodOptional<z.ZodBoolean>
-    >,
+    Object.fromEntries(
+      TEMPLATE_IDS.map((templateId) => [templateId, z.boolean().optional()]),
+    ) as Record<string, z.ZodOptional<z.ZodBoolean>>,
   )
   .partial();
 

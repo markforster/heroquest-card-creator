@@ -7,14 +7,15 @@ jest.mock("@/api/client", () => ({
     listDecks: jest.fn(),
     getBorderSwatches: jest.fn(),
     getDefaultCopyright: jest.fn(),
+    getCopyrightTemplateDefaults: jest.fn(),
   },
 }));
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   listCards: jest.fn(),
 }));
 
-jest.mock("@/lib/hero-back-logos-db", () => ({
+jest.mock("@/lib/data/hero-back-logos-db", () => ({
   listHeroBackLogosWithBlobs: jest.fn(),
 }));
 
@@ -26,9 +27,9 @@ jest.mock("@/lib/zip-utils", () => ({
 
 import { apiClient } from "@/api/client";
 import { createBackupHqcc } from "@/lib/backup/backup-export";
-import { listCards } from "@/lib/cards-db";
-import { listHeroBackLogosWithBlobs } from "@/lib/hero-back-logos-db";
-import { getHqccDexieDb } from "@/lib/hqcc-dexie";
+import { listCards } from "@/lib/data/cards-db";
+import { listHeroBackLogosWithBlobs } from "@/lib/data/hero-back-logos-db";
+import { getHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   deleteDb,
   installFakeIndexedDb,
@@ -37,8 +38,9 @@ import {
 
 const mockedApiClient = apiClient as unknown as Record<string, jest.Mock>;
 const mockedListCards = listCards as jest.MockedFunction<typeof listCards>;
-const mockedListHeroBackLogosWithBlobs =
-  listHeroBackLogosWithBlobs as jest.MockedFunction<typeof listHeroBackLogosWithBlobs>;
+const mockedListHeroBackLogosWithBlobs = listHeroBackLogosWithBlobs as jest.MockedFunction<
+  typeof listHeroBackLogosWithBlobs
+>;
 
 describe("createBackupHqcc", () => {
   beforeEach(() => {
@@ -51,6 +53,7 @@ describe("createBackupHqcc", () => {
     mockedApiClient.listDecks.mockReset();
     mockedApiClient.getBorderSwatches.mockReset();
     mockedApiClient.getDefaultCopyright.mockReset();
+    mockedApiClient.getCopyrightTemplateDefaults.mockReset();
     mockedListHeroBackLogosWithBlobs.mockReset();
     createZipBlobWithProgress.mockReset();
 
@@ -61,6 +64,7 @@ describe("createBackupHqcc", () => {
     mockedApiClient.listDecks.mockResolvedValue([]);
     mockedApiClient.getBorderSwatches.mockResolvedValue([]);
     mockedApiClient.getDefaultCopyright.mockResolvedValue("");
+    mockedApiClient.getCopyrightTemplateDefaults.mockResolvedValue({});
     mockedListHeroBackLogosWithBlobs.mockResolvedValue([]);
     createZipBlobWithProgress.mockResolvedValue(new Blob(["zip"], { type: "application/zip" }));
 

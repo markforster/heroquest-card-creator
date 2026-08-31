@@ -16,12 +16,7 @@ import type {
   SetToolbarContext,
 } from "@/components/Decks/detail/boards/deck-board-types";
 
-import type {
-  CSSProperties,
-  MouseEvent,
-  PointerEvent,
-  ReactNode,
-} from "react";
+import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from "react";
 
 export type LayoutMode = "content" | "fill-parent";
 

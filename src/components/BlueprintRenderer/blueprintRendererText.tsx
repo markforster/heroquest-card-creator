@@ -1,18 +1,16 @@
 "use client";
 
-import CardTextBlock, {
-  clipRowsToHeight,
-  layoutCardText,
-  measureCardTextMaxLineWidth,
-} from "@/components/Cards/CardParts/CardTextBlock";
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import {
-  padBounds,
-} from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
+import CardTextBlock, {
+  clipRowsToHeight,
+  layoutCardText,
+  measureCardTextMaxLineWidth,
+} from "@/components/Cards/CardParts/CardTextBlock";
 import { CARD_CORNER_RADIUS } from "@/components/Cards/CardPreview/consts";
 import Layer from "@/components/Cards/CardPreview/Layer";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
@@ -188,8 +186,10 @@ export function TextLayer({
 }) {
   const { defaultCopyright } = useCopyrightSettings();
   const bodyTextFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.textMain);
-  const showBodyTextHover = layer.type === layerTypes.text && isPrimaryBodyTextLayer(blueprint, layer);
-  const initialTextBounds = layer.type === layerTypes.text ? getLayerBounds(blueprint, layer) : null;
+  const showBodyTextHover =
+    layer.type === layerTypes.text && isPrimaryBodyTextLayer(blueprint, layer);
+  const initialTextBounds =
+    layer.type === layerTypes.text ? getLayerBounds(blueprint, layer) : null;
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.textMain,
@@ -287,8 +287,7 @@ export function TextLayer({
       : false;
   const allowBodyTextFitToBounds =
     textKey === "description" ? supportsBlueprintTextFitToBounds(layer) : false;
-  const showOverflowWarning =
-    !suppressPreviewOnlyWarnings && layer.props?.textLayoutMode === "fixed-bounds";
+  const showOverflowWarning = !suppressPreviewOnlyWarnings && allowBodyTextFitToBounds;
   const fill = bodyTextColor ?? layerFill;
   const letterSpacingEm =
     typeof layer.props?.letterSpacingEm === "number" ? layer.props.letterSpacingEm : undefined;
@@ -532,7 +531,11 @@ export function TextLayer({
       const remainingBubbleHeight = backdropBounds.y + backdropBounds.height - cursorBubbleY;
       if (remainingBubbleHeight <= 0) return;
 
-      const { rows, lines, lineHeight: resolvedLineHeight } = layoutCardText({
+      const {
+        rows,
+        lines,
+        lineHeight: resolvedLineHeight,
+      } = layoutCardText({
         text: segment,
         width: textAreaWidth,
         fontSize: fontSizeResolved,

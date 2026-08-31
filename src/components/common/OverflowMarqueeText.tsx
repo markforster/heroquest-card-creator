@@ -178,7 +178,9 @@ export default function OverflowMarqueeText({
     <span
       className={[styles.overflowMarquee, className].filter(Boolean).join(" ")}
       data-overflowing={overflowDistance > 0 ? "true" : "false"}
-      data-marquee-active={isActive && overflowDistance > 0 && !prefersReducedMotion ? "true" : "false"}
+      data-marquee-active={
+        isActive && overflowDistance > 0 && !prefersReducedMotion ? "true" : "false"
+      }
       onMouseEnter={() => {
         if (active !== undefined) return;
         measureOverflow();

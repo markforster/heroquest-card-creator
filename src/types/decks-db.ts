@@ -1,3 +1,6 @@
+/**
+ * Persisted top-level deck record.
+ */
 export type DeckRecord = {
   id: string;
   title: string;
@@ -8,6 +11,9 @@ export type DeckRecord = {
   schemaVersion: 1;
 };
 
+/**
+ * Persisted deck group record that orders sets within a deck.
+ */
 export type DeckGroupRecord = {
   id: string;
   deckId: string;
@@ -18,6 +24,9 @@ export type DeckGroupRecord = {
   schemaVersion: 1;
 };
 
+/**
+ * Persisted deck set record that binds a back face to a group and deck.
+ */
 export type DeckSetRecord = {
   id: string;
   deckId: string;
@@ -31,6 +40,9 @@ export type DeckSetRecord = {
   schemaVersion: 1;
 };
 
+/**
+ * Persisted deck entry record that links a pair into a set.
+ */
 export type DeckEntryRecord = {
   id: string;
   deckId: string;

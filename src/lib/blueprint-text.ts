@@ -1,10 +1,6 @@
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
-import type {
-  Blueprint,
-  BlueprintLayer,
-  BlueprintTextLayoutMode,
-} from "@/types/blueprints";
+import type { Blueprint, BlueprintLayer, BlueprintTextLayoutMode } from "@/types/blueprints";
 import type { TemplateId } from "@/types/templates";
 
 function isDescriptionTextLayer(layer: BlueprintLayer): boolean {
@@ -40,5 +36,7 @@ export function supportsBlueprintTextFitToBounds(
 
 export function descriptionSupportsBodyTextFitToBounds(templateId?: TemplateId): boolean {
   if (!templateId) return false;
-  return supportsBlueprintTextFitToBounds(findDescriptionTextEntry(blueprintsByTemplateId[templateId]));
+  return supportsBlueprintTextFitToBounds(
+    findDescriptionTextEntry(blueprintsByTemplateId[templateId]),
+  );
 }

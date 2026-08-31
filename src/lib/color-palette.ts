@@ -47,10 +47,7 @@ export function extractPaletteFromCanvas(
   });
 }
 
-function extractPalette(
-  canvas: HTMLCanvasElement,
-  options: Required<PaletteOptions>,
-): string[] {
+function extractPalette(canvas: HTMLCanvasElement, options: Required<PaletteOptions>): string[] {
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return [];
 
@@ -126,11 +123,7 @@ function extractPalette(
   const chosen: { r: number; g: number; b: number }[] = [];
   for (const candidate of candidates) {
     if (chosen.length >= options.maxColors) break;
-    if (
-      chosen.some(
-        (existing) => colorDistance(existing, candidate) < 55,
-      )
-    ) {
+    if (chosen.some((existing) => colorDistance(existing, candidate) < 55)) {
       continue;
     }
     chosen.push(candidate);

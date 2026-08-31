@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/api/client";
 import { helpCardShowcaseCssBackground } from "@/assets/app-shell-assets";
 import { useI18n } from "@/i18n/I18nProvider";
-import { DB_VERSION } from "@/lib/hqcc-db";
+import { DB_VERSION } from "@/lib/db/hqcc-db";
 import { APP_VERSION } from "@/version";
 
 import styles from "./DatabaseVersionGate.module.css";

@@ -1,5 +1,5 @@
-import { resolveDeckPreviewIds } from "@/components/Decks/deck-preview";
 import type { PairRecord } from "@/api/pairs/types";
+import { resolveDeckPreviewIds } from "@/components/Decks/deck-preview";
 
 function buildPair(overrides: Partial<PairRecord> = {}): PairRecord {
   return {
@@ -162,7 +162,10 @@ describe("resolveDeckPreviewIds visual prioritization", () => {
       pairMap: new Map(),
     });
 
-    expect(mockUpdateDeck).toHaveBeenCalledWith({ keySetId: null }, { params: { deckId: "deck-1" } });
+    expect(mockUpdateDeck).toHaveBeenCalledWith(
+      { keySetId: null },
+      { params: { deckId: "deck-1" } },
+    );
     expect(ids).toEqual(["b2", "b1"]);
   });
 });

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 
 import StockpilePrimaryToolbar from "@/components/Stockpile/StockpilePrimaryToolbar";
+
+import type { ReactNode } from "react";
 
 type MockOption = {
   value: string;
@@ -37,7 +38,7 @@ jest.mock("react-select", () => {
         <div data-testid="mock-react-select-selected">
           {props.value && props.formatOptionLabel
             ? props.formatOptionLabel(props.value, { context: "value" })
-            : props.value?.label ?? ""}
+            : (props.value?.label ?? "")}
         </div>
         <select
           data-testid="mock-react-select"
@@ -85,6 +86,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
         "tooltip.filterCards": "Filter cards",
         "tooltip.sortCards": "Sort cards",
         "tooltip.groupCards": "Group cards",
+        "tooltip.filterCardsByPairingStatus": "Filter cards by pairing status",
         "aria.viewMode": "View mode",
         "warning.notPaired": "Not paired",
       };
@@ -105,13 +107,17 @@ describe("StockpilePrimaryToolbar", () => {
     },
     {
       label: "Type",
-      options: [
-        { value: "type:monster", label: "Monster card" },
-      ],
+      options: [{ value: "type:monster", label: "Monster card" }],
     },
   ];
 
-  it("renders search, filter, sort, group-by, the Not paired toggle, and the view switcher", () => {
+  const pairingFilterOptions = [
+    { value: "all" as const, label: "All" },
+    { value: "not-paired" as const, label: "Not paired" },
+    { value: "paired" as const, label: "Paired" },
+  ];
+
+  it("renders search, filter, sort, group-by, pairing-status, and the view switcher", () => {
     render(
       <StockpilePrimaryToolbar
         search=""
@@ -135,14 +141,14 @@ describe("StockpilePrimaryToolbar", () => {
           { value: "type", label: "Card type" },
           { value: "face", label: "Face" },
         ]}
-        showUnpairedOnly={false}
-        onShowUnpairedOnlyChange={() => {}}
+        pairingFilterValue="all"
+        onPairingFilterChange={() => {}}
+        pairingFilterOptions={pairingFilterOptions}
       />,
     );
 
     expect(screen.getByRole("searchbox", { name: "Search cards" })).toBeInTheDocument();
-    expect(screen.getAllByTestId("mock-react-select")).toHaveLength(3);
-    expect(screen.getByRole("button", { name: "Not paired" })).toBeInTheDocument();
+    expect(screen.getAllByTestId("mock-react-select")).toHaveLength(4);
     expect(screen.getByRole("group", { name: "View mode" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Grid" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Table" })).toBeInTheDocument();
@@ -219,7 +225,9 @@ describe("StockpilePrimaryToolbar", () => {
       />,
     );
 
-    fireEvent.change(screen.getAllByTestId("mock-react-select")[0], { target: { value: "face:back" } });
+    fireEvent.change(screen.getAllByTestId("mock-react-select")[0], {
+      target: { value: "face:back" },
+    });
     expect(onFilterChange).toHaveBeenCalledWith("face:back");
   });
 
@@ -331,14 +339,15 @@ describe("StockpilePrimaryToolbar", () => {
         groupValue="none"
         onGroupChange={() => {}}
         groupOptions={[{ value: "none", label: "None" }]}
-        showUnpairedOnly={false}
-        onShowUnpairedOnlyChange={() => {}}
+        pairingFilterValue="all"
+        onPairingFilterChange={() => {}}
+        pairingFilterOptions={pairingFilterOptions}
         isSearchDisabled
         isFilterDisabled
         isSortDisabled
         isGroupDisabled
         isViewModeDisabled
-        isUnpairedToggleDisabled
+        isPairingFilterDisabled
       />,
     );
 
@@ -346,13 +355,13 @@ describe("StockpilePrimaryToolbar", () => {
     expect(screen.getAllByTestId("mock-react-select")[0]).toBeDisabled();
     expect(screen.getAllByTestId("mock-react-select")[1]).toBeDisabled();
     expect(screen.getAllByTestId("mock-react-select")[2]).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Not paired" })).toBeDisabled();
+    expect(screen.getAllByTestId("mock-react-select")[3]).toBeDisabled();
     expect(screen.getByRole("radio", { name: "Grid" })).toBeDisabled();
     expect(screen.getByRole("radio", { name: "Table" })).toBeDisabled();
   });
 
-  it("renders and toggles the compact Not paired control when provided", () => {
-    const onShowUnpairedOnlyChange = jest.fn();
+  it("renders and changes the pairing-status filter when provided", () => {
+    const onPairingFilterChange = jest.fn();
 
     render(
       <StockpilePrimaryToolbar
@@ -369,12 +378,14 @@ describe("StockpilePrimaryToolbar", () => {
         groupValue="none"
         onGroupChange={() => {}}
         groupOptions={[{ value: "none", label: "None" }]}
-        showUnpairedOnly={false}
-        onShowUnpairedOnlyChange={onShowUnpairedOnlyChange}
+        pairingFilterValue="all"
+        onPairingFilterChange={onPairingFilterChange}
+        pairingFilterOptions={pairingFilterOptions}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Not paired" }));
-    expect(onShowUnpairedOnlyChange).toHaveBeenCalledWith(true);
+    const selects = screen.getAllByTestId("mock-react-select");
+    fireEvent.change(selects[3], { target: { value: "not-paired" } });
+    expect(onPairingFilterChange).toHaveBeenCalledWith("not-paired");
   });
 });

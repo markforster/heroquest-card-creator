@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0253, Q-0254, Q-0277, Q-0280]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Understand Template-Specific Card Controls
 
@@ -22,14 +22,14 @@ The Properties panel changes with the card template. This keeps each card focuse
 
 | Template | Main template-specific controls |
 | --- | --- |
-| **Hero Card** | Hero name and image, background tint, Attack, Defend, Body and Mind stats, card text, and copyright. |
-| **Monster Card** | Monster name and image, background tint, Monster icon, Movement, Attack, Defend, Body and Mind stats, card text, and copyright. |
+| **Hero Card** | Hero name and image, main artwork lower clip, background tint, Attack, Defend, Body and Mind stats, card text, and copyright. |
+| **Monster Card** | Monster name and image, main artwork lower clip, background tint, Monster icon, Movement, Attack, Defend, Body and Mind stats, card text, and copyright. |
 | **Small Artwork** | Card title and image, card text, border colour, background tint, and copyright. |
 | **Large Artwork** | Card title and image, card text, border colour, background tint, and copyright. |
-| **Rules** | Name, rules text, and copyright. |
+| **Rules** | Name, rules text, background tint, and copyright. |
 | **Hero Back** | Name, background tint, a back logo, back text and its backdrop, and copyright. |
 | **Logo Back** | Name, background tint, a back logo, and copyright. |
-| **Labelled Back** | A configurable back label, back image, optional back text and its backdrop, border colour, background tint, and copyright. |
+| **Labelled Back** | A configurable bold-italic back label, back image, optional back text and its backdrop, border colour, background tint, and copyright. |
 
 Hero Back and Logo Back use the same built-in and saved custom-logo choices. Labelled Back uses an ordinary back image instead, so its image is chosen from Assets.
 

@@ -1,13 +1,15 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
-import { cardTemplatesById } from "@/data/card-templates";
-import { resolveEffectiveFace } from "@/lib/card-face";
 import type { CardRecord } from "@/api/cards";
-import type { CollectionRecord } from "@/types/collections-db";
 import type {
   StockpilePrimaryToolbarGroupValue,
+  StockpilePrimaryToolbarPairingFilterValue,
   StockpilePrimaryToolbarSortValue,
 } from "@/components/Stockpile/types";
+import { cardTemplatesById } from "@/data/card-templates";
+import { resolveEffectiveFace } from "@/lib/card-face";
+import { cardMatchesNameOrTitleSearch } from "@/lib/title-name-linking";
+import type { CollectionRecord } from "@/types/collections-db";
 
 type ActiveFilter =
   | { type: "all" }
@@ -28,7 +30,7 @@ type UseStockpileFiltersOptions = {
   isPairBacks: boolean;
   sortMode?: StockpilePrimaryToolbarSortValue;
   groupMode?: StockpilePrimaryToolbarGroupValue;
-  showUnpairedOnly?: boolean;
+  pairingFilter?: StockpilePrimaryToolbarPairingFilterValue;
   pairedIdSet?: Set<string>;
   showMissingArtworkOnly?: boolean;
   missingArtworkIdSet?: Set<string>;
@@ -52,46 +54,48 @@ export const useStockpileFilters = ({
   isPairBacks,
   sortMode = "modified",
   groupMode = "none",
-  showUnpairedOnly = false,
+  pairingFilter = "all",
   pairedIdSet,
   showMissingArtworkOnly = false,
   missingArtworkIdSet,
 }: UseStockpileFiltersOptions) => {
-  const compareCardsByNameAsc = (a: CardRecord, b: CardRecord) => {
+  const compareCardsByNameAsc = useCallback((a: CardRecord, b: CardRecord) => {
     const aName = a.nameLower ?? a.name.toLocaleLowerCase();
     const bName = b.nameLower ?? b.name.toLocaleLowerCase();
     return aName.localeCompare(bName);
-  };
-  const compareCardsByTypeAsc = (a: CardRecord, b: CardRecord) => {
-    const aType = templateLabelMap?.[a.templateId] ?? a.templateId;
-    const bType = templateLabelMap?.[b.templateId] ?? b.templateId;
-    return aType.localeCompare(bType);
-  };
-  const compareCardsBySortMode = (
-    sort: StockpilePrimaryToolbarSortValue,
-    a: CardRecord,
-    b: CardRecord,
-  ) => {
-    if (sort === "name") {
-      const byName = compareCardsByNameAsc(a, b);
-      if (byName !== 0) return byName;
+  }, []);
+  const compareCardsByTypeAsc = useCallback(
+    (a: CardRecord, b: CardRecord) => {
+      const aType = templateLabelMap?.[a.templateId] ?? a.templateId;
+      const bType = templateLabelMap?.[b.templateId] ?? b.templateId;
+      return aType.localeCompare(bType);
+    },
+    [templateLabelMap],
+  );
+  const compareCardsBySortMode = useCallback(
+    (sort: StockpilePrimaryToolbarSortValue, a: CardRecord, b: CardRecord) => {
+      if (sort === "name") {
+        const byName = compareCardsByNameAsc(a, b);
+        if (byName !== 0) return byName;
+        if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+        return b.createdAt - a.createdAt;
+      }
+
+      if (sort === "type") {
+        const byType = compareCardsByTypeAsc(a, b);
+        if (byType !== 0) return byType;
+        const byName = compareCardsByNameAsc(a, b);
+        if (byName !== 0) return byName;
+        return b.updatedAt - a.updatedAt;
+      }
+
       if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-      return b.createdAt - a.createdAt;
-    }
-
-    if (sort === "type") {
-      const byType = compareCardsByTypeAsc(a, b);
-      if (byType !== 0) return byType;
       const byName = compareCardsByNameAsc(a, b);
       if (byName !== 0) return byName;
-      return b.updatedAt - a.updatedAt;
-    }
-
-    if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
-    const byName = compareCardsByNameAsc(a, b);
-    if (byName !== 0) return byName;
-    return b.createdAt - a.createdAt;
-  };
+      return b.createdAt - a.createdAt;
+    },
+    [compareCardsByNameAsc, compareCardsByTypeAsc],
+  );
 
   const recentCards = useMemo(() => {
     const withViewed = cards
@@ -149,16 +153,18 @@ export const useStockpileFilters = ({
       let next = base;
 
       if (search.trim()) {
-        const q = search.toLocaleLowerCase();
-        next = next.filter((card) => card.nameLower.includes(q));
+        next = next.filter((card) => cardMatchesNameOrTitleSearch(card, search));
       }
 
       if (showMissingArtworkOnly && missingArtworkIdSet) {
         next = next.filter((card) => missingArtworkIdSet.has(card.id));
       }
 
-      if (showUnpairedOnly && pairedIdSet) {
-        next = next.filter((card) => !pairedIdSet.has(card.id));
+      if (pairingFilter !== "all" && pairedIdSet) {
+        next = next.filter((card) => {
+          const isPaired = pairedIdSet.has(card.id);
+          return pairingFilter === "paired" ? isPaired : !isPaired;
+        });
       }
 
       return next;
@@ -388,7 +394,8 @@ export const useStockpileFilters = ({
     isPairBacks,
     sortMode,
     groupMode,
-    showUnpairedOnly,
+    pairingFilter,
+    compareCardsBySortMode,
     pairedIdSet,
     showMissingArtworkOnly,
     missingArtworkIdSet,

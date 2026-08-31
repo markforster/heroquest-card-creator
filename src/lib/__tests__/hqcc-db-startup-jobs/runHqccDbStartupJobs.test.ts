@@ -1,11 +1,11 @@
 const dedupePairsFromStore = jest.fn();
 const migrateCardCanvas = jest.fn();
 
-jest.mock("@/lib/hqcc-db-pair-jobs", () => ({
+jest.mock("@/lib/db/jobs/hqcc-db-pair-jobs", () => ({
   dedupePairsFromStore: (...args: unknown[]) => dedupePairsFromStore(...args),
 }));
 
-jest.mock("@/lib/hqcc-db-card-canvas-job", () => ({
+jest.mock("@/lib/db/jobs/hqcc-db-card-canvas-job", () => ({
   migrateCardCanvas: (...args: unknown[]) => migrateCardCanvas(...args),
 }));
 
@@ -48,7 +48,7 @@ describe("runHqccDbStartupJobs", () => {
       });
     });
 
-    const { runHqccDbStartupJobs } = await import("@/lib/hqcc-db-startup-jobs");
+    const { runHqccDbStartupJobs } = await import("@/lib/db/jobs/hqcc-db-startup-jobs");
     runHqccDbStartupJobs();
 
     expect(order).toEqual(["dedupe:start", "canvas:start"]);
@@ -70,7 +70,7 @@ describe("runHqccDbStartupJobs", () => {
     dedupePairsFromStore.mockImplementation(() => dedupe.promise);
     migrateCardCanvas.mockImplementation(() => canvas.promise);
 
-    const { runHqccDbStartupJobs } = await import("@/lib/hqcc-db-startup-jobs");
+    const { runHqccDbStartupJobs } = await import("@/lib/db/jobs/hqcc-db-startup-jobs");
     runHqccDbStartupJobs();
     runHqccDbStartupJobs();
 

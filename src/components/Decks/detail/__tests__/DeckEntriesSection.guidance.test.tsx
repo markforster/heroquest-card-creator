@@ -12,7 +12,9 @@ const mockSetSelectedEntryId = jest.fn();
 const buildSelectionState = (groupId: string | null, setId: string | null) => ({
   deckId: "deck-1",
   orderedGroups: groupId ? [{ id: groupId, title: "Group", sortIndex: 0 }] : [],
-  sets: setId ? [{ id: setId, groupId: groupId ?? "group-1", backFaceId: "back-1", sortIndex: 0 }] : [],
+  sets: setId
+    ? [{ id: setId, groupId: groupId ?? "group-1", backFaceId: "back-1", sortIndex: 0 }]
+    : [],
   selectedGroupId: groupId,
   selectedSetId: setId,
   selectedEntryId: null,
@@ -358,10 +360,9 @@ describe("DeckEntriesSection guidance states", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" }));
-    expect(screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     currentSelectedSetId = "set-2";
     rerender(
@@ -374,11 +375,13 @@ describe("DeckEntriesSection guidance states", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "decks.entries.mode.inSet" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: "decks.entries.mode.inSet" })).toHaveAttribute(
         "aria-pressed",
-        "false",
+        "true",
       );
+      expect(
+        screen.getByRole("button", { name: "decks.entries.mode.pairedNotInSet" }),
+      ).toHaveAttribute("aria-pressed", "false");
     });
   });
 });

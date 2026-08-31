@@ -1,21 +1,21 @@
 "use client";
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
 import { createRef, forwardRef } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
+import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import CardPreviewContainer from "@/components/Cards/CardEditor/CardPreviewContainer";
 
 let mockPreviewRenderer: "svg" | "webgl" = "svg";
 
 jest.mock("@/components/Cards/CardPreview", () => ({
   __esModule: true,
-  default: forwardRef(function MockCardPreview(_props, _ref) {
+  default: forwardRef(function MockCardPreview() {
     return <div>SVG_PREVIEW</div>;
   }),
 }));
@@ -84,10 +84,7 @@ function HoverProbe() {
   return (
     <>
       <output data-testid="hovered-target">{hoveredTargetId ?? "none"}</output>
-      <button
-        type="button"
-        onClick={() => setHoveredTargetId(EDITOR_TARGET_IDS.imageMain)}
-      >
+      <button type="button" onClick={() => setHoveredTargetId(EDITOR_TARGET_IDS.imageMain)}>
         hover-image
       </button>
     </>

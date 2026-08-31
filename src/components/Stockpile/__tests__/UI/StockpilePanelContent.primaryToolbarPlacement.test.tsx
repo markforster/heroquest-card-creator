@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ComponentProps, ReactNode } from "react";
 
-import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import StockpilePanelContent from "@/components/Stockpile/StockpilePanelContent";
 import { I18nProvider } from "@/i18n/I18nProvider";
+
+import type { ComponentProps, ReactNode } from "react";
 
 const mockTrack = jest.fn();
 const mockSetActiveCard = jest.fn();
@@ -68,6 +69,11 @@ jest.mock("@/components/Providers/CardEditorContext", () => ({
     },
     setActiveCard: mockSetActiveCard,
   }),
+}));
+
+jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
+  __esModule: true,
+  useCopyrightSettings: () => ({ getTemplateDefault: () => false }),
 }));
 
 jest.mock("@/components/Providers/EditorFormContext", () => ({
@@ -164,11 +170,7 @@ jest.mock("@/components/Stockpile/StockpileFooter", () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => {
     lastStockpileFooterProps = props;
-    return (
-      <div data-testid="stockpile-footer">
-        {props.collectionControls as ReactNode}
-      </div>
-    );
+    return <div data-testid="stockpile-footer">{props.collectionControls as ReactNode}</div>;
   },
 }));
 
@@ -193,13 +195,22 @@ jest.mock("@/components/Stockpile/StockpilePrimaryToolbar", () => ({
     lastPrimaryToolbarProps = props;
     return (
       <div data-testid="stockpile-primary-toolbar">
-        <button type="button" onClick={() => (props.onSearchChange as (value: string) => void)("ritual")}>
+        <button
+          type="button"
+          onClick={() => (props.onSearchChange as (value: string) => void)("ritual")}
+        >
           Primary search change
         </button>
-        <button type="button" onClick={() => (props.onFilterChange as (value: string) => void)("face:back")}>
+        <button
+          type="button"
+          onClick={() => (props.onFilterChange as (value: string) => void)("face:back")}
+        >
           Primary filter change
         </button>
-        <button type="button" onClick={() => (props.onFilterChange as (value: string) => void)("all")}>
+        <button
+          type="button"
+          onClick={() => (props.onFilterChange as (value: string) => void)("all")}
+        >
           Primary filter all cards
         </button>
         <button
@@ -211,7 +222,11 @@ jest.mock("@/components/Stockpile/StockpilePrimaryToolbar", () => ({
         <button
           type="button"
           onClick={() =>
-            (props.onShowUnpairedOnlyChange as ((value: boolean) => void) | undefined)?.(true)
+            (
+              props.onPairingFilterChange as
+                | ((value: "all" | "not-paired" | "paired") => void)
+                | undefined
+            )?.("not-paired")
           }
         >
           Primary not paired
@@ -318,9 +333,15 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
     const footer = screen.getByTestId("stockpile-footer");
     const bottomToolbar = screen.getByTestId("stockpile-bottom-toolbar");
 
-    expect(primaryToolbar.compareDocumentPosition(existingToolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(existingToolbar.compareDocumentPosition(contentPane) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(contentPane.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      primaryToolbar.compareDocumentPosition(existingToolbar) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      existingToolbar.compareDocumentPosition(contentPane) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      contentPane.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.queryByTestId("stockpile-status-strip")).not.toBeInTheDocument();
     expect(bottomToolbar).toBeInTheDocument();
   });
@@ -339,7 +360,7 @@ describe("StockpilePanelContent primary toolbar placement (UI)", () => {
     expect(lastPrimaryToolbarProps?.viewMode).toBe("table");
 
     fireEvent.click(screen.getByRole("button", { name: "Primary not paired" }));
-    expect(lastPrimaryToolbarProps?.showUnpairedOnly).toBe(true);
+    expect(lastPrimaryToolbarProps?.pairingFilterValue).toBe("not-paired");
     fireEvent.click(screen.getByRole("button", { name: "Primary group change" }));
     expect(lastPrimaryToolbarProps?.groupValue).toBe("type");
     expect(mockSetTip).toHaveBeenLastCalledWith(

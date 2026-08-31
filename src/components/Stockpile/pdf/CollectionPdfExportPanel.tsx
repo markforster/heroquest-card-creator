@@ -15,9 +15,7 @@ export default function CollectionPdfExportPanel({
 
   return (
     <div className="d-flex flex-column gap-1">
-      <div className="fw-semibold">
-        {collectionName?.trim() || t("heading.collections")}
-      </div>
+      <div className="fw-semibold">{collectionName?.trim() || t("heading.collections")}</div>
       <div>{`${t("label.cards")}: ${count}`}</div>
     </div>
   );

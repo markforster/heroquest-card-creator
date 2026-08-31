@@ -30,9 +30,9 @@ jest.mock("@/i18n/I18nProvider", () => ({
   }),
 }));
 
+import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 import DeckExportButton from "@/components/Decks/DeckExportButton";
 import type { DeckExportButtonHandle } from "@/components/Decks/DeckExportButton";
-import { DeckExportProvider } from "@/components/Decks/context/DeckExportContext";
 
 describe("DeckExportButton", () => {
   beforeEach(() => {

@@ -1,8 +1,8 @@
 "use client";
 
-import type { AxiosError, AxiosResponse } from "axios";
-
 import { isDebugToolsEnabled } from "@/lib/env";
+
+import type { AxiosError, AxiosResponse } from "axios";
 
 type ApiLogEnvelope = {
   path?: string;

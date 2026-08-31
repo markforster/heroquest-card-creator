@@ -1831,6 +1831,18 @@
   color: var(--hq-text);
 }
 
+.backgroundTintBlendModeField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  font-size: var(--hq-control-text-secondary);
+  line-height: var(--hq-control-line-height);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hq-accent);
+}
+
 .rightPanel form > div {
   margin-bottom: var(--space-2);
 }
@@ -4557,7 +4569,7 @@
 }
 
 .settingsPopover {
-  width: min(920px, 100% - 2rem);
+  width: min(1104px, 100% - 2rem);
   min-height: 28rem;
   height: min(820px, calc(100vh - 6rem));
   max-height: calc(100vh - 6rem);
@@ -4643,7 +4655,7 @@
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(260px, 30%) minmax(0, 1fr);
+  grid-template-columns: minmax(312px, 30%) minmax(0, 1fr);
   gap: var(--space-14);
 }
 
@@ -4857,6 +4869,180 @@
   font-size: var(--hq-control-text-primary);
   line-height: var(--hq-control-line-height);
   color: var(--hq-text);
+}
+
+.settingsPanelActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.settingsPanelActionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+.settingsPanelActionLabel {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+}
+
+.libraryActionBar {
+  width: 100%;
+}
+
+.libraryActionBar > div:last-child {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.librarySettingsScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.librarySettingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-6) 0;
+}
+
+.librarySummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.librarySummaryItem {
+  display: flex;
+  min-height: 8rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  border: 1px solid var(--hq-border-mid);
+  border-radius: var(--radius-sm);
+  background: var(--hq-surface-2);
+  padding: var(--space-8);
+  font-size: var(--hq-control-text-primary);
+}
+
+.librarySummaryIconWrap {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--hq-text-muted);
+}
+
+.librarySummaryIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  stroke-width: 1.75;
+}
+
+.librarySummaryMeta {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.librarySummaryLabel {
+  color: var(--hq-text-muted);
+}
+
+.librarySummaryValue {
+  color: var(--hq-text);
+  font-weight: 700;
+}
+
+.storagePersistenceRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  border: 1px solid var(--hq-border-mid);
+  border-radius: var(--radius-sm);
+  background: var(--hq-surface-2);
+  padding: var(--space-6) var(--space-8);
+}
+
+.storagePersistenceIntro {
+  margin: 0;
+  color: var(--hq-text-muted);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+}
+
+.storagePersistenceLinks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--hq-control-text-primary);
+  line-height: var(--hq-control-line-height);
+}
+
+.storagePersistenceLead {
+  flex: 0 0 auto;
+  color: var(--hq-text);
+  font-weight: 700;
+}
+
+.storagePersistenceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--hq-border-mid);
+  border-radius: var(--radius-pill);
+  background: var(--hq-white-05);
+  padding: var(--space-2) var(--space-5);
+  color: var(--hq-text);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.storagePersistenceLink:hover,
+.storagePersistenceLink:focus-visible {
+  border-color: var(--hq-accent);
+  background: color-mix(in srgb, var(--hq-accent) 12%, var(--hq-white-05));
+  color: var(--hq-text);
+}
+
+.libraryResetAcknowledge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  border: 1px solid color-mix(in srgb, var(--bs-danger) 45%, var(--hq-border-mid));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bs-danger) 8%, transparent);
+  padding: var(--space-10) var(--space-12);
+  color: var(--hq-text);
+}
+
+.libraryResetError {
+  border: 1px solid color-mix(in srgb, var(--bs-danger) 55%, var(--hq-border-mid));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bs-danger) 10%, transparent);
+  padding: var(--space-8) var(--space-10);
+  color: var(--bs-danger);
+  font-size: var(--hq-control-text-primary);
 }
 
 .settingsPanelHeader {
@@ -5348,6 +5534,10 @@
 .uploadProgressPanel,
 .assetsReportPopover {
   width: min(560px, 100% - 2rem);
+}
+
+.importResultPopover {
+  width: min(420px, 100% - 2rem);
 }
 
 .exportFormatBlock {
@@ -7384,6 +7574,10 @@
   align-items: center;
   justify-content: center;
   z-index: 70;
+}
+
+.backupProgressOverlayBackdrop {
+  z-index: 120;
 }
 
 .stockpileOverlayPanel {
@@ -9499,6 +9693,48 @@ button.assetsKindBadge:disabled {
 .bodyTextToolbarButtonDisabled:hover {
   color: var(--hq-text-muted);
   background: var(--hq-white-06);
+}
+
+.titleNameControl {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+.titleNameToggle {
+  width: 26px;
+  height: 26px;
+  margin-top: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hq-white-15);
+  background: var(--hq-white-06);
+  color: var(--hq-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.titleNameFields {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--hq-white-15);
+}
+
+.titleNameFieldRow {
+  min-width: 0;
+}
+
+.titleNameInlineLabel {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--hq-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
 }
 
 .imageHeaderStatus {

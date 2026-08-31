@@ -3,10 +3,10 @@
 import { useId } from "react";
 
 import borderedMask from "@/assets/card-backgrounds/bordered-mask.png";
-import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
+  useOptionalEditorTargets,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
 import CardBorder from "@/components/Cards/CardParts/CardBorder";
@@ -20,150 +20,40 @@ import { layerTypes } from "@/data/card-systems/types";
 import { useAssetImageUrl } from "@/hooks/useAssetImageUrl";
 import { useHeroBackLogoImageUrl } from "@/hooks/useHeroBackLogoImageUrl";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
-import {
-  getCardShowCopyrightValue,
-  resolveCardCopyrightText,
-} from "@/lib/copyright-defaults";
+import { getCardShowCopyrightValue, resolveCardCopyrightText } from "@/lib/copyright-defaults";
 import { getHeroBackLogoPlacement } from "@/lib/hero-back-logo-layout";
+import {
+  getBaseImageClipBounds,
+  isImageClipEdgeActive,
+  resolveImageClipBottomRange,
+  resolveImageLayerClipBounds,
+} from "@/lib/image-clip-edges";
 import { computeContainScale } from "@/lib/image-scale";
+import { clamp } from "@/lib/math";
+import { getTitleLayerTypographyDefault, resolveTitleTypography } from "@/lib/title-typography";
+import { DEFAULT_BACKGROUND_TINT_BLEND_MODE } from "@/types/background-tint";
+import type { BackgroundTintBlendMode } from "@/types/background-tint";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
+import { IMAGE_CLIP_EDGE_BOTTOM } from "@/types/image-clip-edges";
 import type { TemplateId } from "@/types/templates";
+import type { TitleTypography } from "@/types/title-typography";
 
+import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 import {
   MissingArtworkPlaceholder,
   getLayerBounds,
   normalizeClipId,
 } from "./blueprintRendererShared";
-import { resolveImageLayerHoverBounds } from "./blueprintRendererImageGeometry";
 
 import type { StaticImageData } from "next/image";
 
 const IMAGE_HOVER_EDGE_INSET = 18;
 const IMAGE_HOVER_RADIUS = 16;
-const TREASURE_HOVER_OUTSET = 16;
-const CANVAS_IMAGE_HOVER_OUTSET = 16;
+const IMAGE_CLIP_GHOST_OPACITY = 0.5;
 
 export function getImageHoverEdgeInset() {
   return IMAGE_HOVER_EDGE_INSET;
-}
-
-function intersectRect(
-  first: { x: number; y: number; width: number; height: number },
-  second: { x: number; y: number; width: number; height: number },
-) {
-  const left = Math.max(first.x, second.x);
-  const top = Math.max(first.y, second.y);
-  const right = Math.min(first.x + first.width, second.x + second.width);
-  const bottom = Math.min(first.y + first.height, second.y + second.height);
-
-  if (right <= left || bottom <= top) return null;
-
-  return {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
-}
-
-function getRotatedRectBounds({
-  bounds,
-  rotation,
-  cx,
-  cy,
-}: {
-  bounds: { x: number; y: number; width: number; height: number };
-  rotation: number;
-  cx: number;
-  cy: number;
-}) {
-  if (rotation === 0) return bounds;
-
-  const radians = (rotation * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  const corners = [
-    { x: bounds.x, y: bounds.y },
-    { x: bounds.x + bounds.width, y: bounds.y },
-    { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
-    { x: bounds.x, y: bounds.y + bounds.height },
-  ].map((corner) => {
-    const translatedX = corner.x - cx;
-    const translatedY = corner.y - cy;
-    return {
-      x: cx + translatedX * cos - translatedY * sin,
-      y: cy + translatedX * sin + translatedY * cos,
-    };
-  });
-
-  const xs = corners.map((corner) => corner.x);
-  const ys = corners.map((corner) => corner.y);
-  const left = Math.min(...xs);
-  const right = Math.max(...xs);
-  const top = Math.min(...ys);
-  const bottom = Math.max(...ys);
-
-  return {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
-}
-
-function buildImageHoverBounds({
-  clipMode,
-  layerBounds,
-  renderedBounds,
-  canvasBounds,
-}: {
-  clipMode: "bounds" | "canvas" | "none";
-  layerBounds: { x: number; y: number; width: number; height: number };
-  renderedBounds: { x: number; y: number; width: number; height: number } | null;
-  canvasBounds: { x: number; y: number; width: number; height: number };
-}) {
-  if (clipMode !== "canvas" || !renderedBounds) {
-    const baseBounds = {
-      x: layerBounds.x,
-      y: layerBounds.y,
-      width: layerBounds.width,
-      height: layerBounds.height,
-      radius: IMAGE_HOVER_RADIUS,
-    };
-    return clipMode === "bounds"
-      ? {
-          ...padBounds(baseBounds, TREASURE_HOVER_OUTSET),
-          radius: IMAGE_HOVER_RADIUS,
-        }
-      : baseBounds;
-  }
-
-  const visibleBounds = intersectRect(renderedBounds, canvasBounds);
-  if (!visibleBounds) return null;
-
-  const minLeft = canvasBounds.x + IMAGE_HOVER_EDGE_INSET;
-  const minTop = canvasBounds.y + IMAGE_HOVER_EDGE_INSET;
-  const maxRight = canvasBounds.x + canvasBounds.width - IMAGE_HOVER_EDGE_INSET;
-  const maxBottom = canvasBounds.y + canvasBounds.height - IMAGE_HOVER_EDGE_INSET;
-  const left = Math.max(visibleBounds.x - CANVAS_IMAGE_HOVER_OUTSET, minLeft);
-  const top = Math.max(visibleBounds.y - CANVAS_IMAGE_HOVER_OUTSET, minTop);
-  const right = Math.min(
-    visibleBounds.x + visibleBounds.width + CANVAS_IMAGE_HOVER_OUTSET,
-    maxRight,
-  );
-  const bottom = Math.min(
-    visibleBounds.y + visibleBounds.height + CANVAS_IMAGE_HOVER_OUTSET,
-    maxBottom,
-  );
-
-  return {
-    x: left,
-    y: top,
-    width: Math.max(0, right - left),
-    height: Math.max(0, bottom - top),
-    radius: IMAGE_HOVER_RADIUS,
-  };
 }
 
 export function renderBackgroundLayer({
@@ -192,6 +82,8 @@ export function renderBackgroundLayer({
     tintKey && cardData ? (cardData as Record<string, unknown>)[tintKey] : undefined;
   const tint =
     typeof tintValue === "string" && tintValue.trim().length > 0 ? tintValue.trim() : undefined;
+  const tintBlendMode: BackgroundTintBlendMode =
+    cardData?.backgroundTintBlendMode ?? DEFAULT_BACKGROUND_TINT_BLEND_MODE;
   const cutoutBounds = "cutoutBounds" in layer ? layer.cutoutBounds : undefined;
   const maskId = cutoutBounds ? `${blueprint.templateId}-${layer.id}-cutout-mask` : undefined;
   const opacity = backgroundLoaded === false ? 0 : 1;
@@ -238,7 +130,7 @@ export function renderBackgroundLayer({
             width={bounds.width}
             height={bounds.height}
             fill={tint}
-            style={{ mixBlendMode: "multiply", opacity }}
+            style={{ mixBlendMode: tintBlendMode, opacity }}
             mask={maskId ? `url(#${maskId})` : undefined}
           />
         ) : null}
@@ -354,6 +246,7 @@ export function ImageLayer({
       : undefined;
   const { url: imageUrl, status: imageStatus } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageMain);
+  const editorTargets = useOptionalEditorTargets();
   const bounds = isImageLayer ? getLayerBounds(blueprint, layer) : null;
   const imageLayer = isImageLayer ? (layer as Extract<BlueprintLayer, { type: "image" }>) : null;
   const clipMode = imageLayer?.clip ?? "bounds";
@@ -371,7 +264,9 @@ export function ImageLayer({
     : "relative";
   const offsetX = hasRenderInputs ? ((cardData as { imageOffsetX?: number }).imageOffsetX ?? 0) : 0;
   const offsetY = hasRenderInputs ? ((cardData as { imageOffsetY?: number }).imageOffsetY ?? 0) : 0;
-  const rotation = hasRenderInputs ? ((cardData as { imageRotation?: number }).imageRotation ?? 0) : 0;
+  const rotation = hasRenderInputs
+    ? ((cardData as { imageRotation?: number }).imageRotation ?? 0)
+    : 0;
   const layerOffsetX = typeof layer.props?.offsetX === "number" ? layer.props.offsetX : 0;
   const layerOffsetY = typeof layer.props?.offsetY === "number" ? layer.props.offsetY : 0;
   const baseWidth =
@@ -435,11 +330,47 @@ export function ImageLayer({
 
   const transform = rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined;
   const shouldClip = clipMode !== "none";
-  const clipBounds = clipMode === "canvas" ? canvasBounds : bounds;
+  const baseClipBounds =
+    shouldClip && imageLayer ? getBaseImageClipBounds({ blueprint, layer: imageLayer }) : null;
+  const clipBounds = shouldClip
+    ? (resolveImageLayerClipBounds({
+        blueprint,
+        layer,
+        cardState: cardData as { imageClipEdgeMask?: number; imageClipBottom?: number },
+      }) ?? (clipMode === "canvas" ? canvasBounds : bounds))
+    : null;
+  const clipBottomRange =
+    imageLayer && baseClipBounds
+      ? resolveImageClipBottomRange({ layer: imageLayer, baseClipBounds })
+      : null;
+  const isBottomClipActive =
+    imageLayer &&
+    isImageClipEdgeActive({
+      supportedMask: imageLayer.adjustableClipEdgeMask,
+      activeMask: (cardData as { imageClipEdgeMask?: number }).imageClipEdgeMask,
+      edge: IMAGE_CLIP_EDGE_BOTTOM,
+    });
+  const selectedMainImage = editorTargets?.selectedTargetId === EDITOR_TARGET_IDS.imageMain;
+  const clipGhostBottom =
+    clipBottomRange && cardData
+      ? clamp(
+          (cardData as { imageClipBottom?: number }).imageClipBottom ??
+            clipBottomRange.defaultValue,
+          clipBottomRange.min,
+          clipBottomRange.max,
+        )
+      : null;
+  const clipGhostHeight =
+    baseClipBounds && clipGhostBottom != null
+      ? baseClipBounds.y + baseClipBounds.height - clipGhostBottom
+      : 0;
+  const shouldRenderClipGhost =
+    selectedMainImage && isBottomClipActive && baseClipBounds && clipGhostHeight > 0;
+  const clipGhostId = shouldRenderClipGhost ? `${clipId}-ghost` : undefined;
 
   return (
     <Layer key={layer.id} {...svgFocusProps}>
-      {shouldClip ? (
+      {shouldClip && clipBounds ? (
         <defs>
           <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
             <rect
@@ -464,6 +395,40 @@ export function ImageLayer({
           preserveAspectRatio="xMidYMid meet"
         />
       </g>
+      {shouldRenderClipGhost && baseClipBounds && clipGhostBottom != null && clipGhostId ? (
+        <>
+          <defs>
+            <clipPath id={clipGhostId} clipPathUnits="userSpaceOnUse">
+              <rect
+                x={baseClipBounds.x}
+                y={clipGhostBottom}
+                width={baseClipBounds.width}
+                height={clipGhostHeight}
+              />
+            </clipPath>
+          </defs>
+          <g
+            clipPath={`url(#${clipGhostId})`}
+            opacity={IMAGE_CLIP_GHOST_OPACITY}
+            pointerEvents="none"
+            data-preview-only="image-clip-ghost"
+            data-editor-image-clip-bottom-ghost="true"
+          >
+            <image
+              href={imageUrl}
+              data-user-asset-id={assetId}
+              data-user-asset-name={assetName}
+              x={x}
+              y={y}
+              width={scaledWidth}
+              height={scaledHeight}
+              transform={transform}
+              preserveAspectRatio="xMidYMid meet"
+              data-editor-image-clip-bottom-ghost-image="true"
+            />
+          </g>
+        </>
+      ) : null}
     </Layer>
   );
 }
@@ -480,8 +445,9 @@ export function HeroBackLogoLayer({
   const isLogoLayer = layer.type === layerTypes.logo;
   const bounds = isLogoLayer ? getLayerBounds(blueprint, layer) : null;
   const logoLayer = isLogoLayer ? (layer as Extract<BlueprintLayer, { type: "logo" }>) : null;
-  const logoMode = (cardData as { heroBackLogoMode?: "default" | "none" | "custom" } | undefined)
-    ?.heroBackLogoMode ?? "default";
+  const logoMode =
+    (cardData as { heroBackLogoMode?: "default" | "none" | "custom" } | undefined)
+      ?.heroBackLogoMode ?? "default";
   const logoId = (cardData as { heroBackLogoId?: string } | undefined)?.heroBackLogoId;
   const logoName = (cardData as { heroBackLogoName?: string } | undefined)?.heroBackLogoName;
   const { url: customUrl, status, width, height } = useHeroBackLogoImageUrl(logoId);
@@ -549,15 +515,20 @@ export function HeroBackLogoLayerHitArea({
 }) {
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.heroBackLogo);
 
-  if (layer.type !== layerTypes.logo) return null;
+  const bounds = layer.type === layerTypes.logo ? getLayerBounds(blueprint, layer) : null;
 
-  const bounds = getLayerBounds(blueprint, layer);
+  useRegisterHoverAdornment(
+    EDITOR_TARGET_IDS.heroBackLogo,
+    bounds
+      ? {
+          kind: "rect",
+          ...bounds,
+          radius: IMAGE_HOVER_RADIUS,
+        }
+      : null,
+  );
 
-  useRegisterHoverAdornment(EDITOR_TARGET_IDS.heroBackLogo, {
-    kind: "rect",
-    ...bounds,
-    radius: IMAGE_HOVER_RADIUS,
-  });
+  if (!bounds) return null;
 
   return (
     <Layer {...svgFocusProps}>
@@ -661,10 +632,9 @@ export function TitleLayerHitArea({
   const textBounds = getBound(placement === "top" ? "textTop" : "text");
   const textBoundsNoRibbon = getBound(placement === "top" ? "textNoRibbonTop" : "textNoRibbon");
   const baseBounds = showRibbon
-    ? ribbonBounds ?? textBounds
-    : textBoundsNoRibbon ?? textBounds ?? ribbonBounds;
-  const copyrightBounds =
-    templateId === "labelled-back" ? getCopyrightBounds(templateId) : null;
+    ? (ribbonBounds ?? textBounds)
+    : (textBoundsNoRibbon ?? textBounds ?? ribbonBounds);
+  const copyrightBounds = templateId === "labelled-back" ? getCopyrightBounds(templateId) : null;
   const resolvedCopyrightText =
     templateId === "labelled-back" && cardData
       ? resolveCardCopyrightText(cardData as Record<string, unknown>, defaultCopyright, "copyright")
@@ -685,9 +655,7 @@ export function TitleLayerHitArea({
         }
       : baseBounds;
   const shouldRenderHitArea =
-    layer.type === "title" &&
-    showTitle &&
-    (templateId === "labelled-back" || !hasVisibleTitle);
+    layer.type === "title" && showTitle && (templateId === "labelled-back" || !hasVisibleTitle);
 
   useRegisterHoverAdornment(
     EDITOR_TARGET_IDS.title,
@@ -753,6 +721,13 @@ export function TitleLayer({
   const titleStyle = cardData
     ? (cardData as { titleStyle?: "ribbon" | "plain" }).titleStyle
     : undefined;
+  const savedTitleTypography = cardData
+    ? (cardData as { titleTypography?: TitleTypography }).titleTypography
+    : undefined;
+  const titleTypography = resolveTitleTypography({
+    saved: savedTitleTypography,
+    defaultTypography: getTitleLayerTypographyDefault(layer),
+  });
   const showRibbon =
     titleStyle === "ribbon" ? true : titleStyle === "plain" ? false : showRibbonDefault;
   const titleColor = cardData ? (cardData as { titleColor?: string }).titleColor : undefined;
@@ -786,6 +761,7 @@ export function TitleLayer({
       showRibbon={showRibbon}
       y={y}
       titleColor={titleColor}
+      titleTypography={titleTypography}
       ribbonBounds={ribbonBounds}
       textBounds={textBounds}
       textBoundsNoRibbon={textBoundsNoRibbon}

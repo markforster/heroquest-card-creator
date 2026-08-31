@@ -1,6 +1,11 @@
 import { ROLE_CONFIG } from "./roleConfig";
 
-import type { PreferencesByRole, TextRole, TitlePreferences, StatHeadingPreferences } from "./types";
+import type {
+  PreferencesByRole,
+  TextRole,
+  TitlePreferences,
+  StatHeadingPreferences,
+} from "./types";
 
 const STORAGE_KEYS: Record<TextRole, string> = {
   title: "hqcc.titleFittingPrefs",
@@ -64,15 +69,24 @@ export function mergeTextFittingPreferences(
   updates: Partial<PreferencesByRole[TextRole]>,
 ): PreferencesByRole[TextRole] {
   if (role === "title") {
-    return { ...base, ...sanitizeTitlePrefs({ ...(base as TitlePreferences), ...(updates as TitlePreferences) }) };
+    return {
+      ...base,
+      ...sanitizeTitlePrefs({ ...(base as TitlePreferences), ...(updates as TitlePreferences) }),
+    };
   }
   return {
     ...base,
-    ...sanitizeStatHeadingPrefs({ ...(base as StatHeadingPreferences), ...(updates as StatHeadingPreferences) }),
+    ...sanitizeStatHeadingPrefs({
+      ...(base as StatHeadingPreferences),
+      ...(updates as StatHeadingPreferences),
+    }),
   };
 }
 
-export function storeTextFittingPreferences(role: TextRole, prefs: PreferencesByRole[TextRole]): void {
+export function storeTextFittingPreferences(
+  role: TextRole,
+  prefs: PreferencesByRole[TextRole],
+): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEYS[role], JSON.stringify(prefs));

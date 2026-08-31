@@ -20,9 +20,7 @@ import {
 import { BoardDropSurface } from "@/components/Decks/detail/boards/DeckSortableBoardView/BoardDropSurface";
 import { CreateBoundaryPlaceholder } from "@/components/Decks/detail/boards/DeckSortableBoardView/CreateBoundaryPlaceholder";
 import { GroupColumn } from "@/components/Decks/detail/boards/DeckSortableBoardView/GroupColumn";
-import type {
-  DeckSortableBoardViewProps,
-} from "@/components/Decks/detail/boards/DeckSortableBoardView/types";
+import type { DeckSortableBoardViewProps } from "@/components/Decks/detail/boards/DeckSortableBoardView/types";
 
 import styles from "../../DeckGroupsSection2.module.css";
 
@@ -246,7 +244,8 @@ export function DeckSortableBoardView({
                               groupId,
                               setId,
                               isHovered,
-                            })}
+                            })
+                          }
                         />
                       ) : null}
                       {!config.allowInGroupSort ? (
@@ -286,7 +285,8 @@ export function DeckSortableBoardView({
                               groupId,
                               setId,
                               isHovered,
-                            })}
+                            })
+                          }
                         />
                       ) : null}
                     </Fragment>

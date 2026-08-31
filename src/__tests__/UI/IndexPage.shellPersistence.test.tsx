@@ -46,6 +46,13 @@ jest.mock("@/components/Providers/LibraryTransferContext", () => ({
 jest.mock("@/components/Providers/AppActionsContext", () => ({
   __esModule: true,
   AppActionsProvider: ({ children }: { children: ReactNode }) => children,
+  useAppActions: () => ({
+    isAssetsOpen: false,
+    isRecentOpen: false,
+    isSettingsOpen: false,
+    isStockpileOpen: false,
+    isTemplatePickerOpen: false,
+  }),
 }));
 
 jest.mock("@/components/Providers/AssetKindBackfillProvider", () => ({

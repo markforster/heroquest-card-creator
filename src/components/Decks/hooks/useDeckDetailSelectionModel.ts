@@ -1,10 +1,10 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DeckGroupRecord, DeckSetRecord } from "@/api/decks";
 import { useListDeckGroups, useListDeckSets } from "@/api/hooks";
-import { useQueryClient } from "@tanstack/react-query";
 
 export type DeckDetailSelectionModel = {
   deckId: string | null;
@@ -104,9 +104,7 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
       null;
 
     const nextGroupSets = nextGroupId
-      ? sets
-          .filter((set) => set.groupId === nextGroupId)
-          .sort((a, b) => a.sortIndex - b.sortIndex)
+      ? sets.filter((set) => set.groupId === nextGroupId).sort((a, b) => a.sortIndex - b.sortIndex)
       : [];
 
     const suppressSingleSetAutoSelect = Boolean(
@@ -165,7 +163,8 @@ export function useDeckDetailSelectionModel(deckId: string | null): DeckDetailSe
       options?: { suppressSingleSetAutoSelectGroupId?: string | null },
     ) => {
       preferredSetIdRef.current = preferredSetId ?? null;
-      suppressSingleSetAutoSelectGroupIdRef.current = options?.suppressSingleSetAutoSelectGroupId ?? null;
+      suppressSingleSetAutoSelectGroupIdRef.current =
+        options?.suppressSingleSetAutoSelectGroupId ?? null;
       await queryClient.invalidateQueries({
         predicate: deckStructureQueryPredicate,
       });

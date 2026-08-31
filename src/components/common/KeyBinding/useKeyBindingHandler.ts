@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { matchesKeyBinding } from "./keyBindingUtils";
+
 import type { KeyBindingCombo } from "./keyBindingUtils";
 
 type UseKeyBindingHandlerArgs = {

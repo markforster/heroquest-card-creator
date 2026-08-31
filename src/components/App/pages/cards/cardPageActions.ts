@@ -5,17 +5,18 @@ import { apiClient } from "@/api/client";
 import { invalidateCollectionsQueries } from "@/api/queryInvalidation";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview";
 import type { CardEditorContextValue } from "@/components/Providers/CardEditorContext";
+import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import { clearDraft, saveDraft } from "@/lib/draft-storage";
 import { applyInspectorDefaults } from "@/lib/editor-form";
+import { resolveLinkedTitleName } from "@/lib/title-name-linking";
 import type { CardDataByTemplate } from "@/types/card-data";
 import type { TemplateId } from "@/types/templates";
 
+import type { QueryClient } from "@tanstack/react-query";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { NavigateFunction } from "react-router-dom";
-import type { QueryClient } from "@tanstack/react-query";
-import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 
 type SavingMode = "new" | "update" | null;
 type AnalyticsTrackProperties = Record<string, string | number | boolean | null | undefined>;
@@ -61,11 +62,8 @@ export function createCardPageActions({
     if (!currentTemplateId) return false;
     const templateId = currentTemplateId as TemplateId;
     const currentDraftValue = methods.getValues() as CardDataByTemplate[TemplateId];
-    const draftName =
-      (currentDraftValue &&
-        "name" in currentDraftValue &&
-        (currentDraftValue as { name?: string | null }).name) ||
-      "";
+    const linkedTitleName = resolveLinkedTitleName(templateId, currentDraftValue as never);
+    const draftName = linkedTitleName.name;
     if (!draftName || !draftName.toString().trim()) {
       return false;
     }
@@ -79,6 +77,7 @@ export function createCardPageActions({
     );
     const derivedName = (draftName ?? "").toString().trim() || `${templateId} card`;
     const patch = cardDataToCardRecordPatch(templateId, derivedName, currentDraftValue as never);
+    const savedName = patch.name ?? derivedName;
     const viewedAt = Date.now();
 
     let didSave = false;
@@ -92,7 +91,7 @@ export function createCardPageActions({
           templateId,
           status: "saved",
           thumbnailBlob,
-          name: derivedName,
+          name: savedName,
           lastViewedAt: viewedAt,
           ...(duplicateFromCardId ? { duplicateFromCardId } : {}),
         });
@@ -195,10 +194,7 @@ export function createCardPageActions({
   };
 }
 
-async function renderThumbnailBlob(
-  previewRef: RefObject<CardPreviewHandle>,
-  errorMessage: string,
-) {
+async function renderThumbnailBlob(previewRef: RefObject<CardPreviewHandle>, errorMessage: string) {
   let thumbnailBlob: Blob | null = null;
   try {
     const blob = await previewRef.current?.renderToJpegBlob({

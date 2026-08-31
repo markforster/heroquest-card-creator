@@ -9,4 +9,3 @@ describe("getTemplateNameLabel", () => {
     expect(getTemplateNameLabel("xx" as never, { id: "hero", name: "Hero" })).toBe("Hero");
   });
 });
-

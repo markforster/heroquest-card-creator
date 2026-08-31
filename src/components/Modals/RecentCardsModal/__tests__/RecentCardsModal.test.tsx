@@ -24,7 +24,13 @@ jest.mock("@/components/common/ModalShell", () => ({
     isOpen: boolean;
     children: ReactNode;
     title: string;
-  }) => (isOpen ? <div><div>{title}</div>{children}</div> : null),
+  }) =>
+    isOpen ? (
+      <div>
+        <div>{title}</div>
+        {children}
+      </div>
+    ) : null,
 }));
 
 jest.mock("@/components/Modals/RecentCardsModal/LoadingMessage", () => ({
@@ -35,7 +41,12 @@ jest.mock("@/components/Modals/RecentCardsModal/LoadingMessage", () => ({
 jest.mock("@/components/Modals/RecentCardsModal/RecentCardsList", () => ({
   __esModule: true,
   default: ({ cards }: { cards: Array<{ cards: CardRecord[] }> }) => (
-    <div data-testid="recent-cards-list">{cards.flatMap((group) => group.cards).map((card) => card.name).join(",")}</div>
+    <div data-testid="recent-cards-list">
+      {cards
+        .flatMap((group) => group.cards)
+        .map((card) => card.name)
+        .join(",")}
+    </div>
   ),
 }));
 
@@ -91,13 +102,7 @@ describe("RecentCardsModal", () => {
       .mockResolvedValueOnce([buildCard("card-1", "Old Logo Card")])
       .mockResolvedValueOnce([buildCard("card-1", "New Logo Card")]);
 
-    render(
-      <RecentCardsModal
-        isOpen
-        onClose={jest.fn()}
-        onSelectCard={jest.fn()}
-      />,
-    );
+    render(<RecentCardsModal isOpen onClose={jest.fn()} onSelectCard={jest.fn()} />);
 
     expect(await screen.findByTestId("recent-cards-list")).toHaveTextContent("Old Logo Card");
 

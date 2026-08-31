@@ -1,15 +1,12 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import BlueprintRenderer from "@/components/BlueprintRenderer";
+import { getImageHoverEdgeInset } from "@/components/BlueprintRenderer/blueprintRendererSimpleLayers";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import {
-  getImageHoverEdgeInset,
-} from "@/components/BlueprintRenderer/blueprintRendererSimpleLayers";
-import { CARD_WIDTH, sx, sy } from "@/config/card-canvas";
 
 jest.mock("@/components/Providers/DebugVisualsContext", () => ({
   useDebugVisuals: () => ({
@@ -141,13 +138,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          copyright: "Hero Copyright",
-          showCopyright: true,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            copyright: "Hero Copyright",
+            showCopyright: true,
+          } as never
+        }
       />,
     );
 
@@ -188,11 +187,13 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "   ",
-          description: "Body text",
-          imageAssetId: "art-1",
-        } as never}
+        cardData={
+          {
+            title: "   ",
+            description: "Body text",
+            imageAssetId: "art-1",
+          } as never
+        }
       />,
     );
 
@@ -227,13 +228,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          iconAssetId: "icon-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            iconAssetId: "icon-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -274,12 +277,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -320,10 +325,12 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero-back"
         templateName="Hero Back"
-        cardData={{
-          description: "Body text",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            description: "Body text",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -348,12 +355,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -394,13 +403,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          iconAssetId: "icon-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            iconAssetId: "icon-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -422,13 +433,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          iconAssetId: "icon-wide",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            iconAssetId: "icon-wide",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -441,8 +454,12 @@ describe("BlueprintRenderer SVG hover targets", () => {
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageIcon}"]`,
     ) as SVGRectElement;
     expect(hitArea).not.toBe(iconHover);
-    expect(Number(iconHover.getAttribute("width"))).toBeGreaterThan(Number(iconHover.getAttribute("height")));
-    expect(Number(iconHover.getAttribute("height"))).toBeLessThan(Number(hitArea.getAttribute("height")));
+    expect(Number(iconHover.getAttribute("width"))).toBeGreaterThan(
+      Number(iconHover.getAttribute("height")),
+    );
+    expect(Number(iconHover.getAttribute("height"))).toBeLessThan(
+      Number(hitArea.getAttribute("height")),
+    );
     expect(Number(iconHover.getAttribute("width"))).toBe(Number(hitArea.getAttribute("width")));
   });
 
@@ -451,14 +468,16 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          iconAssetId: "icon-tall",
-          iconScale: 1.5,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            iconAssetId: "icon-tall",
+            iconScale: 1.5,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -470,8 +489,12 @@ describe("BlueprintRenderer SVG hover targets", () => {
     const iconHover = container.querySelector(
       `[data-hqcc-hover-target="${EDITOR_TARGET_IDS.imageIcon}"]`,
     ) as SVGRectElement;
-    expect(Number(iconHover.getAttribute("height"))).toBeGreaterThan(Number(hitArea.getAttribute("height")));
-    expect(Number(iconHover.getAttribute("width"))).toBeLessThan(Number(iconHover.getAttribute("height")));
+    expect(Number(iconHover.getAttribute("height"))).toBeGreaterThan(
+      Number(hitArea.getAttribute("height")),
+    );
+    expect(Number(iconHover.getAttribute("width"))).toBeLessThan(
+      Number(iconHover.getAttribute("height")),
+    );
   });
 
   it("keeps missing icon hover adornment on the full slot bounds", () => {
@@ -479,13 +502,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          iconAssetId: "missing-icon",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            iconAssetId: "missing-icon",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -508,12 +533,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -531,7 +558,9 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(textHover).toHaveAttribute("data-hqcc-hover-visible", "true");
     expect(Number(textHover.getAttribute("x"))).toBe(Number(hitArea.getAttribute("x")) - 16);
     expect(Number(textHover.getAttribute("y"))).toBe(Number(hitArea.getAttribute("y")) - 16);
-    expect(Number(textHover.getAttribute("width"))).toBe(Number(hitArea.getAttribute("width")) + 32);
+    expect(Number(textHover.getAttribute("width"))).toBe(
+      Number(hitArea.getAttribute("width")) + 32,
+    );
     expect(Number(textHover.getAttribute("height"))).toBe(
       Number(hitArea.getAttribute("height")) + 32,
     );
@@ -545,12 +574,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "",
-          imageAssetId: "art-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -564,12 +595,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "",
-          imageAssetId: "art-2",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "",
+            imageAssetId: "art-2",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -583,12 +616,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Single line",
-          imageAssetId: "art-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Single line",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -605,12 +640,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Single line",
-          imageAssetId: "art-2",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Single line",
+            imageAssetId: "art-2",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -627,12 +664,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="small-treasure"
         templateName="Small Treasure"
-        cardData={{
-          title: "Potion",
-          description: "",
-          imageAssetId: "art-3",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Potion",
+            description: "",
+            imageAssetId: "art-3",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -649,7 +688,9 @@ describe("BlueprintRenderer SVG hover targets", () => {
     ) as SVGRectElement;
     expect(Number(textHover.getAttribute("x"))).toBe(Number(hitArea.getAttribute("x")) - 16);
     expect(Number(textHover.getAttribute("y"))).toBe(Number(hitArea.getAttribute("y")) - 16);
-    expect(Number(textHover.getAttribute("width"))).toBe(Number(hitArea.getAttribute("width")) + 32);
+    expect(Number(textHover.getAttribute("width"))).toBe(
+      Number(hitArea.getAttribute("width")) + 32,
+    );
     expect(Number(textHover.getAttribute("height"))).toBe(
       Number(hitArea.getAttribute("height")) + 32,
     );
@@ -663,13 +704,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Hero Title",
-          description: "Body text",
-          imageAssetId: "art-1",
-          copyright: "Hero Copyright",
-          showCopyright: true,
-        } as never}
+        cardData={
+          {
+            title: "Hero Title",
+            description: "Body text",
+            imageAssetId: "art-1",
+            copyright: "Hero Copyright",
+            showCopyright: true,
+          } as never
+        }
       />,
     );
 
@@ -725,12 +768,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="small-treasure"
         templateName="Small Treasure"
-        cardData={{
-          title: "Haunted Mirror",
-          description: "Treasure text",
-          imageAssetId: "art-3",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Haunted Mirror",
+            description: "Treasure text",
+            imageAssetId: "art-3",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -756,12 +801,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Warden",
-          description: "Body text",
-          imageAssetId: "art-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Warden",
+            description: "Body text",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -787,12 +834,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="monster"
         templateName="Monster"
-        cardData={{
-          title: "Fimir",
-          description: "Rules text",
-          imageAssetId: "art-2",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Fimir",
+            description: "Rules text",
+            imageAssetId: "art-2",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -809,12 +858,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="small-treasure"
         templateName="Small Treasure"
-        cardData={{
-          title: "Potion",
-          description: "Restore one Body Point.",
-          imageAssetId: "art-3",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Potion",
+            description: "Restore one Body Point.",
+            imageAssetId: "art-3",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -852,12 +903,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="large-treasure"
         templateName="Large Treasure"
-        cardData={{
-          title: "Ancient Relic",
-          description: "A powerful artefact.",
-          imageAssetId: "art-4",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Ancient Relic",
+            description: "A powerful artefact.",
+            imageAssetId: "art-4",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -895,16 +948,18 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          imageOriginalWidth: 750,
-          imageOriginalHeight: 1050,
-          imageScaleMode: "absolute",
-          imageScale: 1,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 1,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -930,17 +985,19 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          imageOriginalWidth: 750,
-          imageOriginalHeight: 1050,
-          imageScaleMode: "absolute",
-          imageScale: 0.6,
-          imageOffsetX: 140,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageOffsetX: 140,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -971,17 +1028,19 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          imageOriginalWidth: 750,
-          imageOriginalHeight: 1050,
-          imageScaleMode: "absolute",
-          imageScale: 0.6,
-          imageRotation: 15,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageRotation: 15,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -1009,17 +1068,19 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          imageOriginalWidth: 750,
-          imageOriginalHeight: 1050,
-          imageScaleMode: "absolute",
-          imageScale: 0.6,
-          imageRotation: 15,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageRotation: 15,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -1035,23 +1096,146 @@ describe("BlueprintRenderer SVG hover targets", () => {
     expect(clipGroup?.getAttribute("clip-path")).toMatch(/^url\(#/);
   });
 
+  it("applies active hero artwork bottom clipping without changing image transform", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageRotation: 15,
+            imageClipEdgeMask: 1,
+            imageClipBottom: 760,
+            showCopyright: false,
+          } as never
+        }
+      />,
+    );
+
+    const image = container.querySelector("[data-user-asset-id='art-1']") as SVGImageElement;
+    const clipGroup = image.parentElement as SVGGElement | null;
+    const clipPathId = clipGroup?.getAttribute("clip-path")?.match(/^url\(#(.+)\)$/)?.[1];
+    const clipRect = clipPathId
+      ? (container.querySelector(`clipPath[id="${clipPathId}"] rect`) as SVGRectElement | null)
+      : null;
+
+    expect(image.getAttribute("transform")).toContain("rotate(15 ");
+    expect(clipRect).not.toBeNull();
+    expect(clipRect).toHaveAttribute("x", "0");
+    expect(clipRect).toHaveAttribute("y", "0");
+    expect(clipRect).toHaveAttribute("width", "750");
+    expect(clipRect).toHaveAttribute("height", "760");
+  });
+
+  it("renders selected active lower-clip artwork ghost beneath hero stats", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="hero"
+        templateName="Hero"
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageRotation: 15,
+            imageClipEdgeMask: 1,
+            imageClipBottom: 760,
+            showCopyright: false,
+          } as never
+        }
+      />,
+    );
+
+    expect(container.querySelector('[data-preview-only="image-clip-ghost"]')).toBeNull();
+
+    const imageTarget = container.querySelector(
+      `[data-hqcc-edit="${EDITOR_TARGET_IDS.imageMain}"]`,
+    ) as SVGGElement;
+    fireEvent.click(imageTarget);
+
+    const ghost = container.querySelector(
+      '[data-preview-only="image-clip-ghost"]',
+    ) as SVGGElement | null;
+    const ghostImage = container.querySelector(
+      '[data-editor-image-clip-bottom-ghost-image="true"]',
+    ) as SVGImageElement | null;
+    const statsHitArea = container.querySelector(
+      `[data-hqcc-hit-area="${EDITOR_TARGET_IDS.statsHero}"]`,
+    ) as SVGRectElement | null;
+
+    expect(ghost).not.toBeNull();
+    expect(ghost).toHaveAttribute("opacity", "0.5");
+    expect(ghostImage).toHaveAttribute("href", "asset://art-1");
+    expect(statsHitArea).not.toBeNull();
+    expect(
+      ghost?.compareDocumentPosition(statsHitArea as SVGRectElement) ??
+        Node.DOCUMENT_POSITION_DISCONNECTED,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("ignores active artwork bottom clip fields on unsupported image blueprints", () => {
+    const { container } = renderWithTargets(
+      <BlueprintRenderer
+        templateId="large-treasure"
+        templateName="Large Treasure"
+        cardData={
+          {
+            title: "Potion",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 1,
+            imageClipEdgeMask: 1,
+            imageClipBottom: 400,
+            showCopyright: false,
+          } as never
+        }
+      />,
+    );
+
+    const image = container.querySelector("[data-user-asset-id='art-1']") as SVGImageElement;
+    const clipGroup = image.parentElement as SVGGElement | null;
+    const clipPathId = clipGroup?.getAttribute("clip-path")?.match(/^url\(#(.+)\)$/)?.[1];
+    const clipRect = clipPathId
+      ? (container.querySelector(`clipPath[id="${clipPathId}"] rect`) as SVGRectElement | null)
+      : null;
+
+    expect(clipRect).not.toBeNull();
+    expect(clipRect).not.toHaveAttribute("height", "400");
+  });
+
   it("encloses rotated near-edge canvas-clipped artwork while still clamping only affected edges", () => {
     const { container } = renderWithTargets(
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          imageOriginalWidth: 750,
-          imageOriginalHeight: 1050,
-          imageScaleMode: "absolute",
-          imageScale: 0.6,
-          imageOffsetX: 140,
-          imageRotation: 15,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageOffsetX: 140,
+            imageRotation: 15,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -1080,18 +1264,20 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          imageOriginalWidth: 750,
-          imageOriginalHeight: 1050,
-          imageScaleMode: "absolute",
-          imageScale: 0.6,
-          imageOffsetX: 140,
-          imageRotation: 15,
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            imageOriginalWidth: 750,
+            imageOriginalHeight: 1050,
+            imageScaleMode: "absolute",
+            imageScale: 0.6,
+            imageOffsetX: 140,
+            imageRotation: 15,
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -1112,13 +1298,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="labelled-back"
         templateName="Labelled Back"
-        cardData={{
-          title: "Lore Card",
-          description: "Back text",
-          imageAssetId: "art-6",
-          titlePlacement: "top",
-          showTitle: true,
-        } as never}
+        cardData={
+          {
+            title: "Lore Card",
+            description: "Back text",
+            imageAssetId: "art-6",
+            titlePlacement: "top",
+            showTitle: true,
+          } as never
+        }
       />,
     );
 
@@ -1150,16 +1338,17 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="labelled-back"
         templateName="Labelled Back"
-        cardData={{
-          title: "Artifact",
-          description: "Back text",
-          imageAssetId: "art-6",
-          titlePlacement: "bottom",
-          showTitle: true,
-          showCopyright: true,
-          copyright:
-            "asdasd asd as da sd as d asd as d as da sd as da sd as d asd as d",
-        } as never}
+        cardData={
+          {
+            title: "Artifact",
+            description: "Back text",
+            imageAssetId: "art-6",
+            titlePlacement: "bottom",
+            showTitle: true,
+            showCopyright: true,
+            copyright: "asdasd asd as da sd as d asd as d as da sd as da sd as d asd as d",
+          } as never
+        }
       />,
     );
 
@@ -1195,12 +1384,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
       <BlueprintRenderer
         templateId="hero"
         templateName="Hero"
-        cardData={{
-          title: "Sir Ragnar",
-          description: "Body text",
-          imageAssetId: "art-1",
-          showCopyright: false,
-        } as never}
+        cardData={
+          {
+            title: "Sir Ragnar",
+            description: "Body text",
+            imageAssetId: "art-1",
+            showCopyright: false,
+          } as never
+        }
       />,
     );
 
@@ -1211,13 +1402,15 @@ describe("BlueprintRenderer SVG hover targets", () => {
           <BlueprintRenderer
             templateId="labelled-back"
             templateName="Labelled Back"
-            cardData={{
-              title: "Lore Card",
-              description: "Back text",
-              imageAssetId: "art-6",
-              titlePlacement: "top",
-              showTitle: true,
-            } as never}
+            cardData={
+              {
+                title: "Lore Card",
+                description: "Back text",
+                imageAssetId: "art-6",
+                titlePlacement: "top",
+                showTitle: true,
+              } as never
+            }
           />
         </svg>
       </EditorTargetsProvider>,
@@ -1230,12 +1423,14 @@ describe("BlueprintRenderer SVG hover targets", () => {
           <BlueprintRenderer
             templateId="small-treasure"
             templateName="Small Treasure"
-            cardData={{
-              title: "Potion",
-              description: "Restore one Body Point.",
-              imageAssetId: "art-3",
-              showCopyright: false,
-            } as never}
+            cardData={
+              {
+                title: "Potion",
+                description: "Restore one Body Point.",
+                imageAssetId: "art-3",
+                showCopyright: false,
+              } as never
+            }
           />
         </svg>
       </EditorTargetsProvider>,

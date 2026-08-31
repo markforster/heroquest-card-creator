@@ -8,10 +8,14 @@ import {
   statValueSchema,
   templateIdSchema,
 } from "@/api/shared/schema";
+import { BACKGROUND_TINT_BLEND_MODES } from "@/types/background-tint";
 
 export const cardStatusSchema = z.enum(["draft", "saved", "archived"]);
 
 export const cardSchemaVersionSchema = z.union([z.literal(1), z.literal(2)]);
+
+export const backgroundTintBlendModeSchema = z.enum(BACKGROUND_TINT_BLEND_MODES);
+export const titleTypographySchema = z.enum(["bold", "boldItalic"]);
 
 export const cardRecordSchema = z.object({
   id: z.string(),
@@ -20,6 +24,7 @@ export const cardRecordSchema = z.object({
 
   name: z.string(),
   nameLower: z.string(),
+  customNameEnabled: z.boolean().optional(),
   createdAt: z.number(),
   updatedAt: z.number(),
   lastViewedAt: z.number().optional(),
@@ -30,6 +35,7 @@ export const cardRecordSchema = z.object({
   title: z.string().optional(),
   showTitle: z.boolean().optional(),
   titleStyle: z.enum(["ribbon", "plain"]).optional(),
+  titleTypography: titleTypographySchema.optional(),
   titleColor: z.string().optional(),
   bodyTextColor: z.string().optional(),
   bodyTextFitToBounds: z.boolean().optional(),
@@ -48,10 +54,13 @@ export const cardRecordSchema = z.object({
   imageOffsetX: z.number().optional(),
   imageOffsetY: z.number().optional(),
   imageRotation: z.number().optional(),
+  imageClipEdgeMask: z.number().optional(),
+  imageClipBottom: z.number().optional(),
   imageOriginalWidth: z.number().optional(),
   imageOriginalHeight: z.number().optional(),
   borderColor: z.string().optional(),
   backgroundTint: z.string().optional(),
+  backgroundTintBlendMode: backgroundTintBlendModeSchema.optional(),
   heroBackLogoMode: z.enum(["default", "none", "custom"]).optional(),
   heroBackLogoId: z.string().optional(),
   heroBackLogoName: z.string().optional(),

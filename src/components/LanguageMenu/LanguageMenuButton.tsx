@@ -35,9 +35,7 @@ export default function LanguageMenuButton({
       <span className={styles.leftNavMenuFlag} aria-hidden="true">
         {currentFlag}
       </span>
-      {!isCollapsed ? (
-        <span className={styles.leftNavMenuLabel}>{currentCode}</span>
-      ) : null}
+      {!isCollapsed ? <span className={styles.leftNavMenuLabel}>{currentCode}</span> : null}
     </button>
   );
 }

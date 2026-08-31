@@ -17,7 +17,7 @@ Download the sample file, choose Import library, accept the replacement warning,
 
 ## How do I back up my complete library?
 
-Export library creates a portable `.hqcc` backup of local app data.
+Export library creates a portable `.hqcc` backup of local app data. You can start it from the left navigation or from Settings > Library. Keep the downloaded file somewhere outside the app.
 
 [Read the full guidance](../settings-and-data/back-up-and-restore-your-library.md)
 
@@ -29,7 +29,7 @@ Use the recommended compact format for 0.5.6+; use compatibility format only for
 
 ## What happens when I import a library?
 
-Import validates one backup file and replaces existing browser-profile app data rather than merging.
+Import validates one backup file and replaces existing browser-profile app data rather than merging. When it finishes, the app shows a result window with imported totals.
 
 <!-- help-visual:p100:start -->
 <figure class="hqcc-help-figure hqcc-help-figure--compact" markdown="span">
@@ -55,7 +55,7 @@ Open Language in the left navigation and choose another language; the visible in
 
 ## What can I configure in Settings?
 
-Settings covers export, labels, collections, fitting, copyright, assets, appearance, debug, and system options.
+Settings covers export, labels, collections, fitting, copyright, assets, appearance, library, debug, and system options. Library includes export, import, and starting fresh.
 
 [Read the full guidance](../settings-and-data/settings-reference.md)
 
@@ -171,7 +171,7 @@ System shows app information and an estimated browser-storage breakdown with a R
 
 ## What are Debug Tools for?
 
-Debug Tools exposes diagnostics, migration status, and destructive maintenance actions, but its notice still names version 0.5.x in v0.8.0.
+Debug Tools exposes diagnostics, migration status, and destructive maintenance actions, but its notice still names version 0.5.x in v0.8.1.
 
 [Read the full guidance](../troubleshooting/fix-settings-problems.md)
 
@@ -183,7 +183,7 @@ The active language is represented by the button flag and omitted from the choic
 
 ## Which languages are available?
 
-v0.8.0 supports English, Czech, Danish, German, Spanish, French, Italian, Hungarian, Dutch, Norwegian Bokmal, Polish, Portuguese, Brazilian Portuguese, Finnish, Swedish, Greek, and Russian.
+v0.8.1 supports English, Czech, Danish, German, Spanish, French, Italian, Hungarian, Dutch, Norwegian Bokmal, Polish, Portuguese, Brazilian Portuguese, Finnish, Swedish, Greek, and Russian.
 
 [Read the full guidance](../settings-and-data/change-language-and-appearance.md)
 
@@ -195,21 +195,21 @@ Theme is the quick Light, Dark, or system selector; Appearance contains the same
 
 ## Are app settings included in a library backup?
 
-A `.hqcc` backup includes export profiles and selected library-related settings, but not every personal preference such as language or theme.
+A `.hqcc` backup includes export profiles and selected library-related settings, but not every personal preference such as language or theme. Starting a new library also keeps those app preferences.
 
 [Read the full guidance](../troubleshooting/fix-settings-problems.md)
 
 ## Where are the backup and restore controls, and what do their windows show?
 
-**Export library** and **Import library** are adjacent actions in the left navigation; each opens a confirmation window before work begins.
+**Export library** and **Import library** are available in the left navigation and in Settings > Library. Settings > Library also offers New for starting an empty library.
 
 [Read the full guidance](../settings-and-data/understand-backups-and-local-data.md)
 
 ## Where does the app keep my working library?
 
-The working library belongs to the current browser profile or installed app copy and is not automatically synchronized through an online account.
+The working library belongs to the current browser profile or installed app copy and is not automatically synchronized through an online account. The app asks the browser to protect local data where supported, but a `.hqcc` export is still the safety copy you control.
 
-[Read the full guidance](../settings-and-data/understand-backups-and-local-data.md)
+[Read the full guidance](../settings-and-data/protect-your-library-and-keep-it-small.md)
 
 ## What is included in a library backup?
 
@@ -231,13 +231,13 @@ Export shows preparation, item progress, and finalising stages before downloadin
 
 ## How do I know a library import completed successfully?
 
-A successful import displays **Import complete** and reports card, asset, collection, and deck totals.
+A successful import displays an app result window and reports card, asset, collection, and deck totals.
 
 [Read the full guidance](../settings-and-data/back-up-and-restore-your-library.md)
 
 ## Can I merge a backup with my current library?
 
-Import replaces the destination library; there is no merge option.
+Import replaces the destination library; there is no merge option. If you want an empty library instead, export first and use Settings > Library > New.
 
 [Read the full guidance](../settings-and-data/back-up-and-restore-your-library.md)
 
@@ -273,13 +273,13 @@ Compare the completion totals, clear workspace filters, check Recently deleted a
 
 ## Why is my library empty in another browser, profile, or app copy?
 
-A different browser, profile, private window, cleared app location, or installed copy can have a separate empty library; use backup export/import to move work.
+A different browser, profile, private window, cleared app location, or installed copy can have a separate empty library. Local browser data can also be cleared, so use backup export/import to move or protect work.
 
-[Read the full guidance](../settings-and-data/back-up-and-restore-your-library.md)
+[Read the full guidance](../settings-and-data/protect-your-library-and-keep-it-small.md)
 
 ## Why is my downloaded copy showing an empty library?
 
-The library belongs to the browser and exact app location, so a different launch method, address, port, profile, or browser can open a separate empty library.
+The library belongs to the browser and exact app location, so a different launch method, address, port, profile, or browser can open a separate empty library. Export from the source location before switching.
 
 [Read the full guidance](../getting-started/use-a-downloaded-copy.md)
 

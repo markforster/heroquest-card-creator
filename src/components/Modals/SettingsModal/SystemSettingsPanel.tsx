@@ -8,12 +8,12 @@ import {
   formatSystemSettingsTimestamp,
   getSystemSettingsStoreLabel,
 } from "@/components/Modals/SettingsModal/systemSettingsI18n";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   getDbEstimateStatus,
   runFullDbEstimate,
   subscribeDbEstimateStatus,
-} from "@/lib/indexeddb-size-tracker";
-import { useI18n } from "@/i18n/I18nProvider";
+} from "@/lib/db/maintenance/indexeddb-size-tracker";
 import { APP_VERSION } from "@/version";
 
 type StoreBreakdownEntry = {
@@ -172,11 +172,13 @@ function StorageDetailRows({ title, data, fallbackLabel, recordsLabel }: Storage
                 aria-hidden="true"
               />
               <span className={styles.storageDetailRowLabel}>
-                {getSystemSettingsStoreLabel(entry.name, t)}: {formatBytes(entry.bytes, fallbackLabel)} (
-                {entry.records} {recordsLabel})
+                {getSystemSettingsStoreLabel(entry.name, t)}:{" "}
+                {formatBytes(entry.bytes, fallbackLabel)} ({entry.records} {recordsLabel})
               </span>
             </div>
-            <span className={styles.storageUsageLegendShare}>{(entry.share * 100).toFixed(1)}%</span>
+            <span className={styles.storageUsageLegendShare}>
+              {(entry.share * 100).toFixed(1)}%
+            </span>
           </div>
         ))}
       </div>
@@ -213,10 +215,13 @@ function StorageUsageBar({
               aria-hidden="true"
             />
             <span className={styles.settingsPanelOption}>
-              {getSystemSettingsStoreLabel(entry.name, t)}: {formatBytes(entry.bytes, fallbackLabel)}
+              {getSystemSettingsStoreLabel(entry.name, t)}:{" "}
+              {formatBytes(entry.bytes, fallbackLabel)}
               {entry.records > 0 ? ` (${entry.records} ${recordsLabel})` : ""}
             </span>
-            <span className={styles.storageUsageLegendShare}>{(entry.share * 100).toFixed(1)}%</span>
+            <span className={styles.storageUsageLegendShare}>
+              {(entry.share * 100).toFixed(1)}%
+            </span>
           </div>
         ))}
       </div>
@@ -227,9 +232,9 @@ function StorageUsageBar({
 export default function SystemSettingsPanel() {
   const { language, t } = useI18n();
   const [usageBytes, setUsageBytes] = useState<number | null>(null);
-  const [quotaBytes, setQuotaBytes] = useState<number | null>(null);
+  const [, setQuotaBytes] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [dbEstimateStatus, setDbEstimateStatus] = useState(() => getDbEstimateStatus());
   const [dbEstimateLoading, setDbEstimateLoading] = useState(false);
 

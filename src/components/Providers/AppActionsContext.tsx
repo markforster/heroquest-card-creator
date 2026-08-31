@@ -3,10 +3,11 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import type { CardRecord } from "@/api/cards";
+import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import AssetsModal from "@/components/Assets/AssetsModal";
 import RecentCardsModal from "@/components/Modals/RecentCardsModal";
 import SettingsModal from "@/components/Modals/SettingsModal/SettingsModal";
-import { useUnsavedChangesGuardControls } from "@/components/App/UnsavedChangesGuardContext";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
 import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
@@ -17,9 +18,8 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { usePopupState } from "@/hooks/usePopupState";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/api/cards";
-import { createEditorDefaultValues } from "@/lib/editor-form";
 import { saveDraft } from "@/lib/draft-storage";
+import { createEditorDefaultValues } from "@/lib/editor-form";
 import type { TemplateId } from "@/types/templates";
 
 type StockpileOpenOptions = {

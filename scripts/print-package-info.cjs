@@ -17,8 +17,7 @@ const chalk = require("chalk");
 
 const name = pkg && typeof pkg.name === "string" ? pkg.name.trim() : "";
 const version = pkg && typeof pkg.version === "string" ? pkg.version.trim() : "";
-const description =
-  pkg && typeof pkg.description === "string" ? pkg.description.trim() : "";
+const description = pkg && typeof pkg.description === "string" ? pkg.description.trim() : "";
 
 const missing = [];
 if (!name) missing.push("name");
@@ -30,13 +29,9 @@ if (missing.length > 0) {
   console.log(
     [
       `${chalk.bold.blue("name:")} ${chalk.bold.cyan(name || "<missing>")}`,
-      `${chalk.bold.blue("version:")} ${
-        version ? chalk.green(version) : "<missing>"
-      }`,
-      `${chalk.bold.blue("description:")} ${chalk.white(
-        description || "<missing>"
-      )}`,
-    ].join("\n")
+      `${chalk.bold.blue("version:")} ${version ? chalk.green(version) : "<missing>"}`,
+      `${chalk.bold.blue("description:")} ${chalk.white(description || "<missing>")}`,
+    ].join("\n"),
   );
   process.exit(1);
 }
@@ -46,5 +41,5 @@ console.log(
     `${chalk.bold.blue("name:")} ${chalk.bold.cyan(name)}`,
     `${chalk.bold.blue("version:")} ${chalk.green(version)}`,
     `${chalk.bold.blue("description:")} ${chalk.white(description)}`,
-  ].join("\n")
+  ].join("\n"),
 );

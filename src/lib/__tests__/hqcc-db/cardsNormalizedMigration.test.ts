@@ -1,8 +1,8 @@
 import Dexie from "dexie";
-import { IDBDatabase, IDBFactory, IDBKeyRange } from "fake-indexeddb";
+import { IDBFactory, IDBKeyRange } from "fake-indexeddb";
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { getCard } from "@/lib/cards-db";
+import { getCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 const originalIndexedDbDescriptor = Object.getOwnPropertyDescriptor(window, "indexedDB");
 const originalIdbKeyRangeDescriptor = Object.getOwnPropertyDescriptor(window, "IDBKeyRange");
@@ -106,10 +106,12 @@ async function seedLegacyDb(): Promise<void> {
         status: "saved",
         name: "Goblin",
         nameLower: "goblin",
+        customNameEnabled: true,
         createdAt: 10,
         updatedAt: 20,
         schemaVersion: 2,
         title: "Goblin",
+        titleTypography: "boldItalic",
         description: "A sneaky foe",
         bodyTextColor: "#111111",
         bodyTextFitToBounds: true,
@@ -120,7 +122,10 @@ async function seedLegacyDb(): Promise<void> {
         imageAssetName: "Goblin Art",
         imageScale: 1.2,
         imageScaleMode: "relative",
+        imageClipEdgeMask: 1,
+        imageClipBottom: 760,
         backgroundTint: "#eeeeee",
+        backgroundTintBlendMode: "screen",
         heroAttackDice: 0,
         monsterMovementSquares: 8,
         monsterAttackDice: 2,
@@ -174,6 +179,7 @@ describe("cards normalized migration", () => {
         status: "saved",
         name: "Goblin",
         nameLower: "goblin",
+        customNameEnabled: true,
         schemaVersion: 1,
       }),
     );
@@ -192,11 +198,13 @@ describe("cards normalized migration", () => {
     expect(await db.cardBackgroundComponents.get("monster-1:hq.2021.background.base")).toEqual(
       expect.objectContaining({
         tint: "#eeeeee",
+        blendMode: "screen",
       }),
     );
     expect(await db.cardTitleComponents.get("monster-1:hq.2021.title.main")).toEqual(
       expect.objectContaining({
         title: "Goblin",
+        titleTypography: "boldItalic",
       }),
     );
     expect(await db.cardTextComponents.get("monster-1:hq.2021.text.body")).toEqual(
@@ -212,9 +220,13 @@ describe("cards normalized migration", () => {
         assetName: "Goblin Art",
         scale: 1.2,
         scaleMode: "relative",
+        clipEdgeMask: 1,
+        clipBottom: 760,
       }),
     );
-    expect(await db.cardMonsterStatsComponents.get("monster-1:hq.2021.stats.monster.primary")).toEqual(
+    expect(
+      await db.cardMonsterStatsComponents.get("monster-1:hq.2021.stats.monster.primary"),
+    ).toEqual(
       expect.objectContaining({
         movementSquares: 8,
         attackDice: 2,
@@ -239,7 +251,12 @@ describe("cards normalized migration", () => {
         id: "monster-1",
         templateId: "monster",
         name: "Goblin",
+        customNameEnabled: true,
+        titleTypography: "boldItalic",
         description: "A sneaky foe",
+        imageClipEdgeMask: 1,
+        imageClipBottom: 760,
+        backgroundTintBlendMode: "screen",
         monsterIconAssetId: "asset-icon",
         thumbnailBlob: expect.objectContaining({ type: "image/png" }),
       }),

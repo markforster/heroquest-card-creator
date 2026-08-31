@@ -1,16 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 
 import DeckPdfExportProgressModal from "@/components/Decks/pdf/DeckPdfExportProgressModal";
+
+import type { ReactNode } from "react";
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "actions.cancel": "Cancel",
           "actions.cancelling": "Cancelling",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -30,7 +31,13 @@ jest.mock("@/components/common/ModalShell", () => ({
     isOpen: boolean;
     title: ReactNode;
     children: ReactNode;
-  }) => (isOpen ? <div><div>{title}</div>{children}</div> : null),
+  }) =>
+    isOpen ? (
+      <div>
+        <div>{title}</div>
+        {children}
+      </div>
+    ) : null,
 }));
 
 jest.mock("@/components/common/ProgressBar", () => ({

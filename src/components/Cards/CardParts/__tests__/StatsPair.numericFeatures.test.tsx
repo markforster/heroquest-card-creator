@@ -2,9 +2,7 @@ import { render, screen } from "@testing-library/react";
 
 import StatsPair from "@/components/Cards/CardParts/StatsPair";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
-import {
-  TYPOGRAPHY_NUMERIC_STORAGE_KEYS,
-} from "@/lib/typography-settings";
+import { TYPOGRAPHY_NUMERIC_STORAGE_KEYS } from "@/lib/typography-settings";
 
 jest.mock("@/lib/text-fitting/fitText", () => ({
   __esModule: true,
@@ -77,7 +75,15 @@ describe("StatsPair numeric features", () => {
     render(
       <LocalStorageProvider>
         <svg>
-          <StatsPair header="Attack" value={[3, 4, 1]} asterisks={[true, false]} x={0} y={0} width={160} height={120} />
+          <StatsPair
+            header="Attack"
+            value={[3, 4, 1]}
+            asterisks={[true, false]}
+            x={0}
+            y={0}
+            width={160}
+            height={120}
+          />
         </svg>
       </LocalStorageProvider>,
     );

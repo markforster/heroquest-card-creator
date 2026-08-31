@@ -37,8 +37,7 @@ jest.mock("@/lib/render-svg-to-canvas", () => ({
   __esModule: true,
   renderSvgToCanvas: jest.fn(async ({ svgElement }: { svgElement: SVGSVGElement }) => {
     const renderedColor =
-      svgElement.querySelector('[data-testid="copyright-probe"]')?.getAttribute("data-color") ??
-      "";
+      svgElement.querySelector('[data-testid="copyright-probe"]')?.getAttribute("data-color") ?? "";
     capturedCopyrightColors.push(renderedColor);
     const canvas = document.createElement("canvas");
     canvas.toBlob = ((callback: BlobCallback) => {

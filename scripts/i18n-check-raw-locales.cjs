@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 const fs = require("fs");
+const { createRequire } = require("module");
 const path = require("path");
 const vm = require("vm");
-const { createRequire } = require("module");
+
 const ts = require("typescript");
 
 const repoRoot = path.join(__dirname, "..");
@@ -103,7 +104,8 @@ function loadSupportedLanguages() {
 
 function getNamespaces() {
   const enDir = path.join(rawLocalesDir, "en");
-  return fs.readdirSync(enDir)
+  return fs
+    .readdirSync(enDir)
     .filter((name) => name.endsWith(".json"))
     .map((name) => name.replace(/\.json$/, ""))
     .sort((a, b) => a.localeCompare(b));
@@ -168,9 +170,7 @@ for (const locale of supportedLanguages) {
   const missing = enKeys.filter((key) => !Object.prototype.hasOwnProperty.call(bundle, key));
   const extra = localeKeys.filter((key) => !Object.prototype.hasOwnProperty.call(en, key));
   const untranslated = enKeys.filter(
-    (key) =>
-      Object.prototype.hasOwnProperty.call(bundle, key) &&
-      bundle[key] === en[key],
+    (key) => Object.prototype.hasOwnProperty.call(bundle, key) && bundle[key] === en[key],
   );
 
   console.log(

@@ -31,7 +31,10 @@ export function guessOriginalFileName(fileName: string): string[] {
   return Array.from(candidates);
 }
 
-export function readBlobAsDataUrl(blob: Blob, errorMessage = "Failed to read blob"): Promise<string> {
+export function readBlobAsDataUrl(
+  blob: Blob,
+  errorMessage = "Failed to read blob",
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);

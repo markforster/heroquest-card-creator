@@ -3,12 +3,12 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useBeforeUnload, useBlocker } from "react-router-dom";
 
-import { ENABLE_UNSAVED_CHANGES_GUARD } from "@/config/flags";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { ENABLE_UNSAVED_CHANGES_GUARD } from "@/config/flags";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import type { Location } from "react-router-dom";
 import type { ReactNode } from "react";
+import type { Location } from "react-router-dom";
 
 type UnsavedChangesRegistration = {
   enabled: boolean;
@@ -55,9 +55,8 @@ function isSameLocation(currentLocation: Location, nextLocation: Location): bool
 
 export function UnsavedChangesGuardProvider({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const [registration, setRegistration] = useState<UnsavedChangesRegistration>(
-    DEFAULT_REGISTRATION,
-  );
+  const [registration, setRegistration] =
+    useState<UnsavedChangesRegistration>(DEFAULT_REGISTRATION);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const registrationRef = useRef<UnsavedChangesRegistration>(registration);
@@ -167,9 +166,9 @@ export function UnsavedChangesGuardProvider({ children }: { children: ReactNode 
   };
 
   return (
-      <UnsavedChangesGuardContext.Provider value={contextValue}>
-        {children}
-        <ConfirmModal
+    <UnsavedChangesGuardContext.Provider value={contextValue}>
+      {children}
+      <ConfirmModal
         isOpen={pendingAction !== null}
         title={registration.title}
         confirmLabel={t("actions.discard")}

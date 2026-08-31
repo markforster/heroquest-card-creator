@@ -87,10 +87,12 @@ describe("StockpileSidebar (UI)", () => {
           { id: "col-1", name: "A/B/One", cardIds: [] },
           { id: "col-2", name: "C/Two", cardIds: [] },
         ]}
-        collectionCounts={new Map([
-          ["col-1", 0],
-          ["col-2", 0],
-        ])}
+        collectionCounts={
+          new Map([
+            ["col-1", 0],
+            ["col-2", 0],
+          ])
+        }
         selectedCountByCollection={new Map()}
       />,
     );

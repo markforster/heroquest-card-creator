@@ -16,9 +16,7 @@ const targetDir = path.join(rootDir, "public", "zip");
 const targetFile = path.join(targetDir, "zip-web-worker.js");
 
 if (!fs.existsSync(sourceFile)) {
-  throw new Error(
-    `[copy-zip-worker] Missing ${sourceFile}. Did you install @zip.js/zip.js?`,
-  );
+  throw new Error(`[copy-zip-worker] Missing ${sourceFile}. Did you install @zip.js/zip.js?`);
 }
 
 fs.mkdirSync(targetDir, { recursive: true });

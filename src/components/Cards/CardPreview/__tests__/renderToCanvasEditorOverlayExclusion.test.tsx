@@ -1,16 +1,14 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { createRef, useMemo } from "react";
-import { useEffect } from "react";
+import { createRef, useMemo, useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import { resolveImageLayerOverlayGeometry } from "@/components/BlueprintRenderer/blueprintRendererImageGeometry";
-import CardPreview from "@/components/Cards/CardPreview";
-import { resolveMonsterIconOverlayGeometry } from "@/components/Cards/CardPreview/cardPreviewIconGeometry";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
   useEditorTargets,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import CardPreview from "@/components/Cards/CardPreview";
 import {
   GIZMO_CENTER_HANDLE_RADIUS,
   GIZMO_MOVE_SNAP_INCREMENT,
@@ -18,14 +16,23 @@ import {
   getArmLengthForScale,
   roundStageValue,
 } from "@/components/Cards/CardPreview/cardPreviewGizmoMath";
-import { CARD_HEIGHT, CARD_WIDTH, getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
+import { resolveMonsterIconOverlayGeometry } from "@/components/Cards/CardPreview/cardPreviewIconGeometry";
+import {
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  getCardPreviewStageLayout,
+} from "@/components/Cards/CardPreview/cardPreviewStage";
 import type { CardPreviewHandle } from "@/components/Cards/CardPreview/types";
 import { blueprintsByTemplateId } from "@/data/blueprints";
 import { layerTypes } from "@/data/card-systems/types";
 import { computeImageZoomModel } from "@/lib/image-scale";
 import type { CardDataByTemplate } from "@/types/card-data";
 
+import type { Ref } from "react";
+
 const capturedOverlayPresence: boolean[] = [];
+const capturedClipGuidePresence: boolean[] = [];
+const capturedClipScissorsPresence: boolean[] = [];
 const mockGetStagePointFromClientCoordinates = jest.fn();
 const selectedPreviewData = {
   title: "Hero",
@@ -76,15 +83,22 @@ jest.mock("@/i18n/I18nProvider", () => ({
 
 jest.mock("@/components/Cards/CardPreview/cardPreviewPointer", () => ({
   __esModule: true,
-  getStagePointFromClientCoordinates: (args: {
-    clientX: number;
-    clientY: number;
-  }) => mockGetStagePointFromClientCoordinates(args),
+  getStagePointFromClientCoordinates: (args: { clientX: number; clientY: number }) =>
+    mockGetStagePointFromClientCoordinates(args),
 }));
 
 jest.mock("@/hooks/useAssetImageUrl", () => ({
   __esModule: true,
   useAssetImageUrl: (assetId?: string) => {
+    if (assetId === "asset-1") {
+      return {
+        url: "blob:asset-1",
+        status: "ready",
+        width: 1400,
+        height: 1800,
+      };
+    }
+
     if (assetId === "icon-1") {
       return {
         url: "blob:icon-1",
@@ -115,7 +129,15 @@ jest.mock("@/lib/render-svg-to-canvas", () => ({
     }) => {
       const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
       mutateSvg?.(clonedSvg);
-      capturedOverlayPresence.push(Boolean(clonedSvg.querySelector('[data-editor-image-frame="true"]')));
+      capturedOverlayPresence.push(
+        Boolean(clonedSvg.querySelector('[data-editor-image-frame="true"]')),
+      );
+      capturedClipGuidePresence.push(
+        Boolean(clonedSvg.querySelector('[data-editor-image-clip-bottom-guide="true"]')),
+      );
+      capturedClipScissorsPresence.push(
+        Boolean(clonedSvg.querySelector("[data-editor-image-clip-bottom-scissors]")),
+      );
       const canvas = document.createElement("canvas");
       canvas.toBlob = ((callback: BlobCallback) => {
         callback(new Blob(["png"], { type: "image/png" }));
@@ -157,8 +179,12 @@ describe("CardPreview renderToCanvas", () => {
         "iconOffsetY",
         "iconRotation",
         "iconScale",
+        "imageClipEdgeMask",
+        "imageClipBottom",
       ],
     }) as [
+      number | undefined,
+      number | undefined,
       number | undefined,
       number | undefined,
       number | undefined,
@@ -180,6 +206,8 @@ describe("CardPreview renderToCanvas", () => {
         data-icon-offset-y={values[5] ?? ""}
         data-icon-rotation={values[6] ?? ""}
         data-icon-scale={values[7] ?? ""}
+        data-image-clip-edge-mask={values[8] ?? ""}
+        data-image-clip-bottom={values[9] ?? ""}
       />
     );
   }
@@ -214,7 +242,7 @@ describe("CardPreview renderToCanvas", () => {
 
     return (
       <CardPreview
-        ref={previewRef}
+        ref={previewRef as Ref<CardPreviewHandle>}
         templateId={templateId}
         templateName={templateName}
         cardData={cardData}
@@ -224,6 +252,8 @@ describe("CardPreview renderToCanvas", () => {
 
   beforeEach(() => {
     capturedOverlayPresence.length = 0;
+    capturedClipGuidePresence.length = 0;
+    capturedClipScissorsPresence.length = 0;
     mockGetStagePointFromClientCoordinates.mockReset();
 
     HTMLCanvasElement.prototype.getContext = jest.fn(() => null);
@@ -283,6 +313,9 @@ describe("CardPreview renderToCanvas", () => {
 
   function getSelectedPreviewStageGeometry() {
     const blueprint = blueprintsByTemplateId.hero;
+    if (!blueprint) {
+      throw new Error("Expected hero blueprint");
+    }
     const imageLayer = blueprint.layers.find((layer) => {
       return layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId";
     });
@@ -333,6 +366,9 @@ describe("CardPreview renderToCanvas", () => {
     overrides?: Partial<typeof selectedMonsterIconData>,
   ) {
     const blueprint = blueprintsByTemplateId.monster;
+    if (!blueprint) {
+      throw new Error("Expected monster blueprint");
+    }
     const overlayGeometry = resolveMonsterIconOverlayGeometry({
       blueprint,
       cardData: {
@@ -390,7 +426,11 @@ describe("CardPreview renderToCanvas", () => {
         <EditorTargetsProvider>
           <SelectTarget targetId={targetId} />
           <PreviewFormHarness defaultValues={defaultValues}>
-            <WatchedCardPreview previewRef={ref} templateId={templateId} templateName={templateName} />
+            <WatchedCardPreview
+              previewRef={ref}
+              templateId={templateId}
+              templateName={templateName}
+            />
           </PreviewFormHarness>
         </EditorTargetsProvider>,
       );
@@ -422,27 +462,38 @@ describe("CardPreview renderToCanvas", () => {
         return handle;
       },
       snapGuides: () => document.querySelector('[data-editor-image-snap-guides="true"]'),
-      activeSnapGuide: () =>
-        document.querySelector('[data-editor-image-snap-angle-active="true"]'),
+      activeSnapGuide: () => document.querySelector('[data-editor-image-snap-angle-active="true"]'),
       moveGrid: () => document.querySelector('[data-editor-image-move-grid="true"]'),
       moveGridMask: () => document.querySelector('[data-editor-image-move-grid-mask="true"]'),
       moveGridGradient: () =>
         document.querySelector('[data-editor-image-move-grid-gradient="true"]'),
-      moveGridLines: () => document.querySelectorAll('[data-editor-image-move-grid-line]'),
+      moveGridLines: () => document.querySelectorAll("[data-editor-image-move-grid-line]"),
       moveGridAxes: () => document.querySelectorAll('[data-editor-image-move-grid-axis="true"]'),
       moveGridAccentLines: () =>
-        document.querySelectorAll('[data-editor-image-move-grid-accent-line]'),
+        document.querySelectorAll("[data-editor-image-move-grid-accent-line]"),
       pivotMarker: () => document.querySelector('[data-editor-image-pivot-marker="true"]'),
-      pivotMarkerAxes: () =>
-        document.querySelectorAll('[data-editor-image-pivot-marker-axis]'),
+      pivotMarkerAxes: () => document.querySelectorAll("[data-editor-image-pivot-marker-axis]"),
       arm: () => document.querySelector('[data-editor-image-arm="true"]'),
       moveHandleInnerDot: () =>
         document.querySelector('[data-editor-image-move-handle-inner-dot="true"]'),
       transformHandleVisual: () =>
         document.querySelector('[data-editor-image-transform-handle-visual="true"]'),
-      scaleSnapRings: () => document.querySelectorAll('[data-editor-image-snap-scale-ring]'),
+      scaleSnapRings: () => document.querySelectorAll("[data-editor-image-snap-scale-ring]"),
       activeScaleSnapRing: () =>
         document.querySelector('[data-editor-image-snap-scale-ring-active="true"]'),
+      clipBottomGuide: () => document.querySelector('[data-editor-image-clip-bottom-guide="true"]'),
+      clipBottomLine: () => document.querySelector('[data-editor-image-clip-bottom-line="true"]'),
+      clipBottomScissors: () =>
+        document.querySelectorAll("[data-editor-image-clip-bottom-scissors]"),
+      clipBottomHandleVisual: () =>
+        document.querySelector('[data-editor-image-clip-bottom-handle-visual="true"]'),
+      clipBottomHandle: () => {
+        const handle = document.querySelector('[data-editor-image-clip-bottom-handle="true"]');
+        if (!(handle instanceof SVGElement)) {
+          throw new Error("Expected clip bottom handle");
+        }
+        return handle;
+      },
     };
   }
 
@@ -478,6 +529,87 @@ describe("CardPreview renderToCanvas", () => {
     });
 
     expect(capturedOverlayPresence).toEqual([false]);
+    expect(capturedClipGuidePresence).toEqual([false]);
+    expect(capturedClipScissorsPresence).toEqual([false]);
+  });
+
+  it("shows the lower clip guide only for selected main artwork that supports it", async () => {
+    const mainPreview = await renderSelectedPreview();
+    expect(mainPreview.clipBottomGuide()).not.toBeNull();
+    expect(mainPreview.clipBottomLine()).toHaveAttribute(
+      "data-editor-image-clip-bottom-active",
+      "false",
+    );
+    expect(mainPreview.clipBottomLine()).toHaveAttribute("stroke", "rgba(107, 114, 128, 0.82)");
+    expect(mainPreview.clipBottomLine()).not.toHaveAttribute("stroke-dasharray");
+    expect(mainPreview.clipBottomHandleVisual()).toHaveAttribute(
+      "data-editor-image-clip-bottom-active",
+      "false",
+    );
+    expect(mainPreview.clipBottomHandleVisual()).toHaveAttribute(
+      "fill",
+      "rgba(107, 114, 128, 0.72)",
+    );
+    expect(mainPreview.clipBottomScissors()).toHaveLength(2);
+    expect(
+      Array.from(mainPreview.clipBottomScissors()).map((marker) =>
+        marker.getAttribute("data-editor-image-clip-bottom-scissors"),
+      ),
+    ).toEqual(["left", "right"]);
+    expect(
+      Array.from(mainPreview.clipBottomScissors()).map((marker) =>
+        marker.getAttribute("data-editor-image-clip-bottom-active"),
+      ),
+    ).toEqual(["false", "false"]);
+  });
+
+  it("does not show the lower clip guide for selected monster icon artwork", async () => {
+    const preview = await renderSelectedPreview({
+      targetId: EDITOR_TARGET_IDS.imageIcon,
+      templateId: "monster",
+      templateName: "Monster",
+      defaultValues: selectedMonsterIconData,
+    });
+
+    expect(preview.clipBottomGuide()).toBeNull();
+  });
+
+  it("updates and enables artwork bottom clipping while dragging the guide handle", async () => {
+    const preview = await renderSelectedPreview();
+    const handle = preview.clipBottomHandle();
+    const layout = getCardPreviewStageLayout();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 850 })
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 760 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 1 });
+      fireEvent.pointerMove(handle, { pointerId: 1 });
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+    });
+
+    expect(preview.values()).toHaveAttribute("data-image-clip-edge-mask", "1");
+    expect(preview.values()).toHaveAttribute("data-image-clip-bottom", "760");
+    expect(preview.values()).toHaveAttribute("data-offset-x", "0");
+    expect(preview.values()).toHaveAttribute("data-offset-y", "0");
+  });
+
+  it("clamps artwork bottom clipping while dragging the guide handle", async () => {
+    const preview = await renderSelectedPreview();
+    const handle = preview.clipBottomHandle();
+    const layout = getCardPreviewStageLayout();
+    mockGetStagePointFromClientCoordinates
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 850 })
+      .mockReturnValueOnce({ x: layout.cardOriginX + CARD_WIDTH / 2, y: layout.cardOriginY + 200 });
+
+    await act(async () => {
+      fireEvent.pointerDown(handle, { pointerId: 1 });
+      fireEvent.pointerMove(handle, { pointerId: 1 });
+      fireEvent.pointerUp(handle, { pointerId: 1 });
+    });
+
+    expect(preview.values()).toHaveAttribute("data-image-clip-edge-mask", "1");
+    expect(preview.values()).toHaveAttribute("data-image-clip-bottom", "470");
   });
 
   it("updates image offsets while dragging the move handle", async () => {
@@ -508,6 +640,9 @@ describe("CardPreview renderToCanvas", () => {
 
   it("uses the true rendered image pivot instead of the clipped frame center", () => {
     const blueprint = blueprintsByTemplateId.hero;
+    if (!blueprint) {
+      throw new Error("Expected hero blueprint");
+    }
     const imageLayer = blueprint.layers.find((layer) => {
       return layer.type === layerTypes.image && layer.bind?.imageKey === "imageAssetId";
     });
@@ -823,13 +958,7 @@ describe("CardPreview renderToCanvas", () => {
   });
 
   it("keeps move grid lines anchored while the image offset changes", async () => {
-    const {
-      moveHandle,
-      moveGridLines,
-      moveGridAxes,
-      moveGridGradient,
-      moveGridAccentLines,
-    } =
+    const { moveHandle, moveGridLines, moveGridAxes, moveGridGradient, moveGridAccentLines } =
       await renderSelectedPreview();
     const { centerX, centerY } = getSelectedPreviewStageGeometry();
     const handle = moveHandle();
@@ -886,20 +1015,11 @@ describe("CardPreview renderToCanvas", () => {
         return false;
       }
       const numericPosition = Number(position);
-      const axisPosition =
-        numericPosition === Number(axisPositionValues[0]) ||
-        numericPosition === Number(axisPositionValues[1])
-          ? numericPosition
-          : null;
       const anchor =
-        Math.abs(numericPosition - Number(axisPositionValues[0])) %
-          GIZMO_MOVE_SNAP_INCREMENT ===
-        0
+        Math.abs(numericPosition - Number(axisPositionValues[0])) % GIZMO_MOVE_SNAP_INCREMENT === 0
           ? Number(axisPositionValues[0])
           : Number(axisPositionValues[1]);
-      const offsetIndex = Math.round(
-        (numericPosition - anchor) / GIZMO_MOVE_SNAP_INCREMENT,
-      );
+      const offsetIndex = Math.round((numericPosition - anchor) / GIZMO_MOVE_SNAP_INCREMENT);
       return offsetIndex !== 0 && Math.abs(offsetIndex) % 10 === 0;
     });
     expect(accentPositions).toEqual(expectedAccentPositions);
@@ -942,7 +1062,10 @@ describe("CardPreview renderToCanvas", () => {
       throw new Error("Expected move arm");
     }
 
-    expect(Number(armLine.getAttribute("x1"))).toBeCloseTo(centerX + 24 + GIZMO_CENTER_HANDLE_RADIUS, 4);
+    expect(Number(armLine.getAttribute("x1"))).toBeCloseTo(
+      centerX + 24 + GIZMO_CENTER_HANDLE_RADIUS,
+      4,
+    );
     expect(Number(armLine.getAttribute("y1"))).toBeCloseTo(centerY - 9.5, 4);
     expect(Number(armLine.getAttribute("y2"))).toBeCloseTo(centerY - 9.5, 4);
   });
@@ -1052,7 +1175,8 @@ describe("CardPreview renderToCanvas", () => {
   });
 
   it("snaps scale to the nearest relative ring when the modifier is held within tolerance", async () => {
-    const { transformHandle, values, scaleSnapRings, activeScaleSnapRing } = await renderSelectedPreview();
+    const { transformHandle, values, scaleSnapRings, activeScaleSnapRing } =
+      await renderSelectedPreview();
     const handle = transformHandle();
     const { startX, startY, endX, endY } = getTransformDragPoints(0, 1.24);
     mockGetStagePointFromClientCoordinates
@@ -1071,7 +1195,8 @@ describe("CardPreview renderToCanvas", () => {
   });
 
   it("does not snap scale when outside the ring tolerance", async () => {
-    const { transformHandle, values, scaleSnapRings, activeScaleSnapRing } = await renderSelectedPreview();
+    const { transformHandle, values, scaleSnapRings, activeScaleSnapRing } =
+      await renderSelectedPreview();
     const handle = transformHandle();
     const { startX, startY, endX, endY } = getTransformDragPoints(0, 1.12);
     mockGetStagePointFromClientCoordinates
@@ -1144,7 +1269,8 @@ describe("CardPreview renderToCanvas", () => {
   });
 
   it("snaps rotation and scale together when both guides are engaged", async () => {
-    const { transformHandle, values, activeSnapGuide, activeScaleSnapRing } = await renderSelectedPreview();
+    const { transformHandle, values, activeSnapGuide, activeScaleSnapRing } =
+      await renderSelectedPreview();
     const handle = transformHandle();
     const { startX, startY, endX, endY } = getTransformDragPoints(84, 1.24);
     mockGetStagePointFromClientCoordinates
@@ -1198,8 +1324,12 @@ describe("CardPreview renderToCanvas", () => {
 
     const baseCenterX = layout.cardOriginX + moveBounds.baseCenterX;
     const baseCenterY = layout.cardOriginY + moveBounds.baseCenterY;
-    const expectedOffsetX = roundStageValue((centerX + 24 - baseCenterX) / moveBounds.horizontalTravel);
-    const expectedOffsetY = roundStageValue((baseCenterY - (centerY - 18)) / moveBounds.verticalTravel);
+    const expectedOffsetX = roundStageValue(
+      (centerX + 24 - baseCenterX) / moveBounds.horizontalTravel,
+    );
+    const expectedOffsetY = roundStageValue(
+      (baseCenterY - (centerY - 18)) / moveBounds.verticalTravel,
+    );
 
     expect(Number(values().getAttribute("data-icon-offset-x"))).toBeCloseTo(expectedOffsetX, 4);
     expect(Number(values().getAttribute("data-icon-offset-y"))).toBeCloseTo(expectedOffsetY, 4);

@@ -3,8 +3,7 @@
 import FormSelect, { type FormSelectOption } from "@/components/common/FormSelect";
 import selectStyles from "@/components/common/FormSelect.module.css";
 import { useI18n } from "@/i18n/I18nProvider";
-
-import type { ExportProfile } from "@/lib/export-profiles";
+import type { ExportProfile } from "@/lib/data/export-profiles";
 
 type ExportProfileOption = FormSelectOption & {
   isDefault: boolean;

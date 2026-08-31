@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 const fs = require("fs");
+const { createRequire } = require("module");
 const path = require("path");
 const vm = require("vm");
-const { createRequire } = require("module");
+
 const ts = require("typescript");
 
 const messagesPath = path.join(__dirname, "..", "src", "i18n", "messages.ts");

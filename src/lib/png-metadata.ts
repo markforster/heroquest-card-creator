@@ -7,7 +7,7 @@ const crcTable = (() => {
   for (let i = 0; i < 256; i += 1) {
     let c = i;
     for (let k = 0; k < 8; k += 1) {
-      c = (c & 1) ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
     }
     table[i] = c >>> 0;
   }
@@ -44,11 +44,7 @@ function makeChunk(type: string, data: Uint8Array): Uint8Array {
   return chunk;
 }
 
-export async function addPngTextChunk(
-  blob: Blob,
-  keyword: string,
-  text: string,
-): Promise<Blob> {
+export async function addPngTextChunk(blob: Blob, keyword: string, text: string): Promise<Blob> {
   const buffer = new Uint8Array(await blob.arrayBuffer());
   if (buffer.length < PNG_SIGNATURE.length) return blob;
   for (let i = 0; i < PNG_SIGNATURE.length; i += 1) {

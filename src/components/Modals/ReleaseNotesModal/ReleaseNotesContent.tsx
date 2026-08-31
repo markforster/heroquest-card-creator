@@ -8,6 +8,7 @@ export const releaseNotesSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-1", "Update 29/08/2026 (v0.8.1)"],
   ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
   ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
   ["about-update-v0-7-0", "Update 05/07/2026 (v0.7.0)"],
@@ -229,15 +230,62 @@ export default function ReleaseNotesContent() {
       </DocSection>
 
       <DocSection
+        id="about-update-v0-8-1"
+        title="Update 29/08/2026 (v0.8.1)"
+        className={docStyles.docSectionSpaced}
+      >
+        <DocParagraph>
+          v0.8.1 is a focused quality-of-life release built around more flexible card appearance
+          controls and safer local library management. It keeps the existing editing workflow
+          familiar, but gives you more room to make cards look right when the standard defaults are
+          not quite enough.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          The card editor now supports separate library names and printed titles, so duplicate or
+          variant cards can be easier to find without changing what appears on the card itself.
+          Labelled Back title typography is closer to the original cards, Rules cards now support
+          background tint, and tint colors can use different blend modes for more creative control.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Hero and Monster main artwork also gained a lower clipping guide, with inspector controls
+          and direct preview dragging. Around the library, the Stockpile can filter by pairing
+          status, Settings has a clearer Library panel for export, import, and starting fresh, and
+          import completion now uses an in-app results modal instead of a browser alert.
+        </DocParagraph>
+        <DocList className={docStyles.docListSpaced}>
+          <li>Optional separate card name and printed title for title-bearing cards.</li>
+          <li>Bold italic title typography support, including Labelled Back defaults.</li>
+          <li>Rules background tint support and selectable tint blend modes.</li>
+          <li>Adjustable lower clipping for Hero and Monster main artwork.</li>
+          <li>Pairing-status filtering in the Stockpile: All, Not paired, and Paired.</li>
+          <li>Settings Library panel with export, import, and a guarded start-new-library flow.</li>
+          <li>
+            Import results now appear in the app modal system with consistent dismissal behavior.
+          </li>
+        </DocList>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Full release notes:{" "}
+          <a
+            href="https://github.com/markforster/heroquest-card-creator/releases/tag/v0.8.1"
+            target="_blank"
+            rel="noreferrer noopener"
+            className={docStyles.docLink}
+          >
+            v0.8.1
+          </a>
+        </DocParagraph>
+      </DocSection>
+
+      <DocSection
         id="about-update-v0-8-0"
         title="Update 25/07/2026 (v0.8.0)"
         className={docStyles.docSectionSpaced}
       >
         <DocParagraph>
           This release is a big step forward for the day-to-day card-making workflow. Rather than
-          introducing one single giant subsystem, v0.8.0 improves the parts of the app you spend
-          the most time in: the card editor is more interactive, the stockpile is calmer and easier
-          to browse, card content is more expressive, and Help is now a real built-in part of the
+          introducing one single giant subsystem, v0.8.0 improves the parts of the app you spend the
+          most time in: the card editor is more interactive, the stockpile is calmer and easier to
+          browse, card content is more expressive, and Help is now a real built-in part of the
           product instead of something scattered across notes and videos.
         </DocParagraph>
         <DocParagraph className={docStyles.docParagraphSpaced}>
@@ -248,8 +296,8 @@ export default function ReleaseNotesContent() {
           showing what is selected, what is interactive, and when a preview is still loading.
         </DocParagraph>
         <DocParagraph className={docStyles.docParagraphSpaced}>
-          v0.8.0 also broadens what kinds of cards and text the app can handle. Rules cards and
-          Logo Back cards are now first-class templates, body text has richer scaling and structure
+          v0.8.0 also broadens what kinds of cards and text the app can handle. Rules cards and Logo
+          Back cards are now first-class templates, body text has richer scaling and structure
           options, hero and monster defaults are closer to the printed cards, and smaller but very
           practical improvements such as stat asterisk markers, copyright defaults, and emoji or
           inline-dice insertion make authoring more flexible without turning the editor into a
@@ -291,8 +339,8 @@ export default function ReleaseNotesContent() {
             official-looking custom cards.
           </li>
           <li>
-            A full public help centre with in-app Help that can use the live site when available
-            and fall back to built-in guidance when it is not.
+            A full public help centre with in-app Help that can use the live site when available and
+            fall back to built-in guidance when it is not.
           </li>
         </DocList>
         <DocParagraph className={docStyles.docParagraphSpaced}>

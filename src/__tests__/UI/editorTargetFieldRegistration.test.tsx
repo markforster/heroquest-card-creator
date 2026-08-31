@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
-import type { AssetKind } from "@/api/assets";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 
+import type { AssetKind } from "@/api/assets";
 import {
   EDITOR_TARGET_IDS,
   EditorTargetsProvider,
@@ -34,7 +34,9 @@ jest.mock("@/components/Assets", () => ({
   }) =>
     isOpen ? (
       <div>
-        {preferredKindOrder?.[0] === "icon" ? "ICON_ASSETS_MODAL_OPEN" : "ARTWORK_ASSETS_MODAL_OPEN"}
+        {preferredKindOrder?.[0] === "icon"
+          ? "ICON_ASSETS_MODAL_OPEN"
+          : "ARTWORK_ASSETS_MODAL_OPEN"}
         {initialSelectedAssetId ? `:${initialSelectedAssetId}` : ""}
       </div>
     ) : null,
@@ -89,10 +91,7 @@ function SecondaryRequestButton({ targetId }: { targetId: keyof typeof EDITOR_TA
   const { requestSecondaryTarget } = useEditorTargets();
 
   return (
-    <button
-      type="button"
-      onClick={() => requestSecondaryTarget(EDITOR_TARGET_IDS[targetId])}
-    >
+    <button type="button" onClick={() => requestSecondaryTarget(EDITOR_TARGET_IDS[targetId])}>
       secondary-{targetId}
     </button>
   );
@@ -106,6 +105,12 @@ function SvgTargetProbe({ targetId }: { targetId: keyof typeof EDITOR_TARGET_IDS
       <rect data-testid={`svg-${targetId}`} width="10" height="10" {...svgTargetProps} />
     </svg>
   );
+}
+
+function CopyrightColorProbe() {
+  const copyrightColor = useWatch({ name: "copyrightColor" }) as string | undefined;
+
+  return <div data-testid="copyright-color">{copyrightColor ?? ""}</div>;
 }
 
 function renderWithForm(ui: React.ReactNode, defaultValues: Record<string, unknown> = {}) {
@@ -194,6 +199,34 @@ describe("editor target field registration", () => {
     });
   });
 
+  it("moves copyright auto colour into the field toolbar", async () => {
+    renderWithForm(
+      <>
+        <CopyrightField label="Copyright" showToggle />
+        <CopyrightColorProbe />
+      </>,
+      {
+        copyright: "Hero Copyright",
+        showCopyright: true,
+        copyrightColor: "#123456",
+      },
+    );
+
+    const autoButton = screen.getByRole("button", { name: "actions.auto" });
+
+    expect(autoButton).toHaveAttribute("aria-pressed", "false");
+    expect(autoButton).toHaveClass("bodyTextToolbarButton");
+    expect(autoButton).toHaveTextContent("");
+    expect(screen.getByTestId("copyright-color")).toHaveTextContent("#123456");
+
+    fireEvent.click(autoButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("copyright-color")).toHaveTextContent("");
+    });
+    expect(autoButton).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("runs registered secondary actions when requested directly", async () => {
     renderWithForm(
       <>
@@ -230,6 +263,22 @@ describe("editor target field registration", () => {
     await waitFor(() => {
       expect(screen.getByText("ICON_ASSETS_MODAL_OPEN:icon-1")).toBeInTheDocument();
     });
+  });
+
+  it("renders monster icon picker and adjustments with compact image toolbar controls", () => {
+    renderWithForm(<MonsterIconField label="Monster Icon" />, {
+      iconAssetId: "icon-1",
+      iconAssetName: "Icon",
+    });
+
+    const pickerButton = screen.getByTitle("tooltip.openIconPicker");
+    const adjustmentsButton = screen.getByRole("button", { name: "form.imageAdjustments" });
+
+    expect(pickerButton).toHaveClass("justify-content-center");
+    expect(pickerButton).toHaveTextContent("actions.chooseImage");
+    expect(adjustmentsButton).toHaveAttribute("aria-pressed", "false");
+    expect(adjustmentsButton).not.toHaveClass("btn-outline-secondary");
+    expect(screen.queryByTitle("form.artworkLowerClip")).not.toBeInTheDocument();
   });
 
   it("routes svg double click through the registered secondary action", async () => {

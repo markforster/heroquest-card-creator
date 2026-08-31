@@ -10,7 +10,10 @@ type SmartGroup = {
 };
 
 type UseSmartSwatchesArgs = {
-  renderPreviewCanvas: (args: { width: number; height: number }) => Promise<HTMLCanvasElement | null>;
+  renderPreviewCanvas: (args: {
+    width: number;
+    height: number;
+  }) => Promise<HTMLCanvasElement | null>;
   width: number;
   height: number;
 };

@@ -1,10 +1,18 @@
+import type { BackgroundTintBlendMode } from "./background-tint";
 import type { BodyTextStyle, HeroBackLogoMode } from "./card-data";
 import type { CardFace } from "./card-face";
 import type { StatAsteriskFlags, StatValue } from "./stats";
 import type { TemplateId } from "./templates";
+import type { TitleTypography } from "./title-typography";
 
+/**
+ * Saved-state lifecycle for a stored card record.
+ */
 export type CardStatus = "draft" | "saved" | "archived";
 
+/**
+ * Canonical persisted card record written to IndexedDB and exchanged through the local API.
+ */
 export interface CardRecord {
   id: string;
   templateId: TemplateId;
@@ -12,6 +20,7 @@ export interface CardRecord {
 
   name: string;
   nameLower: string;
+  customNameEnabled?: boolean;
   createdAt: number;
   updatedAt: number;
   lastViewedAt?: number;
@@ -22,6 +31,7 @@ export interface CardRecord {
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
+  titleTypography?: TitleTypography;
   titleColor?: string;
   bodyTextColor?: string;
   bodyTextFitToBounds?: boolean;
@@ -40,10 +50,13 @@ export interface CardRecord {
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageRotation?: number;
+  imageClipEdgeMask?: number;
+  imageClipBottom?: number;
   imageOriginalWidth?: number;
   imageOriginalHeight?: number;
   borderColor?: string;
   backgroundTint?: string;
+  backgroundTintBlendMode?: BackgroundTintBlendMode;
   heroBackLogoMode?: HeroBackLogoMode;
   heroBackLogoId?: string;
   heroBackLogoName?: string;

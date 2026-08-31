@@ -32,9 +32,9 @@ export default function CardsPage() {
   } = useCardEditor();
   const { resetWithSaved } = useEditorForm();
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
-  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
-    null,
-  );
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<
+    (() => boolean) | null
+  >(null);
 
   const currentTemplateId = selectedTemplateId ?? null;
   const activeCardId =

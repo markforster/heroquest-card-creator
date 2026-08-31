@@ -1,10 +1,7 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-import type {
-  FrameSize,
-  OptimizePreviewState,
-} from "@/components/Assets/AssetsInspector.types";
+import type { FrameSize, OptimizePreviewState } from "@/components/Assets/AssetsInspector.types";
 import ModalShell from "@/components/common/ModalShell";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -91,9 +88,7 @@ export default function AssetsOptimizeModal({
       contentClassName={styles.assetsReplacePopover}
       footer={
         <div className={styles.assetsOptimizeFooter}>
-          <div className={styles.assetsOptimizeFooterHint}>
-            {t("helper.optimizeOverwrite")}
-          </div>
+          <div className={styles.assetsOptimizeFooterHint}>{t("helper.optimizeOverwrite")}</div>
           <div className={styles.assetsOptimizeFooterActions}>
             <button
               type="button"
@@ -108,10 +103,7 @@ export default function AssetsOptimizeModal({
               className="btn btn-primary btn-sm"
               onClick={onApply}
               disabled={
-                isOptimizing ||
-                isApplyingOptimization ||
-                !optimizePreview ||
-                !canApplyOptimization
+                isOptimizing || isApplyingOptimization || !optimizePreview || !canApplyOptimization
               }
             >
               {t("actions.apply")}

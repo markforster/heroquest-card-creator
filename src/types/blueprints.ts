@@ -5,6 +5,7 @@ import type {
   SystemFamily,
 } from "@/data/card-systems/types";
 import type { TemplateId } from "@/types/templates";
+import type { TitleTypography } from "@/types/title-typography";
 
 import type { StaticImageData } from "next/image";
 
@@ -37,6 +38,7 @@ export type BlueprintTextLayoutMode = "fixed-bounds" | "auto-height";
 
 export type BlueprintLayerProps = Record<string, string | number | boolean> & {
   textLayoutMode?: BlueprintTextLayoutMode;
+  titleTypographyDefault?: TitleTypography;
 };
 
 export type BlueprintLayerBase = {
@@ -75,6 +77,10 @@ export type BlueprintLayerOverlay = BlueprintLayerBase & {
 export type BlueprintLayerImage = BlueprintLayerBase & {
   type: "image";
   clip?: BlueprintImageClip;
+  adjustableClipEdgeMask?: number;
+  adjustableClipBottomMin?: number;
+  adjustableClipBottomMax?: number;
+  adjustableClipBottomDefault?: number;
 };
 
 export type BlueprintLayerLogo = BlueprintLayerBase & {

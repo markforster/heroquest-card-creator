@@ -44,4 +44,3 @@ describe("StockpileCollectionModal (UI)", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
   });
 });
-

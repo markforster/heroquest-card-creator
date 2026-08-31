@@ -67,7 +67,11 @@ export default function TemplateCard({
             />
           </div>
           {SHOW_GRID_TEMPLATE_TITLES ? (
-            <CardTitlePill text={label} active={isActive} className={styles.templateCardTitlePill} />
+            <CardTitlePill
+              text={label}
+              active={isActive}
+              className={styles.templateCardTitlePill}
+            />
           ) : null}
         </>
       )}

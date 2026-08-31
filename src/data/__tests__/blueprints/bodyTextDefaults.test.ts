@@ -1,9 +1,11 @@
-import { blueprintIds } from "@/data/card-systems/types";
 import { blueprintsByTemplateId } from "@/data/blueprints";
+import { blueprintIds } from "@/data/card-systems/types";
 
 function getGroupChildProps(templateId: "hero" | "monster", childId: string) {
   const blueprint = blueprintsByTemplateId[templateId];
-  const child = blueprint?.groups?.flatMap((group) => group.children).find((entry) => entry.id === childId);
+  const child = blueprint?.groups
+    ?.flatMap((group) => group.children)
+    .find((entry) => entry.id === childId);
   return child?.props;
 }
 

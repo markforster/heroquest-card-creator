@@ -25,7 +25,11 @@ jest.mock("@/components/common/CardTitlePill", () => ({
     className?: string;
     text: string;
   }) => (
-    <span className={className} data-testid="card-title-pill" data-active={active ? "true" : "false"}>
+    <span
+      className={className}
+      data-testid="card-title-pill"
+      data-active={active ? "true" : "false"}
+    >
       {text}
     </span>
   ),

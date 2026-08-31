@@ -2,8 +2,8 @@
 
 import { setExportBackgroundFit, setExportClip } from "@/lib/bleed-export";
 
-import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 import { getCardPreviewStageLayout } from "./cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH } from "./consts";
 
 import type { CardPreviewProps } from "./types";
 
@@ -26,6 +26,10 @@ function removePreviewOnlyOverflowWarnings(svg: SVGSVGElement) {
 
 function removePreviewOnlyEditorOverlay(svg: SVGSVGElement) {
   svg.querySelectorAll('[data-preview-only="editor-overlay"]').forEach((node) => node.remove());
+}
+
+function removePreviewOnlyImageClipGhosts(svg: SVGSVGElement) {
+  svg.querySelectorAll('[data-preview-only="image-clip-ghost"]').forEach((node) => node.remove());
 }
 
 function cropSvgRootToCardBounds(svg: SVGSVGElement) {
@@ -62,9 +66,9 @@ function applyExportImageClip(svg: SVGSVGElement) {
 
 function zeroTreasureBorderOffsetsForExport(svg: SVGSVGElement) {
   svg
-    .querySelectorAll<SVGImageElement | SVGFEImageElement>(
-      '[data-template-asset="border-mask"], [data-template-asset="border-texture"]',
-    )
+    .querySelectorAll<
+      SVGImageElement | SVGFEImageElement
+    >('[data-template-asset="border-mask"], [data-template-asset="border-texture"]')
     .forEach((node) => {
       node.setAttribute("x", "0");
       node.setAttribute("y", "0");
@@ -113,6 +117,7 @@ export function mutateSvgForExport(
 
   removePreviewOnlyOverflowWarnings(svg);
   removePreviewOnlyEditorOverlay(svg);
+  removePreviewOnlyImageClipGhosts(svg);
   cropSvgRootToCardBounds(svg);
 
   applyExportImageClip(svg);

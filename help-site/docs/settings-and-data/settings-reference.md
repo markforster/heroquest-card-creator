@@ -4,11 +4,11 @@ type: capability-overview
 status: first-draft
 source_questions: [Q-0060, Q-0061, Q-0062, Q-0063, Q-0064, Q-0079, Q-0098, Q-0150, Q-0152, Q-0153, Q-0154, Q-0155, Q-0156, Q-0157, Q-0158, Q-0159, Q-0160, Q-0161, Q-0166]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Settings Reference
 
-This page explains every visible Settings category in v0.8.0. For where the categories appear and how Save or Discard works, see [Understand the Settings Window](./understand-the-settings-window.md).
+This page explains every visible Settings category in v0.8.1. For where the categories appear and how Save or Discard works, see [Understand the Settings Window](./understand-the-settings-window.md).
 
 <!-- help-visual:p087:start -->
 <figure class="hqcc-help-figure hqcc-help-figure--wide" markdown="span">
@@ -54,6 +54,14 @@ See [Configure Export Defaults and Profiles](./configure-export-defaults-and-pro
 
 Stat Label Overrides changes the printed wording used for card statistics. The fields are grouped by where they apply:
 
+<!-- help-visual:p116:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--portrait" markdown="span">
+  ![Stat Label Overrides settings panel with shared, Monster Card, and Hero Card label fields.](../assets/placements/p116--settings-and-data-settings-reference--stat-label-overrides.png)
+  <figcaption>Stat Label Overrides lets you replace printed statistic wording across supported cards.</figcaption>
+</figure>
+<!-- help-visual:p116:end -->
+
+
 - Shared: Attack Dice and Defend Dice.
 - Monster Card: Movement Squares, Body Points, and Mind Points.
 - Hero Card: Starting Points, Body, and Mind.
@@ -64,11 +72,26 @@ Enter replacement wording, enable **Enable stat label overrides**, and choose **
 
 **Group collections by folders** interprets slashes in collection names as folder paths. For example, `spells/fire` and `spells/air` appear beneath a `spells` group.
 
+<!-- help-visual:p117:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--wide" markdown="span">
+  ![Collections settings panel with a folder grouping option for slash-delimited collection names.](../assets/placements/p117--settings-and-data-settings-reference--collections.png)
+  <figcaption>Collections settings control how named collections are presented in the app.</figcaption>
+</figure>
+<!-- help-visual:p117:end -->
+
 This changes how collections are presented. It does not move, duplicate, or delete their cards. See [Create and Organize Collections](../managing-your-library/collections/create-and-organize-collections.md).
 
 ## Text Fitting (Global)
 
 The global text-fitting controls are separate for **Title** and **Stat headings**:
+
+<!-- help-visual:p118:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--wide" markdown="span">
+  ![Text Fitting settings panel showing global title and stat heading fitting controls.](../assets/placements/p118--settings-and-data-settings-reference--text-fitting-global.png)
+  <figcaption>Text Fitting changes global title and stat-heading behaviour, not one card's body text.</figcaption>
+</figure>
+<!-- help-visual:p118:end -->
+
 
 - **Prefer ellipsis over shrink** chooses truncation rather than shrinking below the preferred point.
 - **Min font size** sets how far text may shrink.
@@ -81,15 +104,36 @@ These settings do not control the per-card body-text **Scale to fit** option. Se
 - **Default copyright** supplies the text used by newly created cards unless the card overrides it.
 - **Copyright Visibility** sets the initial visibility separately for each template.
 
+<!-- help-visual:p119:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--portrait" markdown="span">
+  ![Copyright Defaults settings panel with default text and per-template visibility controls.](../assets/placements/p119--settings-and-data-settings-reference--copyright-defaults.png)
+  <figcaption>Copyright Defaults supplies starting copyright wording and visibility for new cards.</figcaption>
+</figure>
+<!-- help-visual:p119:end -->
+
 The template toggles affect new-card defaults. Existing cards retain their saved text and visibility until edited.
 
 ## Assets
 
 **Enable auto-classification** lets the app categorize uploaded images as Artwork or Icon. Turning it off stops automatic classification; you can still override an individual asset's kind in Assets.
 
+<!-- help-visual:p120:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--panoramic" markdown="span">
+  ![Assets settings panel with the auto-classification option.](../assets/placements/p120--settings-and-data-settings-reference--assets.png)
+  <figcaption>Assets settings control whether uploaded images are automatically classified.</figcaption>
+</figure>
+<!-- help-visual:p120:end -->
+
 Automatic classification is unavailable in Safari and the setting is disabled there. See [Understand the Assets Workspace](../managing-your-library/assets/understand-the-assets-workspace.md).
 
 ## Appearance
+
+<!-- help-visual:p121:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--portrait" markdown="span">
+  ![Appearance settings panel with theme and typography controls.](../assets/placements/p121--settings-and-data-settings-reference--appearance.png)
+  <figcaption>Appearance settings control theme and numeral style preferences.</figcaption>
+</figure>
+<!-- help-visual:p121:end -->
 
 ### Theme
 
@@ -104,6 +148,34 @@ Titles and stats each provide:
 - **Use fixed-width numerals** to give each numeral the same width.
 
 Body text keeps the numeral behavior used by the original printed-card style.
+
+## Library
+
+Library shows a compact summary of the current local library:
+
+<!-- help-visual:p122:start -->
+<figure class="hqcc-help-figure hqcc-help-figure--portrait" markdown="span">
+  ![Library settings panel with cards, decks, assets, export, import, and new-library actions.](../assets/placements/p122--settings-and-data-settings-reference--library.png)
+  <figcaption>Library settings provide local library counts and actions for export, import, and starting fresh.</figcaption>
+</figure>
+<!-- help-visual:p122:end -->
+
+
+- **Cards**
+- **Decks**
+- **Assets**
+
+It also provides three actions:
+
+- **Export** creates a `.hqcc` backup.
+- **Import** restores a `.hqcc` backup and replaces the current library.
+- **New** starts a new empty library after a destructive confirmation.
+
+Library also includes browser storage guidance. The app asks the browser for extra local data protection where supported, but regular `.hqcc` exports remain the backup you control.
+
+Choose **New** only when you want to remove the current local library. The confirmation window offers another export opportunity, requires an acknowledgement checkbox, and then shows a completion message when the reset has finished.
+
+For the full safety flow, see [Start a New Library](./start-a-new-library.md). For backup and restore steps, see [Back Up and Restore Your Library](./back-up-and-restore-your-library.md). For browser storage guidance, see [Protect Your Library and Keep It Small](./protect-your-library-and-keep-it-small.md).
 
 ## Credit the developer
 
@@ -132,7 +204,7 @@ Storage figures are estimates for the current browser profile. They are not a ba
 
 ## Debug Tools
 
-Debug Tools appears only when diagnostic tools are enabled. In v0.8.0 it can show:
+Debug Tools appears only when diagnostic tools are enabled. In v0.8.1 it can show:
 
 - **Show text bounds** for visual diagnostics.
 - Thumbnail JPEG migration status.
@@ -141,7 +213,7 @@ Debug Tools appears only when diagnostic tools are enabled. In v0.8.0 it can sho
 
 Do not use **Clear asset classification** as a normal organization tool. The app warns that it is destructive.
 
-The visible message saying Debug will be removed after version 0.5.x is stale in v0.8.0. Treat the entire category as diagnostic and subject to change.
+The visible message saying Debug will be removed after version 0.5.x is stale in v0.8.1. Treat the entire category as diagnostic and subject to change.
 
 ## Backup relationship
 

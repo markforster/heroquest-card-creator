@@ -1,9 +1,4 @@
-import {
-  blueprintsByTemplateId,
-  getCopyrightBounds,
-} from "@/data/blueprints";
-import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
-import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
+import { blueprintsByTemplateId, getCopyrightBounds } from "@/data/blueprints";
 import {
   blueprintsByTemplateId as familyBlueprintsByTemplateId,
   getCopyrightBounds as getFamilyCopyrightBounds,
@@ -13,6 +8,8 @@ import {
   cardTemplatesById as familyCardTemplatesById,
 } from "@/data/card-systems/hq/2021/card-templates";
 import { inspectorFieldsByTemplate as familyInspectorFieldsByTemplate } from "@/data/card-systems/hq/2021/inspector-fields";
+import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
+import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 
 describe("top-level data barrels", () => {
   it("re-exports the assembled hq.2021 blueprint registry and helpers", () => {

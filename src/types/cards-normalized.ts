@@ -1,9 +1,16 @@
-import type { BlueprintGroupTypeValue, BlueprintLayerTypeValue, BlueprintSlotId, SystemFamily } from "@/data/card-systems/types";
+import type {
+  BlueprintGroupTypeValue,
+  BlueprintLayerTypeValue,
+  BlueprintSlotId,
+  SystemFamily,
+} from "@/data/card-systems/types";
+import type { BackgroundTintBlendMode } from "@/types/background-tint";
 import type { BodyTextStyle, HeroBackLogoMode } from "@/types/card-data";
 import type { CardFace } from "@/types/card-face";
 import type { CardStatus } from "@/types/cards-db";
 import type { StatAsteriskFlags, StatValue } from "@/types/stats";
 import type { TemplateId } from "@/types/templates";
+import type { TitleTypography } from "@/types/title-typography";
 
 export type NormalizedCardSchemaVersion = 1;
 
@@ -24,6 +31,7 @@ export interface CardBaseRecord {
   status: CardStatus;
   name: string;
   nameLower: string;
+  customNameEnabled?: boolean;
   createdAt: number;
   updatedAt: number;
   lastViewedAt?: number;
@@ -55,6 +63,7 @@ export interface CardSlotLinkRecord {
 
 export interface CardBackgroundComponentRecord extends NormalizedCardComponentBase {
   tint?: string;
+  blendMode?: BackgroundTintBlendMode;
 }
 
 export interface CardBorderComponentRecord extends NormalizedCardComponentBase {
@@ -65,6 +74,7 @@ export interface CardTitleComponentRecord extends NormalizedCardComponentBase {
   title?: string;
   showTitle?: boolean;
   titleStyle?: "ribbon" | "plain";
+  titleTypography?: TitleTypography;
   titleColor?: string;
   titlePlacement?: "top" | "bottom";
 }
@@ -90,6 +100,8 @@ export interface CardImageComponentRecord extends NormalizedCardComponentBase {
   offsetX?: number;
   offsetY?: number;
   rotation?: number;
+  clipEdgeMask?: number;
+  clipBottom?: number;
   originalWidth?: number;
   originalHeight?: number;
 }

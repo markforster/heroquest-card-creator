@@ -1,20 +1,19 @@
-import { deleteCards, getCard } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import {
-  seedNormalizedCard,
-  seedNormalizedThumbnail,
-} from "@/lib/test-support/normalized-card-test-helpers";
-
+import { deleteCards, getCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createCardRecord,
   deleteDb,
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import {
+  seedNormalizedCard,
+  seedNormalizedThumbnail,
+} from "@/lib/test-support/normalized-card-test-helpers";
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
@@ -41,8 +40,14 @@ describe("deleteCards", () => {
     const db = await openHqccDexieDb();
     await seedNormalizedCard(createCardRecord({ id: "a" }));
     await seedNormalizedCard(createCardRecord({ id: "b" }));
-    await seedNormalizedThumbnail({ cardId: "a", thumbnailBlob: new Blob(["a"], { type: "image/png" }) });
-    await seedNormalizedThumbnail({ cardId: "b", thumbnailBlob: new Blob(["b"], { type: "image/png" }) });
+    await seedNormalizedThumbnail({
+      cardId: "a",
+      thumbnailBlob: new Blob(["a"], { type: "image/png" }),
+    });
+    await seedNormalizedThumbnail({
+      cardId: "b",
+      thumbnailBlob: new Blob(["b"], { type: "image/png" }),
+    });
 
     await deleteCards(["a", "b"]);
     await expect(getCard("a")).resolves.toBeNull();

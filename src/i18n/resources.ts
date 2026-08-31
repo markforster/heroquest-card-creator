@@ -72,12 +72,18 @@ export const defaultNS = "common" as const;
 export const namespaces = ["common", "decks", "formattingHelp", "templates"] as const;
 export type Namespace = (typeof namespaces)[number];
 
-export const resources = {
+export const englishResources = {
+  common: en_common,
+  decks: en_decks,
+  formattingHelp: en_formattingHelp,
+  templates: en_templates,
+} as const;
+
+type LanguageResources = Record<Namespace, Record<string, string>>;
+
+export const resources: Record<string, LanguageResources> = {
   en: {
-    common: en_common,
-    decks: en_decks,
-    formattingHelp: en_formattingHelp,
-    templates: en_templates,
+    ...englishResources,
   },
   fr: {
     common: fr_common,
@@ -175,7 +181,7 @@ export const resources = {
     formattingHelp: fi_formattingHelp,
     templates: fi_templates,
   },
-} as const;
+};
 
 export function namespaceForMessageKey(key: string): Namespace {
   if (key.startsWith("decks.")) return "decks";

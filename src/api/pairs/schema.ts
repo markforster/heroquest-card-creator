@@ -32,3 +32,50 @@ export const deletePairInputSchema = z.object({
   mode: z.enum(["block", "confirmable-cascade"]).optional(),
   confirmCascade: z.boolean().optional(),
 });
+
+export const deckUsageLocationSchema = z.object({
+  deckId: z.string(),
+  deckTitle: z.string(),
+  groupId: z.string(),
+  groupTitle: z.string(),
+  setId: z.string(),
+  setTitle: z.string(),
+});
+
+export const pairCascadePlanSchema = z.object({
+  pairIds: z.array(z.string()),
+  entryIds: z.array(z.string()),
+  usage: z.array(deckUsageLocationSchema),
+});
+
+export const pairUsageReportSchema = z.object({
+  frontFaceId: z.string(),
+  backFaceId: z.string(),
+  mode: z.enum(["block", "confirmable-cascade"]),
+  cascadePlan: pairCascadePlanSchema,
+});
+
+export const previewDeletePairInputSchema = z.object({
+  frontFaceId: z.string(),
+  backFaceId: z.string(),
+  mode: z.enum(["block", "confirmable-cascade"]).optional(),
+});
+
+export const deletePairsForFacesInputSchema = z.object({
+  faceIds: z.array(z.string()),
+  mode: z.enum(["block", "confirmable-cascade"]).optional(),
+  confirmCascade: z.boolean().optional(),
+});
+
+export const pairDeleteResolutionSchema = z.union([
+  z.object({
+    kind: z.literal("no-impact"),
+    report: pairUsageReportSchema,
+  }),
+  z.object({
+    kind: z.literal("executed"),
+    report: pairUsageReportSchema,
+    cascadedEntries: z.number(),
+    deletedPairs: z.number(),
+  }),
+]);

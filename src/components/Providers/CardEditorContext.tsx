@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { apiClient } from "@/api/client";
 import type { CardStatus } from "@/api/cards";
+import { apiClient } from "@/api/client";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import type { TemplateId } from "@/types/templates";
 
@@ -19,6 +19,7 @@ export type CardEditorContextValue = {
   state: CardEditorState;
   setSelectedTemplateId: (templateId: TemplateId | null) => void;
   setActiveCard: (templateId: TemplateId, id: string | null, status: CardStatus | null) => void;
+  resetActiveCards: () => void;
 };
 
 const CardEditorContext = createContext<CardEditorContextValue | undefined>(undefined);
@@ -36,20 +37,6 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
   // Hydrate initial selection and any persisted active cards from localStorage once
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    if (navigator.storage && navigator.storage.persist) {
-      navigator.storage
-        .persisted()
-        .then((isPersisted) => {
-          if (!isPersisted) {
-            return navigator.storage.persist();
-          }
-          return undefined;
-        })
-        .catch(() => {
-          // Ignore storage persistence errors.
-        });
-    }
 
     let initialId: TemplateId | null = cardTemplates[0]?.id ?? null;
     const initialActiveIds: Partial<Record<TemplateId, string>> = {};
@@ -122,6 +109,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
         if (!id && !status) return;
         payload[templateId] = { id, status: status ?? null };
       });
+      if (Object.keys(payload).length === 0) {
+        window.localStorage.removeItem("hqcc.activeCards.v1");
+        return;
+      }
       window.localStorage.setItem("hqcc.activeCards.v1", JSON.stringify(payload));
     } catch {
       // Ignore localStorage errors
@@ -135,17 +126,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
     const activeStatus = activeCardStatusByTemplate[selectedTemplateId];
     if (!activeId || activeStatus !== "saved") return;
 
-    apiClient
-      .touchCardLastViewed({}, { params: { id: activeId } })
-      .catch(() => {
-        // Ignore view updates; editor should not fail.
-      });
-  }, [
-    activeCardIdByTemplate,
-    activeCardStatusByTemplate,
-    isHydrated,
-    selectedTemplateId,
-  ]);
+    apiClient.touchCardLastViewed({}, { params: { id: activeId } }).catch(() => {
+      // Ignore view updates; editor should not fail.
+    });
+  }, [activeCardIdByTemplate, activeCardStatusByTemplate, isHydrated, selectedTemplateId]);
 
   const value = useMemo<CardEditorContextValue>(
     () => ({
@@ -164,6 +148,10 @@ export function CardEditorProvider({ children }: { children: ReactNode }) {
           ...prev,
           [templateId]: status ?? undefined,
         }));
+      },
+      resetActiveCards: () => {
+        setActiveCardIdByTemplate({});
+        setActiveCardStatusByTemplate({});
       },
     }),
     [selectedTemplateId, activeCardIdByTemplate, activeCardStatusByTemplate],

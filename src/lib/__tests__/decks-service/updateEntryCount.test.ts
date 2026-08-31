@@ -1,17 +1,16 @@
 const enqueueDbEstimateChange = jest.fn();
 const createPair = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-jest.mock("@/lib/pairs-service", () => ({
+jest.mock("@/lib/data/pairs-service", () => ({
   createPair: (...args: unknown[]) => createPair(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { addFrontsToSet, listEntriesForSet, updateEntryCount } from "@/lib/decks-service";
-
+import { addFrontsToSet, listEntriesForSet, updateEntryCount } from "@/lib/data/decks-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   TEST_NOW,
   createDeckEntryRecord,
@@ -59,7 +58,14 @@ describe("decks-service entry count", () => {
   it("addFrontsToSet creates entries with count 1", async () => {
     const db = await openHqccDexieDb();
     await db.decks.put(createDeckRecord({ id: "deck-1" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", backFaceId: "back-1" }));
+    await db.deckSets.put(
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-1",
+        groupId: "group-1",
+        backFaceId: "back-1",
+      }),
+    );
 
     const created = await addFrontsToSet("set-1", ["front-1"]);
 

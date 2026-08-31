@@ -94,7 +94,11 @@ export async function refreshCardThumbnailsBatch({
         });
       });
     } catch (error) {
-      logger.warn("[thumbnail-refresh] Failed to render thumbnail", { cardId, stage: "render", error });
+      logger.warn("[thumbnail-refresh] Failed to render thumbnail", {
+        cardId,
+        stage: "render",
+        error,
+      });
       continue;
     }
 

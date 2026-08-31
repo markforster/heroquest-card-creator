@@ -1,7 +1,10 @@
 "use client";
 
+import type {
+  DeckDetailModalActions,
+  DeckDetailModalState,
+} from "@/components/Decks/types/deck-detail";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
-import type { DeckDetailModalActions, DeckDetailModalState } from "@/components/Decks/types/deck-detail";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DeckDetailModals({

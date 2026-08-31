@@ -2,19 +2,18 @@ const getCard = jest.fn();
 const createPair = jest.fn();
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: (...args: unknown[]) => getCard(...args),
 }));
 
-jest.mock("@/lib/pairs-service", () => ({
+jest.mock("@/lib/data/pairs-service", () => ({
   createPair: (...args: unknown[]) => createPair(...args),
 }));
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
 import {
   addFrontsToSet,
   createGroup,
@@ -22,8 +21,8 @@ import {
   reorderEntries,
   reorderGroups,
   reorderSets,
-} from "@/lib/decks-service";
-
+} from "@/lib/data/decks-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   TEST_NOW,
   createDeckEntryRecord,
@@ -88,7 +87,14 @@ describe("decks-service deck updatedAt touch propagation", () => {
     const db = await openHqccDexieDb();
     await db.decks.put(createDeckRecord({ id: "deck-1", updatedAt: TEST_NOW }));
     await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1", updatedAt: TEST_NOW }));
+    await db.deckSets.put(
+      createDeckSetRecord({
+        id: "set-1",
+        deckId: "deck-1",
+        groupId: "group-1",
+        updatedAt: TEST_NOW,
+      }),
+    );
 
     await createSet("deck-1", "group-1", { backFaceId: "back-2", description: null });
     const touchedAfterCreate = (await db.decks.get("deck-1"))?.updatedAt ?? 0;
@@ -105,8 +111,12 @@ describe("decks-service deck updatedAt touch propagation", () => {
     const db = await openHqccDexieDb();
     await db.decks.put(createDeckRecord({ id: "deck-1", updatedAt: TEST_NOW }));
     await db.deckGroups.put(createDeckGroupRecord({ id: "group-1", deckId: "deck-1" }));
-    await db.deckSets.put(createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1" }));
-    await db.deckEntries.put(createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1" }));
+    await db.deckSets.put(
+      createDeckSetRecord({ id: "set-1", deckId: "deck-1", groupId: "group-1" }),
+    );
+    await db.deckEntries.put(
+      createDeckEntryRecord({ id: "entry-1", deckId: "deck-1", setId: "set-1", pairId: "pair-1" }),
+    );
     createPair.mockResolvedValueOnce(createPairRecord({ id: "pair-2", frontFaceId: "front-2" }));
 
     await addFrontsToSet("set-1", ["front-1"]);

@@ -90,9 +90,7 @@ describe("useDecksGridModel", () => {
   });
 
   it("loads decks", async () => {
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     await waitFor(() => {
       expect(result.current.decks).toEqual([{ id: "d1", title: "Deck 1", updatedAt: 1 }]);
@@ -100,9 +98,7 @@ describe("useDecksGridModel", () => {
   });
 
   it("preserves single-select and modifier toggle behavior", async () => {
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -121,9 +117,7 @@ describe("useDecksGridModel", () => {
       data: [{ id: "d2", title: "Deck 2", updatedAt: 2 }],
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     await act(async () => {
       await result.current.createDeck();
@@ -135,9 +129,7 @@ describe("useDecksGridModel", () => {
   });
 
   it("beginCreateDeckDraft clears drafts and target", async () => {
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
     act(() => {
       result.current.setDeckTitleDraft("X");
       result.current.setDeckDescriptionDraft("Y");
@@ -154,9 +146,7 @@ describe("useDecksGridModel", () => {
       isLoading: false,
       refetch,
     });
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
     let opened = false;
     act(() => {
       opened = result.current.beginEditDeckDraft("d1");
@@ -169,9 +159,7 @@ describe("useDecksGridModel", () => {
 
   it("submitDeckDraft updates existing deck in edit mode", async () => {
     updateDeck.mockResolvedValue(undefined);
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
     act(() => {
       result.current.beginEditDeckDraft("d1");
       result.current.setDeckTitleDraft("Deck Updated");
@@ -180,14 +168,17 @@ describe("useDecksGridModel", () => {
     await act(async () => {
       await result.current.submitDeckDraft();
     });
-    expect(updateDeck).toHaveBeenCalledWith("d1", "Deck Updated", "Updated description", "Untitled");
+    expect(updateDeck).toHaveBeenCalledWith(
+      "d1",
+      "Deck Updated",
+      "Updated description",
+      "Untitled",
+    );
     expect(refetch).toHaveBeenCalled();
   });
 
   it("initializes rename draft from single selected deck and gates actions by selection", async () => {
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     expect(result.current.canRenameDeck).toBe(false);
     expect(result.current.canDeleteDecks).toBe(false);
@@ -203,9 +194,7 @@ describe("useDecksGridModel", () => {
   });
 
   it("commits title updates and falls back to untitled when blank", async () => {
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -227,9 +216,7 @@ describe("useDecksGridModel", () => {
   });
 
   it("cancels title edits and resets draft", async () => {
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -253,9 +240,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -270,9 +255,7 @@ describe("useDecksGridModel", () => {
   it("updates effective title immediately and persists with debounce", async () => {
     updateDeckTitle.mockImplementation(() => new Promise(() => {}));
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -319,9 +302,7 @@ describe("useDecksGridModel", () => {
   it("debounced save uses latest draft value only", async () => {
     updateDeckTitle.mockImplementation(() => new Promise(() => {}));
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -352,9 +333,7 @@ describe("useDecksGridModel", () => {
       refetch,
     }));
 
-    const { result, rerender } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result, rerender } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -384,9 +363,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d1", false);
@@ -412,9 +389,7 @@ describe("useDecksGridModel", () => {
     });
     refetch.mockResolvedValue({ data: { deckId: "unexpected-shape" } });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     expect(result.current.decks).toEqual([]);
     await act(async () => {
@@ -433,9 +408,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
     expect(result.current.filteredDecks).toHaveLength(2);
 
     act(() => {
@@ -459,9 +432,7 @@ describe("useDecksGridModel", () => {
       isLoading: false,
       refetch,
     });
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.selectDeck("d2", false);
@@ -496,9 +467,7 @@ describe("useDecksGridModel", () => {
     mockListDeckSets.mockResolvedValue([{ id: "s1" }]);
     mockListDeckEntries.mockResolvedValue([{ id: "e1", pairId: "p1" }]);
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.setSearchDraft("wizard");
@@ -531,9 +500,7 @@ describe("useDecksGridModel", () => {
     mockListDeckSets.mockResolvedValue([{ id: "s1", backFaceId: "b1" }]);
     mockListDeckEntries.mockResolvedValue([]);
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.setSearchDraft("spell");
@@ -583,9 +550,7 @@ describe("useDecksGridModel", () => {
       return [];
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.setSearchDraft("spell");
@@ -623,9 +588,7 @@ describe("useDecksGridModel", () => {
     mockListDeckEntries.mockResolvedValue([]);
     mockGetCardThumbnailUrl.mockResolvedValue("blob:key-back");
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     await waitFor(() => {
       expect(result.current.deckBackgroundUrlByDeckId.d1).toBe("blob:key-back");
@@ -647,9 +610,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     expect(result.current.filteredDecks.map((deck) => deck.id)).toEqual([
       "d6",
@@ -672,9 +633,7 @@ describe("useDecksGridModel", () => {
       refetch,
     });
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     act(() => {
       result.current.setSearchDraft("spell");
@@ -706,9 +665,7 @@ describe("useDecksGridModel", () => {
     mockListDeckEntries.mockResolvedValue([{ id: "e1", pairId: "p1" }]);
     mockGetCardThumbnailUrl.mockResolvedValue("blob:fallback-front");
 
-    const { result } = renderHook(() =>
-      useDecksGridModel(hookArgs),
-    );
+    const { result } = renderHook(() => useDecksGridModel(hookArgs));
 
     await waitFor(() => {
       expect(result.current.deckBackgroundUrlByDeckId.d1).toBe("blob:fallback-front");

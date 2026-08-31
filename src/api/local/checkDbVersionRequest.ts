@@ -2,7 +2,7 @@ import {
   probeHqccDbVersion,
   readExistingHqccDbAppVersion,
   readExistingHqccDbVersion,
-} from "@/lib/hqcc-db";
+} from "@/lib/db/hqcc-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -16,6 +16,9 @@ function isVersionError(error: unknown): boolean {
   );
 }
 
+/**
+ * Resolves the local database readiness check through the IndexedDB-backed service layer.
+ */
 export const checkDbVersionRequestPlugin: ZodiosPlugin = {
   name: "local-check-db-version",
   request: async (apiDefinitions, config) => {

@@ -1,4 +1,3 @@
-import largeWindowFrame from "@/assets/card-backgrounds/large-window-frame.png";
 import smallLargeArtworkBorderMask from "@/assets/card-backgrounds/small-large-artwork-border-alpha-mask.png";
 import smallLargeArtworkBorderTexture from "@/assets/card-backgrounds/small-large-artwork-border-blend-texture.png";
 import smallWindowFrame from "@/assets/card-backgrounds/small-window-frame.png";

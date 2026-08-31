@@ -21,7 +21,7 @@ jest.mock("@/api/client", () => ({
 
 import { apiClient } from "@/api/client";
 import { importBackupJson } from "@/lib/backup/backup-import";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createDeckEntryRecord,
   createDeckGroupRecord,
@@ -146,9 +146,15 @@ describe("importBackupJson", () => {
     );
 
     const db = await openHqccDexieDb();
-    await expect(db.decks.get("deck-1")).resolves.toEqual(expect.objectContaining({ id: "deck-1" }));
-    await expect(db.deckGroups.get("group-1")).resolves.toEqual(expect.objectContaining({ id: "group-1" }));
-    await expect(db.deckSets.get("set-1")).resolves.toEqual(expect.objectContaining({ id: "set-1" }));
+    await expect(db.decks.get("deck-1")).resolves.toEqual(
+      expect.objectContaining({ id: "deck-1" }),
+    );
+    await expect(db.deckGroups.get("group-1")).resolves.toEqual(
+      expect.objectContaining({ id: "group-1" }),
+    );
+    await expect(db.deckSets.get("set-1")).resolves.toEqual(
+      expect.objectContaining({ id: "set-1" }),
+    );
     await expect(db.deckEntries.get("entry-1")).resolves.toEqual(
       expect.objectContaining({ id: "entry-1" }),
     );

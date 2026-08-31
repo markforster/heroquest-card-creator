@@ -6,10 +6,7 @@ import type { AssetRecord } from "@/api/assets";
 import { apiClient } from "@/api/client";
 import styles from "@/app/page.module.css";
 import { formatAssetDate, formatBytes } from "@/components/Assets/asset-formatters";
-import type {
-  AssetUsage,
-  UsagePopoverAnchor,
-} from "@/components/Assets/AssetsRoutePanels.types";
+import type { AssetUsage, UsagePopoverAnchor } from "@/components/Assets/AssetsRoutePanels.types";
 import AssetsUsageCardsPopover from "@/components/Assets/AssetsUsageCardsPopover";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
@@ -43,7 +40,10 @@ export default function AssetsInspectorDetails({
   const usagePopoverRef = useRef<HTMLDivElement | null>(null);
   const usagePopoverCloseTimeoutRef = useRef<number | null>(null);
 
-  const dimensionsLabel = useMemo(() => `${asset.width}×${asset.height}`, [asset.height, asset.width]);
+  const dimensionsLabel = useMemo(
+    () => `${asset.width}×${asset.height}`,
+    [asset.height, asset.width],
+  );
   const sizeLabel = useMemo(
     () => (assetSizeBytes != null ? formatBytes(assetSizeBytes) : "—"),
     [assetSizeBytes],

@@ -1,13 +1,12 @@
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-import type { AssetRecordWithBlob } from "@/lib/assets-db";
-
-import { deleteAssets, getAllAssetsWithBlobs } from "@/lib/assets-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
+import type { AssetRecordWithBlob } from "@/lib/data/assets-db";
+import { deleteAssets, getAllAssetsWithBlobs } from "@/lib/data/assets-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 
 import { createTestBlob, deleteDb, installFakeIndexedDb, restoreIndexedDb } from "./test-helpers";
 

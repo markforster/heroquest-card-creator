@@ -1,8 +1,11 @@
-import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import { getCollection } from "@/lib/data/collections-db";
+
 import type { ZodiosPlugin } from "@zodios/core";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
-import { getCollection } from "@/lib/collections-db";
-
+/**
+ * Serves the local get-collection endpoint through the IndexedDB-backed service layer.
+ */
 export const getCollectionRequestPlugin: ZodiosPlugin = {
   name: "local-get-collection",
   request: async (apiDefinitions, config) => {

@@ -1,5 +1,4 @@
 import { applyDuplexPreset } from "@/lib/pdf-export/duplex";
-
 import type { MmRect } from "@/lib/pdf-export/types";
 
 describe("pdf-export duplex", () => {

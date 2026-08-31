@@ -19,10 +19,7 @@ type DebugVisualsProviderProps = {
 };
 
 export function DebugVisualsProvider({ children }: DebugVisualsProviderProps) {
-  const [showTextBounds, setShowTextBounds] = useLocalStorageBoolean(
-    DEBUG_TEXT_BOUNDS_KEY,
-    false,
-  );
+  const [showTextBounds, setShowTextBounds] = useLocalStorageBoolean(DEBUG_TEXT_BOUNDS_KEY, false);
 
   const value = useMemo(
     () => ({ showTextBounds, setShowTextBounds }),

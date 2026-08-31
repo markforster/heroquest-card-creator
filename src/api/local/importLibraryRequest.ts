@@ -1,11 +1,11 @@
 import { libraryImportInputSchema } from "@/api/library";
 import { importBackupHqcc, importBackupJson } from "@/lib/backup";
-
 import type {
   BackupProgressCallback,
   BackupSecondaryProgressCallback,
   BackupStatusCallback,
 } from "@/lib/backup";
+
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
@@ -19,6 +19,9 @@ type LibraryRequestConfig = {
   hqcc?: LibraryProgressHandlers;
 };
 
+/**
+ * Runs the local library import flow and forwards progress handlers to the backup service.
+ */
 export const importLibraryRequestPlugin: ZodiosPlugin = {
   name: "local-import-library",
   request: async (apiDefinitions, config) => {

@@ -1,20 +1,33 @@
 import { getCardRequestPlugin } from "@/api/local/getCardRequest";
 import { blueprintIds } from "@/data/card-systems/types";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import { getCard } from "@/lib/cards-db";
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import {
-  seedNormalizedCard,
-  seedNormalizedThumbnail,
-} from "@/lib/test-support/normalized-card-test-helpers";
-
+import { getCard } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createCardRecord,
   deleteDb,
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/cards-db-test-helpers";
+import {
+  seedNormalizedCard,
+  seedNormalizedThumbnail,
+} from "@/lib/test-support/normalized-card-test-helpers";
 import type { CardRecord } from "@/types/cards-db";
+
+async function runGetCardAdapter(id: string) {
+  const request = getCardRequestPlugin.request;
+  if (!request) {
+    throw new Error("Expected getCardRequestPlugin.request");
+  }
+
+  const resolved = await request([], { params: { id } } as never);
+  if (typeof resolved.adapter !== "function") {
+    throw new Error("Expected getCardRequestPlugin to provide an adapter");
+  }
+
+  return resolved.adapter({} as never);
+}
 
 describe("getCard", () => {
   beforeEach(() => {
@@ -37,7 +50,9 @@ describe("getCard", () => {
   it("returns the card when present", async () => {
     await seedNormalizedCard(createCardRecord({ id: "c1" }));
 
-    await expect(getCard("c1")).resolves.toEqual(expect.objectContaining(createCardRecord({ id: "c1" })));
+    await expect(getCard("c1")).resolves.toEqual(
+      expect.objectContaining(createCardRecord({ id: "c1" })),
+    );
   });
 
   it("normalizes a thumbnail blob with no type and schedules repair", async () => {
@@ -133,6 +148,7 @@ describe("getCard", () => {
       id: "back-1",
       templateId: "labelled-back",
       title: "Treasure Deck",
+      titleTypography: "bold",
       titlePlacement: "top",
       titleStyle: "plain",
       description: "Back card body",
@@ -157,6 +173,7 @@ describe("getCard", () => {
       expect.objectContaining({
         templateId: "labelled-back",
         title: "Treasure Deck",
+        titleTypography: "bold",
         titlePlacement: "top",
         titleStyle: "plain",
         description: "Back card body",
@@ -181,6 +198,8 @@ describe("getCard", () => {
       name: "Turn Summary",
       face: "front",
       description: "**Movement**\nMove around the board.",
+      backgroundTint: "#efe2bf",
+      backgroundTintBlendMode: "screen",
       bodyTextColor: "#22170f",
       bodyTextFitToBounds: true,
     });
@@ -192,6 +211,7 @@ describe("getCard", () => {
     expect(slots.map((slot) => slot.slotId).sort()).toEqual([
       blueprintIds.hq_2021_background_base,
       blueprintIds.hq_2021_text_body,
+      blueprintIds.hq_2021_text_copyright,
     ]);
 
     await expect(getCard("rules-1")).resolves.toEqual(
@@ -200,6 +220,8 @@ describe("getCard", () => {
         name: "Turn Summary",
         face: "front",
         description: "**Movement**\nMove around the board.",
+        backgroundTint: "#efe2bf",
+        backgroundTintBlendMode: "screen",
         bodyTextColor: "#22170f",
         bodyTextFitToBounds: true,
         schemaVersion: 2,
@@ -237,9 +259,7 @@ describe("getCard", () => {
       thumbnailBlob: new Blob(["x"], { type: "image/png" }),
     });
 
-    const resolved = await getCardRequestPlugin.request?.([], { params: { id: "api-card-1" } } as never);
-    const adapter = resolved?.adapter as (() => Promise<any>) | undefined;
-    const response = await adapter?.();
+    const response = await runGetCardAdapter("api-card-1");
 
     expect(response?.status).toBe(200);
     expect(response?.data).toEqual(
@@ -262,10 +282,7 @@ describe("getCard", () => {
     await seedNormalizedCard(record);
 
     const db = await openHqccDexieDb();
-    await db.cardSlotLinks
-      .where("slotId")
-      .equals(blueprintIds.hq_2021_logo_hero_back)
-      .delete();
+    await db.cardSlotLinks.where("slotId").equals(blueprintIds.hq_2021_logo_hero_back).delete();
     await db.cardHeroBackLogoComponents
       .where("slotId")
       .equals(blueprintIds.hq_2021_logo_hero_back)

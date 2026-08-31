@@ -29,10 +29,10 @@ describe("createCardPageActions saveCurrentCard", () => {
     invalidateCollectionsQueriesMock.mockReset();
   });
 
-  it("persists labelled-back cards from the canonical name field without requiring title", async () => {
+  it("persists title-less back cards from the canonical name field without requiring title", async () => {
     createCardMock.mockResolvedValue({
       id: "card-1",
-      templateId: "labelled-back",
+      templateId: "hero-back",
       status: "saved",
       name: "Treasure Deck",
       nameLower: "treasure deck",
@@ -52,7 +52,7 @@ describe("createCardPageActions saveCurrentCard", () => {
 
     const actions = createCardPageActions({
       bypassNextNavigation: jest.fn(),
-      currentTemplateId: "labelled-back",
+      currentTemplateId: "hero-back",
       draftSourceCardId: "source-card",
       methods: {
         getValues: () =>
@@ -79,7 +79,7 @@ describe("createCardPageActions saveCurrentCard", () => {
 
     expect(createCardMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        templateId: "labelled-back",
+        templateId: "hero-back",
         name: "Treasure Deck",
         title: undefined,
         duplicateFromCardId: "source-card",
@@ -136,6 +136,101 @@ describe("createCardPageActions saveCurrentCard", () => {
       }),
     );
     expect(invalidateCollectionsQueriesMock).not.toHaveBeenCalled();
+  });
+
+  it("saves linked title cards with name synced from title", async () => {
+    createCardMock.mockResolvedValue({
+      id: "card-1",
+      templateId: "hero",
+      status: "saved",
+      name: "Barbarian",
+      nameLower: "barbarian",
+      createdAt: 100,
+      updatedAt: 100,
+      schemaVersion: 2,
+      title: "Barbarian",
+    });
+
+    const actions = createCardPageActions({
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      draftSourceCardId: null,
+      methods: {
+        getValues: () =>
+          ({
+            name: "Female Barbarian",
+            customNameEnabled: false,
+            title: "Barbarian",
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      queryClient: {} as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await expect(actions.saveCurrentCard()).resolves.toBe(true);
+    expect(createCardMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Barbarian",
+        title: "Barbarian",
+        customNameEnabled: undefined,
+      }),
+    );
+  });
+
+  it("saves custom title cards with a distinct name", async () => {
+    createCardMock.mockResolvedValue({
+      id: "card-1",
+      templateId: "hero",
+      status: "saved",
+      name: "Female Barbarian",
+      nameLower: "female barbarian",
+      createdAt: 100,
+      updatedAt: 100,
+      schemaVersion: 2,
+      title: "Barbarian",
+      customNameEnabled: true,
+    });
+
+    const actions = createCardPageActions({
+      bypassNextNavigation: jest.fn(),
+      currentTemplateId: "hero",
+      draftSourceCardId: null,
+      methods: {
+        getValues: () =>
+          ({
+            name: "Female Barbarian",
+            customNameEnabled: true,
+            title: "Barbarian",
+          }) as never,
+      },
+      navigate: jest.fn(),
+      previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      queryClient: {} as never,
+      resetWithSaved: jest.fn(),
+      setActiveCard: jest.fn(),
+      setDraftSourceCardId: jest.fn(),
+      setSaveToken: jest.fn(),
+      setSavingMode: jest.fn(),
+      setSelectedTemplateId: jest.fn(),
+      track: jest.fn(),
+    });
+
+    await expect(actions.saveCurrentCard()).resolves.toBe(true);
+    expect(createCardMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Female Barbarian",
+        title: "Barbarian",
+        customNameEnabled: true,
+      }),
+    );
   });
 
   it("never sends duplicateFromCardId when updating an existing saved card", async () => {
@@ -196,6 +291,7 @@ describe("createCardPageActions saveCurrentCard", () => {
     const actions = createCardPageActions({
       bypassNextNavigation: jest.fn(),
       currentTemplateId: "hero",
+      draftSourceCardId: null,
       methods: {
         getValues: () =>
           ({
@@ -204,6 +300,7 @@ describe("createCardPageActions saveCurrentCard", () => {
       },
       navigate: jest.fn(),
       previewRef: { current: null } as never,
+      queryClient: {} as never,
       resetWithSaved: jest.fn(),
       setActiveCard: jest.fn(),
       setDraftSourceCardId: jest.fn(),
@@ -224,14 +321,17 @@ describe("createCardPageActions saveCurrentCard", () => {
     const actions = createCardPageActions({
       bypassNextNavigation: jest.fn(),
       currentTemplateId: "hero",
+      draftSourceCardId: null,
       methods: {
         getValues: () =>
           ({
             name: "Hero",
+            title: "Hero",
           }) as never,
       },
       navigate: jest.fn(),
       previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      queryClient: {} as never,
       resetWithSaved: jest.fn(),
       setActiveCard: jest.fn(),
       setDraftSourceCardId: jest.fn(),
@@ -263,14 +363,17 @@ describe("createCardPageActions saveCurrentCard", () => {
       activeStatus: "saved",
       bypassNextNavigation: jest.fn(),
       currentTemplateId: "hero",
+      draftSourceCardId: null,
       methods: {
         getValues: () =>
           ({
             name: "Updated Hero",
+            title: "Updated Hero",
           }) as never,
       },
       navigate: jest.fn(),
       previewRef: { current: { renderToJpegBlob: jest.fn().mockResolvedValue(null) } } as never,
+      queryClient: {} as never,
       resetWithSaved: jest.fn(),
       setActiveCard: jest.fn(),
       setDraftSourceCardId: jest.fn(),

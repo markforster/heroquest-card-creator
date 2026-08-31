@@ -3,17 +3,16 @@
 import { Layers, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import styles from "@/app/page.module.css";
-import ModalShell from "@/components/common/ModalShell";
-import ConfirmModal from "@/components/Modals/ConfirmModal";
-import { useI18n } from "@/i18n/I18nProvider";
+import type { DeleteHeroBackLogoRemediation, HeroBackLogoRecord } from "@/api/heroBackLogos";
 import {
   deleteHeroBackLogo,
   getHeroBackLogoUsage,
   listHeroBackLogos,
-  type DeleteHeroBackLogoRemediation,
-  type HeroBackLogoRecord,
-} from "@/lib/hero-back-logos-db";
+} from "@/api/heroBackLogos/client";
+import styles from "@/app/page.module.css";
+import ModalShell from "@/components/common/ModalShell";
+import ConfirmModal from "@/components/Modals/ConfirmModal";
+import { useI18n } from "@/i18n/I18nProvider";
 
 import HeroBackLogoPreviewTile from "./HeroBackLogoPreviewTile";
 import InspectorStateNotice from "./InspectorStateNotice";
@@ -66,9 +65,7 @@ function DeleteRemediationContent({
             checked={mode === "default"}
             onChange={() => onModeChange("default")}
           />
-          <span className={styles.heroBackLogoRemediationLabel}>
-            {t("label.useDefaultLogo")}
-          </span>
+          <span className={styles.heroBackLogoRemediationLabel}>{t("label.useDefaultLogo")}</span>
         </label>
         {alternativeLogos.length > 0 ? (
           <>
@@ -231,10 +228,17 @@ export default function HeroBackLogoModal({
                             if (usage.length === 0) {
                               setIsBusy(true);
                               try {
-                                const affectedCardIds = await deleteHeroBackLogo(logo.id, { mode: "default" });
+                                const affectedCardIds = await deleteHeroBackLogo(logo.id, {
+                                  mode: "default",
+                                });
                                 await reloadLogos();
                                 if (currentLogoId === logo.id) {
-                                  await onDeleted(logo.id, { mode: "default" }, null, affectedCardIds);
+                                  await onDeleted(
+                                    logo.id,
+                                    { mode: "default" },
+                                    null,
+                                    affectedCardIds,
+                                  );
                                 }
                               } finally {
                                 setIsBusy(false);

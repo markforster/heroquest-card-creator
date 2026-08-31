@@ -1,8 +1,11 @@
-import { getAllAssetsWithBlobs } from "@/lib/assets-db";
+import { getAllAssetsWithBlobs } from "@/lib/data/assets-db";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local list-assets-with-blobs endpoint through the IndexedDB-backed service layer.
+ */
 export const listAssetsWithBlobsRequestPlugin: ZodiosPlugin = {
   name: "local-list-assets-with-blobs",
   request: async (apiDefinitions, config) => {

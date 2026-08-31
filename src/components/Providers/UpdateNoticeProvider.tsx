@@ -1,15 +1,9 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { getConfiguredAppDistribution, supportsRemoteUpdateChecks } from "@/lib/app-distribution";
+import type { AppDistribution } from "@/lib/app-distribution";
 import { UPDATE_CHECK_INTERVAL_MS } from "@/lib/update-check/constants";
 import { fetchGithubLatestRelease, fetchNpmLatestVersion } from "@/lib/update-check/sources";
 import {
@@ -17,11 +11,9 @@ import {
   readStoredUpdateState,
   writeStoredUpdateState,
 } from "@/lib/update-check/storage";
+import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
 import { isRemoteVersionNewer } from "@/lib/update-check/version";
 import { APP_VERSION } from "@/version";
-
-import type { AppDistribution } from "@/lib/app-distribution";
-import type { StoredUpdateState, UpdateSource } from "@/lib/update-check/types";
 
 type UpdateNoticeState = {
   distribution: AppDistribution;
@@ -212,10 +204,7 @@ export function UpdateNoticeProvider({ children }: UpdateNoticeProviderProps) {
         isOnline: true,
       }));
 
-      if (
-        !hasCompletedSuccessfulCheckThisSessionRef.current ||
-        isDueForScheduledCheck()
-      ) {
+      if (!hasCompletedSuccessfulCheckThisSessionRef.current || isDueForScheduledCheck()) {
         void runCheck();
         return;
       }

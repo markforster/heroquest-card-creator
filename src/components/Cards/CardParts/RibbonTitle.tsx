@@ -22,7 +22,10 @@ import { buildNumericFontStyle } from "@/config/typography";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
+import { DEFAULT_TITLE_TYPOGRAPHY } from "@/lib/title-typography";
 import { useTypographyNumericSettings } from "@/lib/typography-settings";
+import type { TitleTypography } from "@/types/title-typography";
+
 import type { CSSProperties } from "react";
 
 type RibbonTitleProps = {
@@ -33,6 +36,7 @@ type RibbonTitleProps = {
   textBounds?: { x: number; y: number; width: number; height: number };
   textBoundsNoRibbon?: { x: number; y: number; width: number; height: number };
   titleColor?: string;
+  titleTypography?: TitleTypography;
 };
 
 const RIBBON_WIDTH = sx(560 * 1.05);
@@ -53,6 +57,7 @@ export default function RibbonTitle({
   textBounds,
   textBoundsNoRibbon,
   titleColor,
+  titleTypography = DEFAULT_TITLE_TYPOGRAPHY,
 }: RibbonTitleProps) {
   const { titleAlignedNumerals, titleFixedWidthNumerals } = useTypographyNumericSettings();
   const x = (CARD_WIDTH - RIBBON_WIDTH) / 2;
@@ -97,8 +102,14 @@ export default function RibbonTitle({
   const titleStroke = USE_TITLE_STROKE ? "transparent" : "none";
   const titleStrokeWidth = USE_TITLE_STROKE ? "1.5px" : undefined;
   const defaultTitleWeight = USE_BOLD_TITLE_WEIGHT ? 700 : 550;
-  const titleFontWeight =
-    !showRibbon && USE_LIGHTER_NONRIBBON_TITLE_WEIGHT ? NONRIBBON_TITLE_WEIGHT : defaultTitleWeight;
+  let titleFontWeight = defaultTitleWeight;
+  if (!showRibbon && USE_LIGHTER_NONRIBBON_TITLE_WEIGHT) {
+    titleFontWeight = NONRIBBON_TITLE_WEIGHT;
+  }
+  const titleIsBoldItalic = titleTypography === "boldItalic";
+  if (titleIsBoldItalic) {
+    titleFontWeight = 700;
+  }
   const resolvedTitleColor = titleColor ?? DEFAULT_TITLE_COLOR;
   const { color: resolvedFill, alpha: resolvedAlpha } = splitHexAlpha(resolvedTitleColor);
   const resolvedOpacity = resolvedAlpha ?? 1;
@@ -110,6 +121,7 @@ export default function RibbonTitle({
     fontFamily: CARD_TEXT_FONT_FAMILY,
     fontSize: `${titleFontSize}px`,
     fontWeight: titleFontWeight,
+    fontStyle: titleIsBoldItalic ? "italic" : undefined,
     letterSpacing: letterSpacing != null ? `${letterSpacing}px` : undefined,
     fontKerning: "normal",
     ...numericStyle,

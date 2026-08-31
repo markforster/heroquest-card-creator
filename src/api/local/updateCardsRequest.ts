@@ -1,9 +1,12 @@
-import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import type { ZodiosPlugin } from "@zodios/core";
-
 import { updateCardsInputSchema } from "@/api/cards";
-import { updateCards } from "@/lib/cards-db";
+import { updateCards } from "@/lib/data/cards-db";
 
+import type { ZodiosPlugin } from "@zodios/core";
+import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
+
+/**
+ * Serves the local update-cards endpoint through the IndexedDB-backed service layer.
+ */
 export const updateCardsRequestPlugin: ZodiosPlugin = {
   name: "local-update-cards",
   request: async (apiDefinitions, config) => {

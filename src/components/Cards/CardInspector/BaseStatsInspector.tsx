@@ -53,10 +53,7 @@ export default function BaseStatsInspector<T extends FieldValues>({
     containerRef: fieldRef,
     focusSelectors: ["input:not([disabled])", "button:not([disabled])"],
   });
-  const watchedFieldNames = useMemo(
-    () => fields.map((field) => field.name),
-    [fields],
-  );
+  const watchedFieldNames = useMemo(() => fields.map((field) => field.name), [fields]);
 
   const watchedValues = useWatch({
     control,

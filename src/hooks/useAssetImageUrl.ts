@@ -22,9 +22,7 @@ async function loadObjectUrlImageDimensions(
   return { width: img.naturalWidth, height: img.naturalHeight };
 }
 
-export function useAssetImageUrl(
-  assetId?: string,
-): {
+export function useAssetImageUrl(assetId?: string): {
   url: string | null;
   status: AssetImageStatus;
   width: number | null;

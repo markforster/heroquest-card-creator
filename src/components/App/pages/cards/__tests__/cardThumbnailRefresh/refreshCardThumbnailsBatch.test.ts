@@ -87,16 +87,8 @@ describe("refreshCardThumbnailsBatch", () => {
     });
 
     expect(updateCardThumbnail).toHaveBeenCalledTimes(2);
-    expect(updateCardThumbnail).toHaveBeenNthCalledWith(
-      1,
-      "card-1",
-      expect.any(Blob),
-    );
-    expect(updateCardThumbnail).toHaveBeenNthCalledWith(
-      2,
-      "card-3",
-      expect.any(Blob),
-    );
+    expect(updateCardThumbnail).toHaveBeenNthCalledWith(1, "card-1", expect.any(Blob));
+    expect(updateCardThumbnail).toHaveBeenNthCalledWith(2, "card-3", expect.any(Blob));
     expect(dispatchCardsUpdated).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
       "[thumbnail-refresh] Failed to render thumbnail",
@@ -112,9 +104,7 @@ describe("refreshCardThumbnailsBatch", () => {
       .fn<Promise<Blob | null>, [CardRecord]>()
       .mockImplementation(async (card) => new Blob([card.id], { type: "image/jpeg" }));
     const updateCardThumbnail = jest.fn<Promise<boolean>, [string, Blob]>().mockResolvedValue(true);
-    const readBackThumbnail = jest
-      .fn<Promise<Blob | null>, [string]>()
-      .mockResolvedValue(null);
+    const readBackThumbnail = jest.fn<Promise<Blob | null>, [string]>().mockResolvedValue(null);
     const invalidateCardThumbnail = jest.fn();
     const dispatchCardsUpdated = jest.fn();
     const logger = { debug: jest.fn(), warn: jest.fn() };

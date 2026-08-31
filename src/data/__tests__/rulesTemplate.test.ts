@@ -35,6 +35,7 @@ describe("Rules template", () => {
             id: "hq.2021.background.base",
             type: "background",
             source: "template",
+            tintKey: "backgroundTint",
           }),
           expect.objectContaining({
             id: "hq.2021.text.body",
@@ -60,6 +61,7 @@ describe("Rules template", () => {
     expect(inspectorFieldsByTemplate.rules.map((field) => field.fieldType)).toEqual([
       "name",
       "text",
+      "backgroundTint",
       "copyright",
     ]);
   });

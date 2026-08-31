@@ -130,8 +130,7 @@ function splitTokenToRuns(
 
     for (let i = 0; i < remaining.length; i += 1) {
       const candidate = remaining.slice(0, i + 1);
-      const candidateWithHyphen =
-        i < remaining.length - 1 ? `${candidate}-` : candidate;
+      const candidateWithHyphen = i < remaining.length - 1 ? `${candidate}-` : candidate;
       if (measure(candidateWithHyphen, token) <= maxWidth) {
         chunk = candidate;
         nextIndex = i + 1;

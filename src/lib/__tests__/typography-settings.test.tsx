@@ -77,9 +77,9 @@ describe("useTypographyNumericSettings", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "disable stat fixed" }));
 
-    expect(window.localStorage.getItem(TYPOGRAPHY_NUMERIC_STORAGE_KEYS.statFixedWidthNumerals)).toBe(
-      "0",
-    );
+    expect(
+      window.localStorage.getItem(TYPOGRAPHY_NUMERIC_STORAGE_KEYS.statFixedWidthNumerals),
+    ).toBe("0");
     expect(screen.getByTestId("statFixed")).toHaveTextContent("false");
   });
 });

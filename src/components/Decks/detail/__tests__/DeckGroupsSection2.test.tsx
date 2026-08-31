@@ -1,12 +1,15 @@
-import * as React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { TransformStream } from "node:stream/web";
+
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import * as React from "react";
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
   (globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream =
     TransformStream;
 }
 
+import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks/types";
+import type { PairRecord } from "@/api/pairs/types";
 import DeckGroupsBoardController, {
   DeckEntriesBoardController,
   DeckMockDndProvider,
@@ -16,8 +19,6 @@ import DeckGroupsBoardController, {
   toGroupsBoardModel,
   toSourceBoardModel,
 } from "@/components/Decks/detail/DeckGroupsSection2";
-import type { DeckEntryRecord, DeckGroupRecord, DeckSetRecord } from "@/api/decks/types";
-import type { PairRecord } from "@/api/pairs/types";
 import type { DeckDetailSelectionModel } from "@/components/Decks/hooks/useDeckDetailSelectionModel";
 import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEntriesModel";
 
@@ -27,6 +28,14 @@ type DragEventLike = {
     source?: { id: string; type: string; group?: string; board?: string };
     target?: { id: string; type: string; group?: string; board?: string };
   };
+};
+
+type MockDragDropProviderProps = {
+  children: React.ReactNode;
+  onDragStart?: (event: DragEventLike) => void;
+  onDragOver?: (event: DragEventLike) => void;
+  onDragEnd?: (event: DragEventLike) => void;
+  onDragCancel?: () => void;
 };
 
 const callbacks: {
@@ -57,11 +66,7 @@ const mutationMocks = {
 };
 const CREATE_GROUP_BUTTON_NAME = "decks.groups.actions.createAtPosition";
 
-function createGroupRecord(
-  id: string,
-  sortIndex: number,
-  title: string,
-): DeckGroupRecord {
+function createGroupRecord(id: string, sortIndex: number, title: string): DeckGroupRecord {
   return {
     id,
     deckId: "deck-1",
@@ -107,11 +112,7 @@ function createEntryRecord(
   };
 }
 
-function createPairRecord(
-  id: string,
-  frontFaceId: string,
-  backFaceId: string,
-): PairRecord {
+function createPairRecord(id: string, frontFaceId: string, backFaceId: string): PairRecord {
   return {
     id,
     name: id,
@@ -137,14 +138,20 @@ function getSetTestIdsWithinGroup(groupTestId: string): string[] {
 }
 
 jest.mock("@dnd-kit/react", () => ({
-  DragDropProvider: ({ children, onDragStart, onDragOver, onDragEnd, onDragCancel }: any) => {
+  DragDropProvider: ({
+    children,
+    onDragStart,
+    onDragOver,
+    onDragEnd,
+    onDragCancel,
+  }: MockDragDropProviderProps) => {
     callbacks.onDragStart = onDragStart;
     callbacks.onDragOver = onDragOver;
     callbacks.onDragEnd = onDragEnd;
     callbacks.onDragCancel = onDragCancel;
     return <div>{children}</div>;
   },
-  DragOverlay: ({ children }: any) => <div>{children}</div>,
+  DragOverlay: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useDroppable: () => ({ ref: jest.fn(), isDropTarget: false }),
   useDraggable: () => ({ ref: jest.fn(), handleRef: jest.fn(), isDragging: false }),
 }));
@@ -163,11 +170,19 @@ jest.mock("@dnd-kit/helpers", () => ({
     const sourceId = event.operation.source?.id;
     const sourceGroup = event.operation.source?.group;
     const targetGroup =
-      event.operation.target?.type === "group" ? event.operation.target.id : event.operation.target?.group;
+      event.operation.target?.type === "group"
+        ? event.operation.target.id
+        : event.operation.target?.group;
     const targetId = event.operation.target?.id;
 
     if (!sourceId || !sourceGroup || !targetGroup || sourceGroup === targetGroup) {
-      if (!sourceId || !sourceGroup || sourceGroup !== targetGroup || !targetId || targetId === sourceId) {
+      if (
+        !sourceId ||
+        !sourceGroup ||
+        sourceGroup !== targetGroup ||
+        !targetId ||
+        targetId === sourceId
+      ) {
         return items;
       }
       const current = [...(items[sourceGroup] ?? [])];
@@ -231,7 +246,10 @@ jest.mock("@/components/Decks/detail/context/DeckRightPanelContext", () => ({
 
 beforeEach(() => {
   jest.spyOn(React, "useState").mockImplementation(((initialState: unknown) => {
-    const stateTuple = actualUseState(initialState) as [unknown, React.Dispatch<React.SetStateAction<unknown>>];
+    const stateTuple = actualUseState(initialState) as [
+      unknown,
+      React.Dispatch<React.SetStateAction<unknown>>,
+    ];
     const [state, setState] = stateTuple;
     const initialValue =
       typeof initialState === "function" ? (initialState as () => unknown)() : initialState;
@@ -248,7 +266,9 @@ beforeEach(() => {
     const guardedSetState: typeof setState = (next) =>
       setState((prev: unknown) => {
         const resolved =
-          typeof next === "function" ? (next as (prevState: unknown) => unknown)(prev as unknown) : next;
+          typeof next === "function"
+            ? (next as (prevState: unknown) => unknown)(prev as unknown)
+            : next;
         const prevIsEmptyObject =
           typeof prev === "object" &&
           prev !== null &&
@@ -338,14 +358,16 @@ function renderWorkspace(options?: {
     },
   };
   if (options?.boardModelsOverride) {
-    (Object.keys(options.boardModelsOverride) as Array<"groups" | "entries" | "source">).forEach((boardId) => {
-      const override = options.boardModelsOverride?.[boardId];
-      if (!override) return;
-      boardModels[boardId] = {
-        ...boardModels[boardId],
-        ...override,
-      };
-    });
+    (Object.keys(options.boardModelsOverride) as Array<"groups" | "entries" | "source">).forEach(
+      (boardId) => {
+        const override = options.boardModelsOverride?.[boardId];
+        if (!override) return;
+        boardModels[boardId] = {
+          ...boardModels[boardId],
+          ...override,
+        };
+      },
+    );
   }
   const groups: DeckGroupRecord[] = boardModels.groups.groupIds.map((groupId, index) =>
     createGroupRecord(
@@ -368,7 +390,7 @@ function renderWorkspace(options?: {
   const selectedSet =
     sets.find((set) => set.id === (options?.selectedSetId ?? "g-C1")) ?? sets[0] ?? null;
   const selectedGroupId = selectedSet?.groupId ?? groups[0]?.id ?? null;
-  const entryRecords = Object.entries(boardModels.entries.itemsByGroup).flatMap(([groupId, entryIds]) =>
+  const entryRecords = Object.values(boardModels.entries.itemsByGroup).flatMap((entryIds) =>
     entryIds.map((entryId, index) =>
       createEntryRecord(
         entryId.replace(/^entry:/, ""),
@@ -529,7 +551,9 @@ describe("DeckGroupsSection2 mock boards", () => {
     renderWorkspace();
     fireEvent.mouseMove(screen.getByTestId("groups-row-entries"), { clientX: -9999 });
     fireEvent.mouseMove(screen.getByTestId("groups-row-source"), { clientX: -9999 });
-    expect(screen.queryAllByRole("button", { name: /Create group at position/i }).length).toBeLessThanOrEqual(1);
+    expect(
+      screen.queryAllByRole("button", { name: /Create group at position/i }).length,
+    ).toBeLessThanOrEqual(1);
   });
 
   it("hides create boundaries in bootstrap empty groups state (one group, zero sets)", () => {
@@ -546,7 +570,9 @@ describe("DeckGroupsSection2 mock boards", () => {
     });
     const row = screen.getByTestId("groups-row-groups");
     fireEvent.mouseMove(row, { clientX: -9999 });
-    expect(screen.queryByRole("button", { name: /Create group at position/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Create group at position/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows create boundaries for single group once it has at least one set", () => {
@@ -591,14 +617,14 @@ describe("DeckGroupsSection2 mock boards", () => {
       },
     });
 
-    expect(
-      screen.getByTestId("set-ephemeral:empty-slot:group:group:A"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("set-ephemeral:empty-slot:group:group:A")).toBeInTheDocument();
     expect(screen.queryByTestId("set-ephemeral:empty-slot:group:group:B")).not.toBeInTheDocument();
 
     await act(async () => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "source:src-1", type: "set", group: "source:lane", board: "source" } },
+        operation: {
+          source: { id: "source:src-1", type: "set", group: "source:lane", board: "source" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {
@@ -775,7 +801,9 @@ describe("DeckGroupsSection2 mock boards", () => {
 
     await act(async () => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "source:src-1", type: "set", group: "source:lane", board: "source" } },
+        operation: {
+          source: { id: "source:src-1", type: "set", group: "source:lane", board: "source" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {
@@ -793,11 +821,18 @@ describe("DeckGroupsSection2 mock boards", () => {
     });
 
     expect(mutationMocks.createSetFromBackFace).toHaveBeenCalledWith("deck-1", "A", "src-1");
-    expect(mutationMocks.reorderSets).toHaveBeenCalledWith("created-set-1", ["g-A1", "g-A2", "g-A3", "created-set-1"]);
+    expect(mutationMocks.reorderSets).toHaveBeenCalledWith("created-set-1", [
+      "g-A1",
+      "g-A2",
+      "g-A3",
+      "created-set-1",
+    ]);
 
     await act(async () => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "source:src-2", type: "set", group: "source:lane", board: "source" } },
+        operation: {
+          source: { id: "source:src-2", type: "set", group: "source:lane", board: "source" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {
@@ -830,7 +865,9 @@ describe("DeckGroupsSection2 mock boards", () => {
 
     act(() => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "source:src-2", type: "set", group: "source:lane", board: "source" } },
+        operation: {
+          source: { id: "source:src-2", type: "set", group: "source:lane", board: "source" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {
@@ -863,7 +900,9 @@ describe("DeckGroupsSection2 mock boards", () => {
 
     act(() => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "source:src-2", type: "set", group: "source:lane", board: "source" } },
+        operation: {
+          source: { id: "source:src-2", type: "set", group: "source:lane", board: "source" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {
@@ -941,7 +980,9 @@ describe("DeckGroupsSection2 mock boards", () => {
 
     act(() => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "entry:e-1", type: "set", group: "entries:lane", board: "entries" } },
+        operation: {
+          source: { id: "entry:e-1", type: "set", group: "entries:lane", board: "entries" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {
@@ -972,7 +1013,9 @@ describe("DeckGroupsSection2 mock boards", () => {
 
     act(() => {
       callbacks.onDragStart?.({
-        operation: { source: { id: "source:src-1", type: "set", group: "source:lane", board: "source" } },
+        operation: {
+          source: { id: "source:src-1", type: "set", group: "source:lane", board: "source" },
+        },
       });
       callbacks.onDragOver?.({
         operation: {

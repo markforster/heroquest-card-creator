@@ -40,9 +40,7 @@ export function useSharedColorSwatches() {
       if (!normalized) return;
       if (isTransparentHex(normalized, { allowTransparentString: true })) return;
       if (normalized === DEFAULT_BORDER_COLOR.toUpperCase()) return;
-      const exists = normalizedSwatches.some(
-        (swatch) => swatch.toUpperCase() === normalized,
-      );
+      const exists = normalizedSwatches.some((swatch) => swatch.toUpperCase() === normalized);
       if (exists) return;
       const capped = normalizedSwatches.filter(
         (swatch) => swatch.toUpperCase() !== DEFAULT_BORDER_COLOR.toUpperCase(),
@@ -61,9 +59,7 @@ export function useSharedColorSwatches() {
   const removeSwatch = useCallback(
     async (value: string) => {
       const normalized = value.trim().toUpperCase();
-      const next = normalizedSwatches.filter(
-        (swatch) => swatch.toUpperCase() !== normalized,
-      );
+      const next = normalizedSwatches.filter((swatch) => swatch.toUpperCase() !== normalized);
       setSwatches(next);
       try {
         await apiClient.setBorderSwatches({ swatches: next });

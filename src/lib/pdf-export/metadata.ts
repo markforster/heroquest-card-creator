@@ -1,8 +1,7 @@
-import type { PDFDocument } from "pdf-lib";
-
+import type { PdfExportSourceType, PrintConfig } from "@/lib/pdf-export/types";
 import { APP_VERSION } from "@/version";
 
-import type { PdfExportSourceType, PrintConfig } from "@/lib/pdf-export/types";
+import type { PDFDocument } from "pdf-lib";
 
 type ApplyPdfMetadataOptions = {
   pdf: PDFDocument;

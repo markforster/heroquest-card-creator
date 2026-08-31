@@ -6,7 +6,9 @@ type MockContentFieldProps = {
   showBodyTextFitToggle?: boolean;
 };
 
-const mockContentField = jest.fn<JSX.Element, [MockContentFieldProps]>(() => <div>CONTENT_FIELD</div>);
+const mockContentField = jest.fn<JSX.Element, [MockContentFieldProps]>(() => (
+  <div>CONTENT_FIELD</div>
+));
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
@@ -37,6 +39,11 @@ jest.mock("@/components/Cards/CardInspector/MonsterStatsInspector", () => ({
 jest.mock("@/components/Cards/CardInspector/ImageField", () => ({
   __esModule: true,
   default: () => <div>IMAGE_FIELD</div>,
+}));
+
+jest.mock("@/components/Cards/CardInspector/HeroBackLogoField", () => ({
+  __esModule: true,
+  default: () => <div>HERO_BACK_LOGO_FIELD</div>,
 }));
 
 jest.mock("@/components/Cards/CardInspector/BorderColorField", () => ({

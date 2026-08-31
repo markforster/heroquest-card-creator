@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import styles from "@/app/page.module.css";
+
+import type { ReactNode } from "react";
 
 type InspectorPanelHeaderProps = {
   title?: ReactNode;

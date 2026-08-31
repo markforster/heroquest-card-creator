@@ -1,19 +1,19 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 
 import DeckPdfExportModal from "@/components/Decks/pdf/DeckPdfExportModal";
-
 import type { PrintConfig } from "@/lib/pdf-export";
+
+import type { ReactNode } from "react";
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "decks.pdf.modal.title": "Export deck PDF",
           "actions.cancel": "Cancel",
           "actions.confirm": "Confirm",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));

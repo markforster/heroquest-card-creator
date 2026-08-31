@@ -2,6 +2,7 @@
 
 import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import { CARD_HEIGHT, CARD_WIDTH } from "@/config/card-canvas";
+import { resolveImageLayerClipBounds } from "@/lib/image-clip-edges";
 import { computeContainScale } from "@/lib/image-scale";
 import type { Blueprint, BlueprintLayer } from "@/types/blueprints";
 import type { CardDataByTemplate } from "@/types/card-data";
@@ -161,6 +162,8 @@ export function resolveImageLayerHoverBounds({
     imageOffsetX?: number;
     imageOffsetY?: number;
     imageRotation?: number;
+    imageClipEdgeMask?: number;
+    imageClipBottom?: number;
     imageOriginalWidth?: number;
     imageOriginalHeight?: number;
   };
@@ -182,6 +185,12 @@ export function resolveImageLayerHoverBounds({
   const cx = x + scaledWidth / 2;
   const cy = y + scaledHeight / 2;
 
+  const baseClipBounds = resolveImageLayerClipBounds({
+    blueprint,
+    layer,
+    cardState: data,
+  });
+
   return buildImageHoverBounds({
     clipMode,
     layerBounds: bounds,
@@ -196,7 +205,7 @@ export function resolveImageLayerHoverBounds({
       cx,
       cy,
     }),
-    canvasBounds,
+    canvasBounds: baseClipBounds ?? canvasBounds,
   });
 }
 

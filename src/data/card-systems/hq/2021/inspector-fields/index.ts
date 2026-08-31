@@ -1,7 +1,7 @@
 import type { InspectorFieldsByTemplate } from "@/types/inspector";
 
-import { HERO_BACK_INSPECTOR_FIELDS } from "./hero-back";
 import { HERO_INSPECTOR_FIELDS } from "./hero";
+import { HERO_BACK_INSPECTOR_FIELDS } from "./hero-back";
 import { LABELLED_BACK_INSPECTOR_FIELDS } from "./labelled-back";
 import { LARGE_TREASURE_INSPECTOR_FIELDS } from "./large-treasure";
 import { LOGO_BACK_INSPECTOR_FIELDS } from "./logo-back";

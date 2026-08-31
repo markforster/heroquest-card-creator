@@ -133,10 +133,7 @@ export function logCardFileName(
   );
 }
 
-export function logCardSkip(
-  session: ExportLoggingSession,
-  { reason }: { reason: string },
-): void {
+export function logCardSkip(session: ExportLoggingSession, { reason }: { reason: string }): void {
   if (!exportSessions.has(session.sessionId)) return;
   console.debug(`${LOG_PREFIX} Skip: ${safeValue(reason, "unknown")}`);
 }
@@ -154,9 +151,7 @@ export function logAssetPrefetch(
   },
 ): void {
   if (!exportSessions.has(session.sessionId)) return;
-  console.debug(
-    `${LOG_PREFIX} Prefetch: total=${total} | cached=${cached} | missing=${missing}`,
-  );
+  console.debug(`${LOG_PREFIX} Prefetch: total=${total} | cached=${cached} | missing=${missing}`);
 }
 
 export function logAssetInlineById(

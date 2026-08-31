@@ -106,10 +106,7 @@ export default function StatLabelOverridesPanel() {
   );
 
   useEffect(() => {
-    settingsPanel.setBlocked(
-      isDirty,
-      t("confirm.discardSettingsChangesBody"),
-    );
+    settingsPanel.setBlocked(isDirty, t("confirm.discardSettingsChangesBody"));
   }, [isDirty, settingsPanel, t]);
 
   useEffect(() => {

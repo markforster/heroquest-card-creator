@@ -13,10 +13,7 @@ const spacerClassMap = {
   large: styles.leftNavSpacerLarge,
 } as const;
 
-export default function LeftNavSpacer({
-  size = "small",
-  showLine = true,
-}: LeftNavSpacerProps) {
+export default function LeftNavSpacer({ size = "small", showLine = true }: LeftNavSpacerProps) {
   return (
     <div
       className={`${styles.leftNavSpacer} ${spacerClassMap[size]} ${

@@ -3,7 +3,6 @@ import { renderHook } from "@testing-library/react";
 import { useAssetHashIndexContext } from "@/components/Providers/AssetHashIndexProvider";
 import { useAssetHashIndex } from "@/hooks/useAssetHashIndex";
 
-
 jest.mock("@/components/Providers/AssetHashIndexProvider", () => ({
   useAssetHashIndexContext: jest.fn(),
 }));
@@ -19,4 +18,3 @@ describe("useAssetHashIndex", () => {
     expect(result.current).toBe(sentinel);
   });
 });
-

@@ -22,10 +22,10 @@ export function applyInspectorDefaults<T extends TemplateId>(
     ...(hasTitleField
       ? {
           name:
-            data.name ??
-            ((data as { title?: string }).title?.trim().length
-              ? (data as { title?: string }).title
-              : data.name),
+            data.customNameEnabled === true
+              ? data.name
+              : ((data as { title?: string }).title ?? data.name),
+          customNameEnabled: data.customNameEnabled === true ? true : undefined,
         }
       : {}),
     ...(showTitleToggle ? { showTitle: data.showTitle ?? true } : {}),
@@ -37,8 +37,7 @@ export function applyInspectorDefaults<T extends TemplateId>(
       : {}),
     ...(showTitleStyle
       ? {
-          titleStyle:
-            (data as { titleStyle?: "ribbon" | "plain" }).titleStyle ?? "ribbon",
+          titleStyle: (data as { titleStyle?: "ribbon" | "plain" }).titleStyle ?? "ribbon",
         }
       : {}),
   } as CardDataByTemplate[T];

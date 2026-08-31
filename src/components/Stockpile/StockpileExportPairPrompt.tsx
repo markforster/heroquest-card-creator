@@ -3,14 +3,14 @@
 import { Combine } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
+import type { CardRecord } from "@/api/cards";
 import styles from "@/app/page.module.css";
-import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import StockpilePairOverflowPopover from "@/components/Stockpile/StockpilePairOverflowPopover";
+import StockpileThumbImage from "@/components/Stockpile/StockpileThumbImage";
 import { USE_EXPORT_PAIR_JITTER } from "@/config/flags";
 import { cardTemplatesById } from "@/data/card-templates";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CardRecord } from "@/api/cards";
 
 type StockpileExportPairPromptProps = {
   exportPairPrompt: {

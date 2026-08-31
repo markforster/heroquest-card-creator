@@ -1,5 +1,5 @@
-import { blueprintIds, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
+import { blueprintIds, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import type { Blueprint } from "@/types/blueprints";
 
 import {
@@ -23,6 +23,7 @@ export const RULES_BLUEPRINT: Blueprint = {
       id: blueprintIds.hq_2021_background_base,
       type: layerTypes.background,
       source: "template",
+      tintKey: "backgroundTint",
     },
     {
       id: blueprintIds.hq_2021_text_body,

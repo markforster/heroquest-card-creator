@@ -11,9 +11,9 @@ import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 
 export default function DecksPage() {
   const { track } = useAnalytics();
-  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
-    null,
-  );
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<
+    (() => boolean) | null
+  >(null);
 
   const shellCapabilities = useMemo(
     () => ({

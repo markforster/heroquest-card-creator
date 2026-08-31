@@ -13,7 +13,7 @@ describe("estimateIndexedDbSize", () => {
   });
 
   afterEach(async () => {
-    const { getHqccDexieDb } = await import("@/lib/hqcc-dexie");
+    const { getHqccDexieDb } = await import("@/lib/db/hqcc-dexie");
     getHqccDexieDb().close();
     await deleteDb("hqcc").catch(() => {});
     restoreIndexedDb();
@@ -22,9 +22,9 @@ describe("estimateIndexedDbSize", () => {
   });
 
   it("scans Dexie tables and returns totals, per-store counts, and record sizes", async () => {
-    const { openHqccDexieDb } = await import("@/lib/hqcc-dexie");
+    const { openHqccDexieDb } = await import("@/lib/db/hqcc-dexie");
     const { estimateIndexedDbSize, estimateRecordBytes } = await import(
-      "@/lib/indexeddb-size-estimate"
+      "@/lib/db/maintenance/indexeddb-size-estimate"
     );
 
     const db = await openHqccDexieDb();

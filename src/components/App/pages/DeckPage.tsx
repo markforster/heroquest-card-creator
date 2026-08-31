@@ -12,9 +12,9 @@ import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 
 export default function DeckPage() {
   const { track } = useAnalytics();
-  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<(() => boolean) | null>(
-    null,
-  );
+  const [focusPrimarySearchHandler, setFocusPrimarySearchHandler] = useState<
+    (() => boolean) | null
+  >(null);
   const [routeShortcutHandlers, setRouteShortcutHandlers] = useState<RouteShortcutHandlers>({});
 
   const shellCapabilities = useMemo(

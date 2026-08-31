@@ -1,10 +1,10 @@
 "use client";
 
-import { ZodiosHooks } from "@zodios/react";
 import { useMutation } from "@tanstack/react-query";
+import { ZodiosHooks } from "@zodios/react";
 
-import { apiClient } from "@/api/client";
 import type { CardUpdateInput } from "@/api/cards";
+import { apiClient } from "@/api/client";
 
 export const apiHooks = new ZodiosHooks("hqcc", apiClient, {
   shouldAbortOnUnmount: true,
@@ -28,7 +28,8 @@ export const useAddAsset = apiHooks.useAddAsset.bind(apiHooks);
 export const useReplaceAsset = apiHooks.useReplaceAsset.bind(apiHooks);
 export const useUpdateAssetMetadata = apiHooks.useUpdateAssetMetadata.bind(apiHooks);
 export const useResetAssetClassification = apiHooks.useResetAssetClassification.bind(apiHooks);
-export const useResetAssetClassificationAll = apiHooks.useResetAssetClassificationAll.bind(apiHooks);
+export const useResetAssetClassificationAll =
+  apiHooks.useResetAssetClassificationAll.bind(apiHooks);
 export const useDeleteAssets = apiHooks.useDeleteAssets.bind(apiHooks);
 export const useTouchCardLastViewed = apiHooks.useTouchCardLastViewed.bind(apiHooks);
 export const useUpdateCards = apiHooks.useUpdateCards.bind(apiHooks);

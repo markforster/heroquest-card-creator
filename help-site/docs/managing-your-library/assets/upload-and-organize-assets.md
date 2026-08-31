@@ -20,6 +20,8 @@ Use the Assets workspace to build a reusable image library before or while creat
 
 The successful files from the latest batch appear under **Recently uploaded**. A later batch replaces that temporary group, but it does not delete earlier assets.
 
+Prepare images before upload where you can. Full-card artwork and opaque backgrounds are usually best as optimized JPEG files, while images that need transparency should stay as PNG. See [Protect Your Library and Keep It Small](../../settings-and-data/protect-your-library-and-keep-it-small.md) for practical size guidance.
+
 ## What happens to duplicates
 
 The uploader checks both image content and filenames:
@@ -83,4 +85,5 @@ Choosing and positioning artwork is a card-editing task. See [Add and Position A
 - [Fix Asset Upload Problems](../../troubleshooting/fix-asset-upload-problems.md)
 - [Understand the Assets Workspace](./understand-the-assets-workspace.md)
 - [Replace, Convert, and Delete Assets](./replace-convert-and-delete-assets.md)
+- [Protect Your Library and Keep It Small](../../settings-and-data/protect-your-library-and-keep-it-small.md)
 - [What Is an Asset?](../../concepts/what-is-an-asset.md)

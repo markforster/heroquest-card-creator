@@ -147,7 +147,7 @@ describe("openHqccDb", () => {
 
   afterEach(async () => {
     try {
-      const { getHqccDexieDb } = await import("@/lib/hqcc-dexie");
+      const { getHqccDexieDb } = await import("@/lib/db/hqcc-dexie");
       getHqccDexieDb().close();
     } catch {
       // Ignore teardown import failures in tests that intentionally unset IndexedDB.
@@ -162,13 +162,13 @@ describe("openHqccDb", () => {
 
   it("rejects when IndexedDB is not available", async () => {
     restoreIndexedDb();
-    const { openHqccDb } = await import("@/lib/hqcc-db");
+    const { openHqccDb } = await import("@/lib/db/hqcc-db");
 
     await expect(openHqccDb()).rejects.toThrow("IndexedDB not available");
   });
 
   it("opens the hqcc DB as a native database with the current stores", async () => {
-    const { openHqccDb, readExistingHqccDbAppVersion } = await import("@/lib/hqcc-db");
+    const { openHqccDb, readExistingHqccDbAppVersion } = await import("@/lib/db/hqcc-db");
 
     const db = await openHqccDb();
 
@@ -208,8 +208,12 @@ describe("openHqccDb", () => {
   });
 
   it("does not create an empty DB when probing a fresh install", async () => {
-    const { openHqccDb, probeHqccDbVersion, readExistingHqccDbVersion, readExistingHqccDbAppVersion } =
-      await import("@/lib/hqcc-db");
+    const {
+      openHqccDb,
+      probeHqccDbVersion,
+      readExistingHqccDbVersion,
+      readExistingHqccDbAppVersion,
+    } = await import("@/lib/db/hqcc-db");
 
     await expect(probeHqccDbVersion()).resolves.toBeNull();
     await expect(readExistingHqccDbVersion()).resolves.toBeNull();
@@ -258,7 +262,7 @@ describe("openHqccDb", () => {
     });
     legacyDb.close();
 
-    const { openHqccDb, probeHqccDbVersion } = await import("@/lib/hqcc-db");
+    const { openHqccDb, probeHqccDbVersion } = await import("@/lib/db/hqcc-db");
     const db = await openHqccDb();
 
     expect(db.version).toBe(11);
@@ -330,7 +334,7 @@ describe("openHqccDb", () => {
     });
     legacyDb.close();
 
-    const { openHqccDb } = await import("@/lib/hqcc-db");
+    const { openHqccDb } = await import("@/lib/db/hqcc-db");
     const db = await openHqccDb();
 
     const pairs = (await readAllFromDb(db, "pairs")) as Array<{
@@ -341,7 +345,11 @@ describe("openHqccDb", () => {
 
     expect(pairs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "pair-existing", frontFaceId: "front-1", backFaceId: "back-1" }),
+        expect.objectContaining({
+          id: "pair-existing",
+          frontFaceId: "front-1",
+          backFaceId: "back-1",
+        }),
         expect.objectContaining({ frontFaceId: "front-2", backFaceId: "back-1" }),
       ]),
     );

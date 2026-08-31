@@ -4,7 +4,7 @@ type: troubleshooting
 status: first-draft
 source_questions: [Q-0052, Q-0122, Q-0328, Q-0329, Q-0330, Q-0331, Q-0332, Q-0333, Q-0334, Q-0335, Q-0336, Q-0337, Q-0338, Q-0339]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Fix Cards Workspace Problems
 
@@ -23,18 +23,18 @@ Clear the view in this order:
 
 
 1. Choose **All cards** in the Collections panel.
-2. Clear **Search saved cards by name**.
+2. Clear the saved-card search.
 3. Set the face or template filter to **All cards**.
-4. Turn off **Not paired**.
+4. Set pairing status to **All**.
 5. If a missing-artwork filter is visible, turn it off unless you are deliberately looking for affected cards.
 
 Sorting, grouping, and switching between Grid and Table change the arrangement, not which cards qualify. If the screen is still empty, check **Recently deleted** and confirm that you opened the same browser, profile, and app address where the cards were created.
 
 ## Collection counts changed while I searched
 
-The counts in the Collections panel can respond to the active search and **Not paired** filter. This lets you see how many matching cards remain in each collection without opening every collection.
+The counts in the Collections panel can respond to the active search and pairing-status filter. This lets you see how many matching cards remain in each collection without opening every collection.
 
-Clear the search and turn off **Not paired** to return to the broad counts. Sorting, grouping, and Grid or Table view do not change them.
+Clear the search and set pairing status to **All** to return to the broad counts. Sorting, grouping, and Grid or Table view do not change them.
 
 ## A card is missing from a named collection
 
@@ -113,7 +113,7 @@ If the panel still has too little room, widen the app window. The panel contains
 Check these locations and controls without changing data:
 
 1. Choose **All cards**.
-2. Clear search, face or template filtering, and **Not paired**.
+2. Clear search, face or template filtering, and set pairing status to **All**.
 3. Check the expected named collection and **Unfiled**.
 4. Check **Recently deleted**.
 5. Confirm the same browser, profile, app address, or downloaded-app launch method.

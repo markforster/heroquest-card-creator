@@ -71,7 +71,7 @@ Find retained files first, then upload only missing files and isolate a repeated
 
 ## In what order should I clear Cards search and filters?
 
-Choose All cards, clear the search, return the face or template filter to All cards, then turn off Not paired.
+Choose All cards, clear the search, return the face or template filter to All cards, then set pairing status to All.
 
 [Read the full guidance](../troubleshooting/fix-cards-workspace-problems.md)
 

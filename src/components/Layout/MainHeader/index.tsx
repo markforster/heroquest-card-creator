@@ -1,15 +1,15 @@
 "use client";
 
+import { Coffee, Facebook, MessageCircle, Twitter, UsersRound, Youtube } from "lucide-react";
 import { useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Coffee, Facebook, MessageCircle, Twitter, UsersRound, Youtube } from "lucide-react";
 
 import styles from "@/app/page.module.css";
 import FooterUpdateNotice from "@/components/Layout/FooterUpdateNotice";
+import RateCta from "@/components/Layout/RateCta";
 import { useUpdateNotice } from "@/components/Providers/UpdateNoticeProvider";
 import { formatMessage } from "@/components/Stockpile/stockpile-utils";
 import { useI18n } from "@/i18n/I18nProvider";
-import RateCta from "@/components/Layout/RateCta";
 
 import HeaderBrand from "./HeaderBrand";
 

@@ -1,8 +1,7 @@
-import { forwardRef, useImperativeHandle } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { forwardRef, useImperativeHandle } from "react";
 
 import DeckPdfExportSummaryModal from "@/components/Decks/pdf/DeckPdfExportSummaryModal";
-
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
 
@@ -43,7 +42,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
     language: "en",
     t: (key: string, vars?: Record<string, unknown>) =>
       (
-        {
+        ({
           "decks.pdf.modal.title": "Export deck PDF",
           "actions.cancel": "Cancel",
           "decks.untitledDeck": "Untitled deck",
@@ -82,7 +81,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cutMarkStyleLongDashed": "Long dashed",
           "label.cutMarkStyleDotted": "Dotted",
           "label.cutMarkStyleTicks": "Ticks",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -98,7 +97,7 @@ jest.mock("@/i18n/getTemplateNameLabel", () => ({
 }));
 
 jest.mock("@/components/Export/PdfExportShellModal", () => {
-  const React = require("react");
+  const React = jest.requireActual<typeof import("react")>("react");
   const defaultConfig = {
     paper: "Letter",
     orientation: "portrait",
@@ -125,11 +124,14 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
 
   return {
     __esModule: true,
-    default: (props: {
+    default: function MockPdfExportShellModal(props: {
       title: string;
       sourceType: "deck" | "collection" | "alignment";
       slotPairs: SlotPair[];
-      placeholderLookup?: Record<string, { title: string; subtitle?: string; variant: "empty-front" }>;
+      placeholderLookup?: Record<
+        string,
+        { title: string; subtitle?: string; variant: "empty-front" }
+      >;
       summaryContent?: {
         columns: Array<Array<{ text: string; tone?: "default" | "muted" }>>;
         notice?: { text: string; tone?: "default" | "muted" | "blocked" };
@@ -140,7 +142,7 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
       buildAlignmentExportRun?: (state: unknown) => Promise<unknown>;
       topContent: React.ReactNode | ((state: unknown) => React.ReactNode);
       children?: React.ReactNode;
-    }) => {
+    }) {
       const {
         title,
         sourceType,
@@ -194,13 +196,16 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
           <div data-testid="shell-source-type">{sourceType}</div>
           <div data-testid="shell-mode">{shellState.effectiveConfig.mode}</div>
           <div data-testid="shell-slot-pair-count">{slotPairs.length}</div>
-          <div data-testid="shell-placeholder-count">{Object.keys(placeholderLookup ?? {}).length}</div>
+          <div data-testid="shell-placeholder-count">
+            {Object.keys(placeholderLookup ?? {}).length}
+          </div>
           <div data-testid="shell-summary-primary">
             {summaryContent?.columns[0]?.map((line) => line.text).join(" | ") ?? ""}
           </div>
           <div data-testid="shell-summary-secondary">
-            {summaryContent?.columns[1]?.map((line) => `${line.tone ?? "default"}:${line.text}`).join(" | ") ??
-              ""}
+            {summaryContent?.columns[1]
+              ?.map((line) => `${line.tone ?? "default"}:${line.text}`)
+              .join(" | ") ?? ""}
           </div>
           <div data-testid="shell-summary-notice">
             {summaryContent?.notice
@@ -219,7 +224,11 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
                   ...shellState.effectiveConfig,
                   bleedMm: shellState.resolvedBleedOptions.bleedMm,
                 },
-                layout: { paperMm: { width: 210, height: 297 }, grid: { cols: 2, rows: 1, perPage: 2 }, placements: [] },
+                layout: {
+                  paperMm: { width: 210, height: 297 },
+                  grid: { cols: 2, rows: 1, perPage: 2 },
+                  placements: [],
+                },
               });
               mockCapturedExportRun(result);
             }}
@@ -235,7 +244,11 @@ jest.mock("@/components/Export/PdfExportShellModal", () => {
                   ...shellState.effectiveConfig,
                   bleedMm: shellState.resolvedBleedOptions.bleedMm,
                 },
-                layout: { paperMm: { width: 210, height: 297 }, grid: { cols: 2, rows: 1, perPage: 2 }, placements: [] },
+                layout: {
+                  paperMm: { width: 210, height: 297 },
+                  grid: { cols: 2, rows: 1, perPage: 2 },
+                  placements: [],
+                },
               });
               mockCapturedAlignmentRun(result);
             }}
@@ -282,7 +295,11 @@ jest.mock("@/components/Decks/pdf/DeckPdfExportPanel", () => ({
     onSetScopeMode,
     onToggleSet,
   }: {
-    summary: { includedSetCount: number; totalFaceCount: number; exportSlotQuantity: number } | null;
+    summary: {
+      includedSetCount: number;
+      totalFaceCount: number;
+      exportSlotQuantity: number;
+    } | null;
     setScopeMode: string;
     selectedSetIds: Set<string>;
     onSetScopeMode: (mode: "complete" | "all" | "selected") => void;
@@ -306,7 +323,7 @@ jest.mock("@/components/Decks/pdf/DeckPdfExportPanel", () => ({
 
 jest.mock("@/components/Cards/CardPreview", () => ({
   __esModule: true,
-  default: forwardRef((_props, ref) => {
+  default: forwardRef(function MockCardPreview(_props, ref) {
     useImperativeHandle(ref, () => ({
       waitForBackgroundLoaded: jest.fn().mockResolvedValue(undefined),
       syncCopyrightContrast: jest.fn().mockResolvedValue(undefined),
@@ -368,21 +385,52 @@ beforeEach(() => {
   mockResolveDeckPdfRunData.mockImplementation(
     async (_deckId: string, mode: string, scopeMode: string, selectedSetIds: string[]) => ({
       sets: [
-        { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: true, entryCount: 2 },
-        { setId: "set-2", setTitle: "Set Two", backFaceId: "back-2", hasEntries: false, entryCount: 0 },
+        {
+          setId: "set-1",
+          setTitle: "Set One",
+          backFaceId: "back-1",
+          hasEntries: true,
+          entryCount: 2,
+        },
+        {
+          setId: "set-2",
+          setTitle: "Set Two",
+          backFaceId: "back-2",
+          hasEntries: false,
+          entryCount: 0,
+        },
       ],
       selectedSetIds,
       slotPairs:
         scopeMode === "selected" && selectedSetIds.length === 1
-          ? [{ slotId: "slot-1", frontId: "front-1", backId: mode === "frontAndBack" ? "back-1" : null }]
+          ? [
+              {
+                slotId: "slot-1",
+                frontId: "front-1",
+                backId: mode === "frontAndBack" ? "back-1" : null,
+              },
+            ]
           : [
-              { slotId: "slot-1", frontId: "front-1", backId: mode === "frontAndBack" ? "back-1" : null },
-              { slotId: "slot-2", frontId: "front-2", backId: mode === "frontAndBack" ? "back-2" : null },
+              {
+                slotId: "slot-1",
+                frontId: "front-1",
+                backId: mode === "frontAndBack" ? "back-1" : null,
+              },
+              {
+                slotId: "slot-2",
+                frontId: "front-2",
+                backId: mode === "frontAndBack" ? "back-2" : null,
+              },
             ],
     }),
   );
   mockSummarizeDeckPdfRunData.mockImplementation(
-    (runData: { slotPairs: unknown[] }, mode: string, _scopeMode: string, selectedSetIds: Set<string>) => ({
+    (
+      runData: { slotPairs: unknown[] },
+      mode: string,
+      _scopeMode: string,
+      selectedSetIds: Set<string>,
+    ) => ({
       totalSetCount: 2,
       includedSetCount: selectedSetIds.size || 1,
       includedEmptySetCount: 0,
@@ -390,14 +438,29 @@ beforeEach(() => {
       excludedNonEmptySetCount: 0,
       totalEntryQuantity: runData.slotPairs.length,
       exportSlotQuantity: runData.slotPairs.length,
-      frontFaceCount: runData.slotPairs.filter((slot) => !String(slot.frontId ?? "").startsWith("deck-empty-front:")).length,
-      backFaceCount: mode === "frontAndBack" ? (selectedSetIds.size || 1) : 0,
+      frontFaceCount: runData.slotPairs.filter(
+        (slot) => !String(slot.frontId ?? "").startsWith("deck-empty-front:"),
+      ).length,
+      backFaceCount: mode === "frontAndBack" ? selectedSetIds.size || 1 : 0,
       totalFaceCount:
-        runData.slotPairs.filter((slot) => !String(slot.frontId ?? "").startsWith("deck-empty-front:")).length +
-        (mode === "frontAndBack" ? (selectedSetIds.size || 1) : 0),
+        runData.slotPairs.filter(
+          (slot) => !String(slot.frontId ?? "").startsWith("deck-empty-front:"),
+        ).length + (mode === "frontAndBack" ? selectedSetIds.size || 1 : 0),
       sets: [
-        { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: true, entryCount: 2 },
-        { setId: "set-2", setTitle: "Set Two", backFaceId: "back-2", hasEntries: false, entryCount: 0 },
+        {
+          setId: "set-1",
+          setTitle: "Set One",
+          backFaceId: "back-1",
+          hasEntries: true,
+          entryCount: 2,
+        },
+        {
+          setId: "set-2",
+          setTitle: "Set Two",
+          backFaceId: "back-2",
+          hasEntries: false,
+          entryCount: 0,
+        },
       ],
     }),
   );
@@ -430,7 +493,9 @@ describe("DeckPdfExportSummaryModal", () => {
     expect(screen.getByTestId("shell-summary-primary")).toHaveTextContent(
       "Complete sets: 1 | Entries: 2 | Exported faces: 2/0/2",
     );
-    expect(screen.getByTestId("shell-summary-secondary")).toHaveTextContent("muted:Empty excluded: 1");
+    expect(screen.getByTestId("shell-summary-secondary")).toHaveTextContent(
+      "muted:Empty excluded: 1",
+    );
     expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith("deck-1", "frontsOnly", "complete", []);
   });
 
@@ -452,12 +517,9 @@ describe("DeckPdfExportSummaryModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Change mode" }));
 
     await waitFor(() => {
-      expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith(
-        "deck-1",
-        "frontAndBack",
-        "selected",
-        ["set-1"],
-      );
+      expect(mockResolveDeckPdfRunData).toHaveBeenCalledWith("deck-1", "frontAndBack", "selected", [
+        "set-1",
+      ]);
     });
   });
 
@@ -512,7 +574,13 @@ describe("DeckPdfExportSummaryModal", () => {
   it("passes a blocked summary notice when no slot pairs are available", async () => {
     const blockedRunData = {
       sets: [
-        { setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: false, entryCount: 0 },
+        {
+          setId: "set-1",
+          setTitle: "Set One",
+          backFaceId: "back-1",
+          hasEntries: false,
+          entryCount: 0,
+        },
       ],
       selectedSetIds: [],
       slotPairs: [],
@@ -528,7 +596,15 @@ describe("DeckPdfExportSummaryModal", () => {
       frontFaceCount: 0,
       backFaceCount: 0,
       totalFaceCount: 0,
-      sets: [{ setId: "set-1", setTitle: "Set One", backFaceId: "back-1", hasEntries: false, entryCount: 0 }],
+      sets: [
+        {
+          setId: "set-1",
+          setTitle: "Set One",
+          backFaceId: "back-1",
+          hasEntries: false,
+          entryCount: 0,
+        },
+      ],
     };
     mockResolveDeckPdfRunData.mockImplementation(async () => blockedRunData);
     mockSummarizeDeckPdfRunData.mockImplementation(() => blockedSummary);

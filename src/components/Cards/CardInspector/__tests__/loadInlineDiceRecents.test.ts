@@ -38,7 +38,13 @@ describe("loadInlineDiceRecents", () => {
       INLINE_DICE_RECENTS_STORAGE_KEY,
       JSON.stringify([
         { token: "&cd-nope-w;" },
-        { token: "&d6-1-w;", type: "d6", faceOrValue: 1, backgroundColor: "#FFFFFF", symbolColor: "#111111" },
+        {
+          token: "&d6-1-w;",
+          type: "d6",
+          faceOrValue: 1,
+          backgroundColor: "#FFFFFF",
+          symbolColor: "#111111",
+        },
       ]),
     );
 

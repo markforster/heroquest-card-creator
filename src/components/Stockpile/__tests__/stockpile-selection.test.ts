@@ -17,4 +17,3 @@ describe("resolveSingleSelectToggle", () => {
     expect(resolveSingleSelectToggle(["a", "b"], "a")).toEqual(["a"]);
   });
 });
-

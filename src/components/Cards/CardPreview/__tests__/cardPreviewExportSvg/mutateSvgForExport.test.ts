@@ -1,6 +1,6 @@
-import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 import { mutateSvgForExport } from "@/components/Cards/CardPreview/cardPreviewExportSvg";
 import { getCardPreviewStageLayout } from "@/components/Cards/CardPreview/cardPreviewStage";
+import { CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 
 function createSvg() {
   return document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -125,5 +125,16 @@ describe("mutateSvgForExport", () => {
     expect(svg.getAttribute("viewBox")).toBe(
       `${cardOriginX} ${cardOriginY} ${CARD_WIDTH} ${CARD_HEIGHT}`,
     );
+  });
+
+  it("removes preview-only image clip ghost nodes", () => {
+    const svg = createSvg();
+    const ghost = document.createElementNS(svg.namespaceURI, "g");
+    ghost.setAttribute("data-preview-only", "image-clip-ghost");
+    svg.appendChild(ghost);
+
+    mutateSvgForExport(svg, { mode: "standard" });
+
+    expect(svg.querySelector('[data-preview-only="image-clip-ghost"]')).toBeNull();
   });
 });

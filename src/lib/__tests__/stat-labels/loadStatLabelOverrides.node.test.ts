@@ -9,4 +9,3 @@ describe("loadStatLabelOverrides (node)", () => {
     expect(loadStatLabelOverrides()).toEqual(DEFAULT_STAT_LABELS);
   });
 });
-

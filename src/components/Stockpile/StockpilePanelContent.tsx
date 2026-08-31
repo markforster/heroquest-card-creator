@@ -9,9 +9,9 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, FolderPlus, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import type { CardRecord } from "@/api/cards";
@@ -25,6 +25,7 @@ import { useBulkCardExport } from "@/components/Export/hooks/useBulkCardExport";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
 import { useAnalytics } from "@/components/Providers/AnalyticsProvider";
 import { useCardEditor } from "@/components/Providers/CardEditorContext";
+import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { useFooterTip } from "@/components/Providers/FooterTipContext";
 import { useLocalStorageBoolean } from "@/components/Providers/LocalStorageProvider";
@@ -32,13 +33,14 @@ import { useMissingAssets } from "@/components/Providers/MissingAssetsContext";
 import { getDeleteCollectionImpact } from "@/components/Stockpile/collection-delete-impact";
 import { useStockpileData } from "@/components/Stockpile/hooks/useStockpileData";
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
-import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
-import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
-import { hydrateCardsForExport } from "@/components/Stockpile/stockpile-export";
-import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import CollectionPdfExportSummaryModal from "@/components/Stockpile/pdf/CollectionPdfExportSummaryModal";
+import { mergeCollectionCardIds } from "@/components/Stockpile/stockpile-collections-merge";
+import { hydrateCardsForExport } from "@/components/Stockpile/stockpile-export";
+import { resolveSingleSelectToggle } from "@/components/Stockpile/stockpile-selection";
+import { resolveExportFileName, resolveZipFileName } from "@/components/Stockpile/stockpile-utils";
 import StockpileActionsBar from "@/components/Stockpile/StockpileActionsBar";
 import StockpileAddToCollectionModal from "@/components/Stockpile/StockpileAddToCollectionModal";
+import StockpileBottomToolbar from "@/components/Stockpile/StockpileBottomToolbar";
 import StockpileCollectionModal from "@/components/Stockpile/StockpileCollectionModal";
 import StockpileConfirmModal from "@/components/Stockpile/StockpileConfirmModal";
 import StockpileContentPane from "@/components/Stockpile/StockpileContentPane";
@@ -46,24 +48,20 @@ import StockpileExportPairPrompt from "@/components/Stockpile/StockpileExportPai
 import StockpileFooter from "@/components/Stockpile/StockpileFooter";
 import StockpileMissingAssetsModal from "@/components/Stockpile/StockpileMissingAssetsModal";
 import StockpilePairPopover from "@/components/Stockpile/StockpilePairPopover";
-import StockpileBottomToolbar from "@/components/Stockpile/StockpileBottomToolbar";
 import StockpilePrimaryToolbar from "@/components/Stockpile/StockpilePrimaryToolbar";
 import StockpileSidebar from "@/components/Stockpile/StockpileSidebar";
 import StockpileTableThumbPopover from "@/components/Stockpile/StockpileTableThumbPopover";
 import StockpileToolbar from "@/components/Stockpile/StockpileToolbar";
-import { useCopyrightSettings } from "@/components/Providers/CopyrightSettingsContext";
 import type {
   StockpileCardActions,
   StockpileCardGroupView,
   StockpileCardThumb,
   StockpileCardView,
   StockpilePrimaryToolbarGroupValue,
+  StockpilePrimaryToolbarPairingFilterValue,
   StockpilePrimaryToolbarSortValue,
 } from "@/components/Stockpile/types";
-import {
-  ENABLE_CARD_THUMB_CACHE,
-  ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT,
-} from "@/config/flags";
+import { ENABLE_CARD_THUMB_CACHE, ENABLE_STOCKPILE_COLLECTION_PDF_EXPORT } from "@/config/flags";
 import { cardTemplates, cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -79,11 +77,10 @@ import {
   isPairDeleteConfirmRequiredError,
   type CardDeleteUsageReport,
   type PairUsageReport,
-} from "@/lib/decks-errors";
+} from "@/lib/data/decks-errors";
 import { createEditorDefaultValues } from "@/lib/editor-form";
 import type { MissingAssetReport } from "@/lib/export-assets-cache";
 import formatMessageWith from "@/lib/format-message-with";
-import { deletePairsForFaces } from "@/lib/pairs-service";
 import type { TemplateId } from "@/types/templates";
 import type { OpenCloseProps } from "@/types/ui";
 
@@ -164,7 +161,8 @@ export default function StockpilePanelContent({
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [sortMode, setSortMode] = useState<StockpilePrimaryToolbarSortValue>("modified");
   const [groupMode, setGroupMode] = useState<StockpilePrimaryToolbarGroupValue>("none");
-  const [showUnpairedOnly, setShowUnpairedOnly] = useState(false);
+  const [pairingFilter, setPairingFilter] =
+    useState<StockpilePrimaryToolbarPairingFilterValue>("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [isFiltersPanelOpen, setIsFiltersPanelOpen] = useLocalStorageBoolean(
     STOCKPILE_FILTERS_PANEL_OPEN_STORAGE_KEY,
@@ -276,7 +274,7 @@ export default function StockpilePanelContent({
     isPairBacks,
     sortMode,
     groupMode,
-    showUnpairedOnly,
+    pairingFilter,
     pairedIdSet,
     showMissingArtworkOnly,
     missingArtworkIdSet: missingArtworkIds,
@@ -355,7 +353,7 @@ export default function StockpilePanelContent({
     setActiveFilter({ type: "all" });
     setTemplateFilter("all");
     setSelectedIds([]);
-    setShowUnpairedOnly(false);
+    setPairingFilter("all");
     setIsManagingCollections(false);
   }, [isOpen, isPairMode]);
 
@@ -462,8 +460,10 @@ export default function StockpilePanelContent({
     const visibleIds = new Set(filteredCards.map((card) => card.id));
     return selectedIds.filter((id) => visibleIds.has(id));
   }, [filteredCards, selectedIds]);
-  const allVisibleSelected = filteredCards.length > 0 && visibleSelectedIds.length === filteredCards.length;
-  const someVisibleSelected = visibleSelectedIds.length > 0 && visibleSelectedIds.length < filteredCards.length;
+  const allVisibleSelected =
+    filteredCards.length > 0 && visibleSelectedIds.length === filteredCards.length;
+  const someVisibleSelected =
+    visibleSelectedIds.length > 0 && visibleSelectedIds.length < filteredCards.length;
   const hasMultiSelection = selectedIds.length > 1;
   const hasSavedCards = cards.some((card) => card.deletedAt == null);
   const hasRecentlyDeletedCards = cards.some((card) => typeof card.deletedAt === "number");
@@ -471,7 +471,7 @@ export default function StockpilePanelContent({
   const hasActiveNarrowing =
     search.trim().length > 0 ||
     templateFilter !== "all" ||
-    showUnpairedOnly ||
+    pairingFilter !== "all" ||
     showMissingArtworkOnly ||
     activeFilter.type !== "all";
   const filterLabel =
@@ -518,6 +518,14 @@ export default function StockpilePanelContent({
       { value: "none" as const, label: t("label.none") },
       { value: "type" as const, label: t("label.cardType") },
       { value: "face" as const, label: t("label.cardFace") },
+    ],
+    [t],
+  );
+  const primaryToolbarPairingFilterOptions = useMemo(
+    () => [
+      { value: "all" as const, label: t("label.all") },
+      { value: "not-paired" as const, label: t("warning.notPaired") },
+      { value: "paired" as const, label: t("label.paired") },
     ],
     [t],
   );
@@ -674,6 +682,7 @@ export default function StockpilePanelContent({
     cardById,
     pairedByTargetId,
     backByFrontId,
+    t,
   ]);
   const cardViewsById = useMemo(() => {
     const map = new Map<string, StockpileCardView>();
@@ -882,7 +891,7 @@ export default function StockpilePanelContent({
             showCopyright: getTemplateDefault(templateId),
           }),
         );
-        }
+      }
     });
 
     const refreshedCards = await apiClient.listCards({
@@ -1076,10 +1085,7 @@ export default function StockpilePanelContent({
     if (!target) return;
     try {
       const remaining = target.cardIds.filter((id) => !selectedIds.includes(id));
-      await apiClient.updateCollection(
-        { cardIds: remaining },
-        { params: { id: target.id } },
-      );
+      await apiClient.updateCollection({ cardIds: remaining }, { params: { id: target.id } });
       const refreshed = await apiClient.listCollections();
       setCollections(refreshed);
       await invalidateCollectionsQueries(queryClient);
@@ -1140,10 +1146,7 @@ export default function StockpilePanelContent({
       try {
         await finalizeHardDelete(ids, confirmCascade);
       } catch (error) {
-        if (
-          isCardDeleteConfirmRequiredError(error) ||
-          isPairDeleteConfirmRequiredError(error)
-        ) {
+        if (isCardDeleteConfirmRequiredError(error) || isPairDeleteConfirmRequiredError(error)) {
           if (isCardDeleteConfirmRequiredError(error)) {
             setCardDeletePendingIds(ids);
             setCardDeleteUsagePrompt(error.report);
@@ -1227,11 +1230,7 @@ export default function StockpilePanelContent({
     if (selectedIds.length > 0) {
       return [t("hint.stockpileDragCollection"), t("hint.stockpileExportSelected")];
     }
-    return [
-      t("hint.stockpileSelect"),
-      t("hint.stockpileMultiSelect"),
-      t("hint.stockpileOpen"),
-    ];
+    return [t("hint.stockpileSelect"), t("hint.stockpileMultiSelect"), t("hint.stockpileOpen")];
   }, [selectedIds.length, t]);
   const [stockpileFooterHintIndex, setStockpileFooterHintIndex] = useState(0);
 
@@ -1281,15 +1280,7 @@ export default function StockpilePanelContent({
         "lightbulb",
       );
     }
-  }, [
-    clearTip,
-    isOpen,
-    isPairMode,
-    setTip,
-    stockpileFooterHintIndex,
-    stockpileFooterHints,
-    t,
-  ]);
+  }, [clearTip, isOpen, isPairMode, setTip, stockpileFooterHintIndex, stockpileFooterHints, t]);
 
   useEffect(() => {
     return () => {
@@ -1304,7 +1295,8 @@ export default function StockpilePanelContent({
     viewMode,
     onViewModeChange: handleViewModeChange,
     filterValue: mapTemplateFilterToPrimaryToolbarValue(templateFilter),
-    onFilterChange: (next: string) => setTemplateFilter(mapPrimaryToolbarValueToTemplateFilter(next)),
+    onFilterChange: (next: string) =>
+      setTemplateFilter(mapPrimaryToolbarValueToTemplateFilter(next)),
     filterOptions: primaryToolbarFilterOptions,
     sortValue: sortMode,
     onSortChange: setSortMode,
@@ -1312,9 +1304,10 @@ export default function StockpilePanelContent({
     groupValue: groupMode,
     onGroupChange: setGroupMode,
     groupOptions: primaryToolbarGroupOptions,
-    showUnpairedOnly,
-    onShowUnpairedOnlyChange: setShowUnpairedOnly,
-    isUnpairedToggleDisabled: false,
+    pairingFilterValue: pairingFilter,
+    onPairingFilterChange: setPairingFilter,
+    pairingFilterOptions: primaryToolbarPairingFilterOptions,
+    isPairingFilterDisabled: false,
     isSearchDisabled: false,
     isFilterDisabled: false,
     isSortDisabled:
@@ -1346,7 +1339,9 @@ export default function StockpilePanelContent({
     },
     onSelectNone: () => setSelectedIds([]),
     isAddToCollectionDisabled:
-      activeFilter.type === "recentlyDeleted" || visibleSelectedIds.length === 0 || !hasOtherCollections,
+      activeFilter.type === "recentlyDeleted" ||
+      visibleSelectedIds.length === 0 ||
+      !hasOtherCollections,
     isDeleteDisabled: selectedIds.length === 0,
     isExportDisabled: !canExport,
     isLoadDisabled: !selectedCard || hasMultiSelection || !onLoadCard,
@@ -1356,8 +1351,7 @@ export default function StockpilePanelContent({
     onLoad: handlePrimaryToolbarLoad,
   } as const;
   const showSecondaryActionsBar =
-    !isPairMode &&
-    (activeFilter.type === "collection" || activeFilter.type === "recentlyDeleted");
+    !isPairMode && (activeFilter.type === "collection" || activeFilter.type === "recentlyDeleted");
 
   if (!isOpen) {
     return null;
@@ -1386,9 +1380,7 @@ export default function StockpilePanelContent({
               <section className={styles.stockpileCenterPanel}>
                 <div className={styles.stockpileCenterTop}>
                   <div className={styles.stockpileCenterStack}>
-                    {!isPairMode ? (
-                      <StockpilePrimaryToolbar {...primaryToolbarProps} />
-                    ) : null}
+                    {!isPairMode ? <StockpilePrimaryToolbar {...primaryToolbarProps} /> : null}
                     <StockpileToolbar
                       onOpenCollections={() => setIsCollectionsDrawerOpen(true)}
                       collectionsToggleLabel={collectionsToggleLabel}
@@ -1408,8 +1400,10 @@ export default function StockpilePanelContent({
                       isPairMode={isPairMode}
                       isPairBacks={isPairBacks}
                       isPairFronts={isPairFronts}
-                      showUnpairedOnly={showUnpairedOnly}
-                      onShowUnpairedOnlyChange={setShowUnpairedOnly}
+                      showUnpairedOnly={pairingFilter === "not-paired"}
+                      onShowUnpairedOnlyChange={(next) =>
+                        setPairingFilter(next ? "not-paired" : "all")
+                      }
                       showMissingArtworkOnly={showMissingArtworkOnly}
                       onShowMissingArtworkOnlyChange={setShowMissingArtworkOnly}
                       selectedCount={selectedIds.length}
@@ -1845,7 +1839,8 @@ export default function StockpilePanelContent({
           setPairUsagePrompt(null);
           const allFaceIds = pairUsagePendingDeleteIds;
           if (!allFaceIds.length) return;
-          await deletePairsForFaces(allFaceIds, {
+          await apiClient.deletePairsForFaces({
+            faceIds: allFaceIds,
             mode: "confirmable-cascade",
             confirmCascade: true,
           });

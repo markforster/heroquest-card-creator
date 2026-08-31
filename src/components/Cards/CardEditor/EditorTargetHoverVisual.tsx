@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, SVGProps } from "react";
+
 import { ENABLE_EDITOR_TARGET_INTERACTIONS } from "@/config/flags";
 import type { BlueprintBounds } from "@/types/blueprints";
 
 import * as EditorTargetsContext from "./EditorTargetsContext";
+
 import type {
   EditorTargetId,
   HoverAdornmentDescriptor,
   HoverAdornmentShape,
   HoverAdornmentTone,
 } from "./EditorTargetsContext";
+import type { CSSProperties, SVGProps } from "react";
 
 const HOVER_STYLE: CSSProperties = {
   pointerEvents: "none",
@@ -213,18 +215,49 @@ export function HoverAdornmentDescriptorShape({
 export function EditorTargetAdornmentLayer() {
   if (!ENABLE_EDITOR_TARGET_INTERACTIONS) return null;
 
-  const editorTargets =
-    typeof EditorTargetsContext.useOptionalEditorTargets === "function"
-      ? EditorTargetsContext.useOptionalEditorTargets()
-      : EditorTargetsContext.useEditorTargets();
+  return typeof EditorTargetsContext.useOptionalEditorTargets === "function" ? (
+    <OptionalEditorTargetAdornmentLayer />
+  ) : (
+    <RequiredEditorTargetAdornmentLayer />
+  );
+}
 
+function OptionalEditorTargetAdornmentLayer() {
+  const editorTargets = EditorTargetsContext.useOptionalEditorTargets();
   if (!editorTargets) return null;
 
   const { hoveredTargetId, hoverAdornmentDescriptor } = editorTargets;
+  return (
+    <EditorTargetAdornmentLayerContent
+      hoveredTargetId={hoveredTargetId}
+      hoverAdornmentDescriptor={hoverAdornmentDescriptor}
+    />
+  );
+}
+
+function RequiredEditorTargetAdornmentLayer() {
+  const { hoveredTargetId, hoverAdornmentDescriptor } = EditorTargetsContext.useEditorTargets();
+  return (
+    <EditorTargetAdornmentLayerContent
+      hoveredTargetId={hoveredTargetId}
+      hoverAdornmentDescriptor={hoverAdornmentDescriptor}
+    />
+  );
+}
+
+function EditorTargetAdornmentLayerContent({
+  hoveredTargetId,
+  hoverAdornmentDescriptor,
+}: {
+  hoveredTargetId: EditorTargetId | null;
+  hoverAdornmentDescriptor: HoverAdornmentDescriptor | null;
+}) {
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef<number | null>(null);
   const [renderedTargetId, setRenderedTargetId] = useState<EditorTargetId | null>(null);
-  const [renderedDescriptor, setRenderedDescriptor] = useState<HoverAdornmentDescriptor | null>(null);
+  const [renderedDescriptor, setRenderedDescriptor] = useState<HoverAdornmentDescriptor | null>(
+    null,
+  );
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -246,8 +279,7 @@ export function EditorTargetAdornmentLayer() {
 
     if (hoveredTargetId && hoverAdornmentDescriptor) {
       const isSameTarget =
-        renderedTargetId === hoveredTargetId &&
-        renderedDescriptor === hoverAdornmentDescriptor;
+        renderedTargetId === hoveredTargetId && renderedDescriptor === hoverAdornmentDescriptor;
 
       setRenderedTargetId(hoveredTargetId);
       setRenderedDescriptor(hoverAdornmentDescriptor);

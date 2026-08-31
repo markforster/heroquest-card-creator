@@ -1,9 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 
-import {
-  UpdateNoticeProvider,
-  useUpdateNotice,
-} from "@/components/Providers/UpdateNoticeProvider";
+import { UpdateNoticeProvider, useUpdateNotice } from "@/components/Providers/UpdateNoticeProvider";
 import { UPDATE_CHECK_INTERVAL_MS, UPDATE_STORAGE_KEYS } from "@/lib/update-check/constants";
 
 let mockAppVersion = "0.5.0";
@@ -205,7 +202,10 @@ describe("UpdateNoticeProvider", () => {
   it("always performs a fresh check on mount even when a stored success exists", async () => {
     process.env.NEXT_PUBLIC_APP_DISTRIBUTION = "download";
     window.localStorage.setItem(UPDATE_STORAGE_KEYS.distribution, "download");
-    window.localStorage.setItem(UPDATE_STORAGE_KEYS.lastSuccessfulCheckAt, String(Date.now() - 1000));
+    window.localStorage.setItem(
+      UPDATE_STORAGE_KEYS.lastSuccessfulCheckAt,
+      String(Date.now() - 1000),
+    );
     window.localStorage.setItem(UPDATE_STORAGE_KEYS.latestRemoteVersion, "0.5.1");
     window.localStorage.setItem(UPDATE_STORAGE_KEYS.available, "1");
     window.localStorage.setItem(UPDATE_STORAGE_KEYS.source, "github");

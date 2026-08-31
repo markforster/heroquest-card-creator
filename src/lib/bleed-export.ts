@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  CARD_CORNER_RADIUS,
-  CARD_HEIGHT,
-  CARD_WIDTH,
-} from "@/components/Cards/CardPreview/consts";
+import { CARD_CORNER_RADIUS, CARD_HEIGHT, CARD_WIDTH } from "@/components/Cards/CardPreview/consts";
 
 export type CropMarksOptions = {
   enabled: boolean;
@@ -62,11 +58,9 @@ export function setExportClip(svg: SVGSVGElement, { rounded }: { rounded: boolea
 
 export function setExportBackgroundFit(svg: SVGSVGElement, mode: "slice" | "meet"): void {
   const preserve = mode === "slice" ? "xMidYMid slice" : "xMidYMid meet";
-  svg
-    .querySelectorAll<SVGImageElement>('image[data-card-background="true"]')
-    .forEach((node) => {
-      node.setAttribute("preserveAspectRatio", preserve);
-    });
+  svg.querySelectorAll<SVGImageElement>('image[data-card-background="true"]').forEach((node) => {
+    node.setAttribute("preserveAspectRatio", preserve);
+  });
 }
 
 export function stripToBackgroundOnly(svg: SVGSVGElement): void {
@@ -129,12 +123,12 @@ export function composeBleedCanvas({
   cropMarks,
   cutMarks,
 }: BleedComposeOptions): HTMLCanvasElement {
-  const markLength = cropMarks?.enabled ? cropMarks.markLength ?? DEFAULT_CROP_MARK_LENGTH : 0;
+  const markLength = cropMarks?.enabled ? (cropMarks.markLength ?? DEFAULT_CROP_MARK_LENGTH) : 0;
   const markThickness = cropMarks?.enabled
-    ? cropMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS
+    ? (cropMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS)
     : 0;
-  const cutOffset = cutMarks?.enabled ? cutMarks.offset ?? DEFAULT_CUT_MARK_OFFSET : 0;
-  const cutThickness = cutMarks?.enabled ? cutMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS : 0;
+  const cutOffset = cutMarks?.enabled ? (cutMarks.offset ?? DEFAULT_CUT_MARK_OFFSET) : 0;
+  const cutThickness = cutMarks?.enabled ? (cutMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS) : 0;
   const cutPadding = cutMarks?.enabled ? cutOffset + cutThickness : 0;
   const padding = Math.max(bleedPx, markLength, cutPadding);
   const outputWidth = CARD_WIDTH + padding * 2;
@@ -207,9 +201,9 @@ export function getBleedTrimOrigin({
   cropMarks?: CropMarksOptions;
   cutMarks?: CutMarksOptions;
 }) {
-  const markLength = cropMarks?.enabled ? cropMarks.markLength ?? DEFAULT_CROP_MARK_LENGTH : 0;
-  const cutOffset = cutMarks?.enabled ? cutMarks.offset ?? DEFAULT_CUT_MARK_OFFSET : 0;
-  const cutThickness = cutMarks?.enabled ? cutMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS : 0;
+  const markLength = cropMarks?.enabled ? (cropMarks.markLength ?? DEFAULT_CROP_MARK_LENGTH) : 0;
+  const cutOffset = cutMarks?.enabled ? (cutMarks.offset ?? DEFAULT_CUT_MARK_OFFSET) : 0;
+  const cutThickness = cutMarks?.enabled ? (cutMarks.thickness ?? DEFAULT_CROP_MARK_THICKNESS) : 0;
   const cutPadding = cutMarks?.enabled ? cutOffset + cutThickness : 0;
   const padding = Math.max(bleedPx, markLength, cutPadding);
 
@@ -461,7 +455,12 @@ export function drawCropMarks(
 
   // Bottom-left
   ctx.fillRect(trimX - markLength, bottom, markLength + inwardExtension, thickness);
-  ctx.fillRect(trimX - thickness, bottom - inwardExtension, thickness, markLength + inwardExtension);
+  ctx.fillRect(
+    trimX - thickness,
+    bottom - inwardExtension,
+    thickness,
+    markLength + inwardExtension,
+  );
 
   // Bottom-right
   ctx.fillRect(right - inwardExtension, bottom, markLength + inwardExtension, thickness);
@@ -523,9 +522,9 @@ export function drawCutMarks(
       ? dash
       : style === "long-dashed"
         ? DEFAULT_LONG_DASHED_CUT_MARK_DASH
-      : style === "dotted"
-        ? DEFAULT_DOTTED_CUT_MARK_DASH
-        : [],
+        : style === "dotted"
+          ? DEFAULT_DOTTED_CUT_MARK_DASH
+          : [],
   );
   traceRoundedCutPath(ctx, { x, y, w, h, radius });
   ctx.stroke();
@@ -535,13 +534,7 @@ export function drawCutMarks(
 
 function traceRoundedCutPath(
   ctx: CanvasRenderingContext2D,
-  {
-    x,
-    y,
-    w,
-    h,
-    radius,
-  }: { x: number; y: number; w: number; h: number; radius: number },
+  { x, y, w, h, radius }: { x: number; y: number; w: number; h: number; radius: number },
 ) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -570,13 +563,7 @@ function strokeLineSegment(
 
 function drawCutMarkTicks(
   ctx: CanvasRenderingContext2D,
-  {
-    x,
-    y,
-    w,
-    h,
-    radius,
-  }: { x: number; y: number; w: number; h: number; radius: number },
+  { x, y, w, h, radius }: { x: number; y: number; w: number; h: number; radius: number },
 ) {
   const straightW = Math.max(0, w - radius * 2);
   const straightH = Math.max(0, h - radius * 2);
@@ -595,7 +582,11 @@ function drawCutMarkTicks(
   if (totalLength <= 0) return;
 
   const startOffset = DEFAULT_TICK_CUT_MARK_SPACING / 2;
-  for (let distance = startOffset; distance < totalLength; distance += DEFAULT_TICK_CUT_MARK_SPACING) {
+  for (
+    let distance = startOffset;
+    distance < totalLength;
+    distance += DEFAULT_TICK_CUT_MARK_SPACING
+  ) {
     const { px, py, nx, ny } = resolveRoundedPathSample({
       distance,
       x,

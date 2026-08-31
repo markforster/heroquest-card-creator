@@ -4,7 +4,6 @@ import styles from "@/app/page.module.css";
 
 import type { ReactNode } from "react";
 
-
 type LeftNavMiddleProps = {
   children: ReactNode;
 };

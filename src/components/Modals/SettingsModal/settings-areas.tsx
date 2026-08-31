@@ -2,6 +2,7 @@ import {
   ALargeSmall,
   Bug,
   Copyright,
+  Database,
   FolderTree,
   Info,
   TableCellsSplit,
@@ -16,9 +17,10 @@ import CollectionsSettingsPanel from "@/components/Modals/SettingsModal/Collecti
 import CopyrightSettingsPanel from "@/components/Modals/SettingsModal/CopyrightSettingsPanel";
 import DebugSettingsPanel from "@/components/Modals/SettingsModal/DebugSettingsPanel";
 import ExportSettingsPanel from "@/components/Modals/SettingsModal/ExportSettingsPanel";
+import LibrarySettingsPanel from "@/components/Modals/SettingsModal/LibrarySettingsPanel";
 import StatLabelOverridesPanel from "@/components/Modals/SettingsModal/StatLabelOverridesPanel";
-import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
 import SystemSettingsPanel from "@/components/Modals/SettingsModal/SystemSettingsPanel";
+import TextFittingSettingsPanel from "@/components/Modals/SettingsModal/TextFittingSettingsPanel";
 import type { MessageKey } from "@/i18n/messages";
 import { isDebugToolsEnabled } from "@/lib/env";
 
@@ -91,6 +93,12 @@ export const SETTINGS_AREAS: SettingsNavItem[] = [
     labelKey: "heading.appearanceSettings",
     icon: SunMoon,
     panel: () => <AppearanceSettingsPanel />,
+  },
+  {
+    id: "library-settings",
+    labelKey: "heading.librarySettings",
+    icon: Database,
+    panel: () => <LibrarySettingsPanel />,
   },
   // {
   //   id: "preview-settings",

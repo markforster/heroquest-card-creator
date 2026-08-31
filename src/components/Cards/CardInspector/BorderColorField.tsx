@@ -88,7 +88,11 @@ export default function BorderColorField({ label, templateId }: BorderColorField
         onChange={(value) => field.onChange(value)}
         onSelectDefault={handleSelectDefault}
         onSelectTransparent={() => field.onChange(TRANSPARENT_BORDER_COLOR)}
-        canRevert={hasInspectorColorRevert(borderColor, savedColorRef.current, BORDER_COLOR_OPTIONS)}
+        canRevert={hasInspectorColorRevert(
+          borderColor,
+          savedColorRef.current,
+          BORDER_COLOR_OPTIONS,
+        )}
         onRevert={handleRevert}
         isOpen={popoverState.isOpen}
         onToggleOpen={popoverState.toggle}

@@ -62,4 +62,30 @@ describe("RibbonTitle numeric features", () => {
     expect(textElement?.style.fontVariantNumeric).toBe(expectedVariant);
     expect(textElement?.style.fontFeatureSettings).toBe(expectedFeatures);
   });
+  it("does not use italic title styling by default", () => {
+    render(
+      <LocalStorageProvider>
+        <svg>
+          <RibbonTitle title="Quest 123" showRibbon={false} />
+        </svg>
+      </LocalStorageProvider>,
+    );
+
+    const textElement = screen.getByText("Quest 123").closest("text");
+    expect(textElement?.style.fontStyle).toBe("");
+  });
+
+  it("uses the bold italic title face when requested", () => {
+    render(
+      <LocalStorageProvider>
+        <svg>
+          <RibbonTitle title="Quest 123" showRibbon={false} titleTypography="boldItalic" />
+        </svg>
+      </LocalStorageProvider>,
+    );
+
+    const textElement = screen.getByText("Quest 123").closest("text");
+    expect(textElement?.style.fontWeight).toBe("700");
+    expect(textElement?.style.fontStyle).toBe("italic");
+  });
 });

@@ -13,7 +13,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "actions.cancel": "Cancel",
           "actions.delete": "Delete",
           "actions.edit": "Edit",
@@ -27,12 +27,12 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "decks.searchLabel": "Search decks",
           "decks.searchPlaceholder": "Search decks or card titles...",
           "decks.openDeck": "Open deck",
-          "decks.noResults": "No decks match \"{query}\".",
+          "decks.noResults": 'No decks match "{query}".',
           "decks.empty": "No decks yet.",
           "decks.title": "Title",
           "decks.description": "Description",
           "decks.descriptionPlaceholder": "Description placeholder",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -181,7 +181,9 @@ describe("DecksGridPanel grid refresh", () => {
     render(<DecksGridPanel />);
     expect(screen.getByText("Delete 3 selected deck(s)?")).toBeInTheDocument();
 
-    const confirmButton = screen.getAllByRole("button", { name: "Delete" }).at(-1) as HTMLButtonElement;
+    const confirmButton = screen
+      .getAllByRole("button", { name: "Delete" })
+      .at(-1) as HTMLButtonElement;
     fireEvent.click(confirmButton);
     await waitFor(() => expect(model.deleteSelectedDecks).toHaveBeenCalled());
   });
@@ -215,7 +217,12 @@ describe("DecksGridPanel grid refresh", () => {
     render(<DecksGridPanel />);
 
     fireEvent.click(screen.getByRole("button", { name: "Create deck" }));
-    fireEvent.click(screen.getByRole("heading", { name: "Create deck" }).closest("div")!.parentElement!.querySelector('button[type="submit"]') as HTMLButtonElement);
+    fireEvent.click(
+      screen
+        .getByRole("heading", { name: "Create deck" })
+        .closest("div")!
+        .parentElement!.querySelector('button[type="submit"]') as HTMLButtonElement,
+    );
 
     await waitFor(() => expect(model.submitDeckDraft).toHaveBeenCalled());
     expect(mockNavigate).toHaveBeenCalledWith("/decks/d1");
@@ -227,7 +234,12 @@ describe("DecksGridPanel grid refresh", () => {
     render(<DecksGridPanel />);
 
     fireEvent.click(screen.getByRole("button", { name: "Create deck" }));
-    fireEvent.click(screen.getByRole("heading", { name: "Create deck" }).closest("div")!.parentElement!.querySelector('button[type="submit"]') as HTMLButtonElement);
+    fireEvent.click(
+      screen
+        .getByRole("heading", { name: "Create deck" })
+        .closest("div")!
+        .parentElement!.querySelector('button[type="submit"]') as HTMLButtonElement,
+    );
 
     await waitFor(() => expect(model.submitDeckDraft).toHaveBeenCalled());
     expect(mockNavigate).not.toHaveBeenCalledWith("/decks/d1");

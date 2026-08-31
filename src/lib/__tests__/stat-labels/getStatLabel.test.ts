@@ -15,4 +15,3 @@ describe("getStatLabel", () => {
     expect(getStatLabel("statsLabelAttack", "Attack", overrides)).toBe("ATK");
   });
 });
-

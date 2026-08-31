@@ -1,13 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 
 import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
+
+import type { ReactNode } from "react";
 
 jest.mock("@/i18n/I18nProvider", () => ({
   useI18n: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           "heading.exportSettings": "Export Settings",
           "label.exportMarks": "Export Marks",
           "label.exportWithBleed": "Export with bleed",
@@ -28,7 +29,7 @@ jest.mock("@/i18n/I18nProvider", () => ({
           "label.cutMarkStyleLongDashed": "Long dashed",
           "label.cutMarkStyleDotted": "Dotted",
           "label.cutMarkStyleTicks": "Ticks",
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));
@@ -171,13 +172,7 @@ describe("ExportOptionsForm", () => {
   });
 
   it("disables the crop mark style select when crop marks are unavailable", () => {
-    render(
-      <ExportOptionsForm
-        {...baseProps}
-        bleedEnabled={false}
-        cropMarksEnabled={false}
-      />,
-    );
+    render(<ExportOptionsForm {...baseProps} bleedEnabled={false} cropMarksEnabled={false} />);
 
     expect(screen.getByTestId("mock-form-select")).toBeDisabled();
   });

@@ -1,8 +1,7 @@
 "use client";
 
-import { apiClient } from "@/api/client";
-
 import type { CardRecord } from "@/api/cards";
+import { apiClient } from "@/api/client";
 
 export async function hydrateCardsForExport(cards: CardRecord[]): Promise<CardRecord[]> {
   if (!cards.length) {

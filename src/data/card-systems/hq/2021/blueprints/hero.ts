@@ -1,6 +1,7 @@
 import { DEFAULT_COPYRIGHT_COLOR } from "@/config/colors";
 import { blueprintIds, groupTypes, layerTypes, systemFamilies } from "@/data/card-systems/types";
 import type { Blueprint } from "@/types/blueprints";
+import { IMAGE_CLIP_EDGE_BOTTOM } from "@/types/image-clip-edges";
 
 import {
   CARD_HEIGHT,
@@ -19,6 +20,11 @@ import {
   sy,
 } from "./shared";
 
+const HERO_MAIN_IMAGE_BOUNDS = scaleBounds({ x: 0, y: 120, width: 750, height: 730 });
+const HERO_MAIN_IMAGE_CLIP_MIN_BOTTOM = sy(470);
+const HERO_MAIN_IMAGE_CLIP_DEFAULT_BOTTOM =
+  HERO_MAIN_IMAGE_BOUNDS.y + HERO_MAIN_IMAGE_BOUNDS.height;
+
 export const HERO_BLUEPRINT: Blueprint = {
   schemaVersion: 1,
   systemFamily: systemFamilies.hq_2021,
@@ -34,10 +40,13 @@ export const HERO_BLUEPRINT: Blueprint = {
     {
       id: blueprintIds.hq_2021_image_main,
       type: layerTypes.image,
-      bounds: scaleBounds({ x: 0, y: 120, width: 750, height: 730 }),
+      bounds: HERO_MAIN_IMAGE_BOUNDS,
       bind: { imageKey: "imageAssetId" },
       when: { hasImage: "imageAssetId" },
       clip: "canvas",
+      adjustableClipEdgeMask: IMAGE_CLIP_EDGE_BOTTOM,
+      adjustableClipBottomMin: HERO_MAIN_IMAGE_CLIP_MIN_BOTTOM,
+      adjustableClipBottomDefault: HERO_MAIN_IMAGE_CLIP_DEFAULT_BOTTOM,
     },
     {
       id: blueprintIds.hq_2021_title_main,

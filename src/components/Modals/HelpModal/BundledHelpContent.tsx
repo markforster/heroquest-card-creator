@@ -60,6 +60,11 @@ export default function BundledHelpContent() {
             settings.
           </li>
           <li>
+            On cards with a printed title, the library name normally stays linked to that title. Use
+            the title field&apos;s split control when you need a separate library name for search,
+            browsing, and filenames.
+          </li>
+          <li>
             Drafts are saved automatically per template in your browser, so you can switch templates
             without losing in-progress work.
           </li>
@@ -70,6 +75,10 @@ export default function BundledHelpContent() {
           <li>
             Title toolbar controls are template-dependent. Labelled backs can switch ribbon/plain
             styles and top/bottom placement.
+          </li>
+          <li>
+            Labelled Back titles use the bold italic style by default. Title toolbar controls can
+            switch typography where a template supports it.
           </li>
         </DocList>
       </DocSection>
@@ -160,6 +169,11 @@ export default function BundledHelpContent() {
             Use the Image Adjustments popover (adjustments icon) to fine-tune scale, offset, and
             rotation; step buttons let you nudge left/right/up/down with precision.
           </li>
+          <li>
+            On Hero and Monster main artwork, the clipping control can move the lower edge of the
+            visible artwork. When the artwork is selected, the faded area below the guide is an
+            editing preview only and is not exported.
+          </li>
           <li>Scale starts at fit-to-frame (1.0), and you can scale from 0.5–2.0.</li>
           <li>
             Zoom multipliers are literal (1x, 2x, 3x), and full-card coverage remains reachable when
@@ -200,6 +214,10 @@ export default function BundledHelpContent() {
           <li>
             When starting from an empty library, Stockpile onboarding can guide setup and provide
             direct Import library actions.
+          </li>
+          <li>
+            The pairing-status filter can show all cards, only unpaired cards, or only paired cards
+            while you review the Stockpile.
           </li>
         </DocList>
       </DocSection>
@@ -396,6 +414,10 @@ export default function BundledHelpContent() {
             Use Export data and Import data in the header to back up or restore your entire library
             (.hqcc file). Import replaces existing data in this browser profile, so export first if
             you want a safety copy.
+          </li>
+          <li>
+            Settings has a Library panel for export, import, and starting again with an empty
+            library. Starting again is destructive, so export first if you want to keep a backup.
           </li>
           <li>
             Library backup now defaults to a compact .hqcc format, while older backup imports are

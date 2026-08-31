@@ -41,7 +41,6 @@ export function wrapStrategy(ctx: StrategyContext): StrategyResult {
         strategyUsed: "wrap-title-disabled",
       },
     };
-
   }
 
   if (ctx.role === "statHeading") {

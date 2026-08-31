@@ -25,7 +25,8 @@ jest.mock("@/i18n/I18nProvider", () => ({
       const map: Record<string, string> = {
         "empty.saveCardToViewDecks": "Save this card to view deck membership.",
         "empty.saveCardToViewDecksTitle": "Save this card to view decks",
-        "empty.saveCardToViewDecksBody": "Deck membership appears here after this card has been saved.",
+        "empty.saveCardToViewDecksBody":
+          "Deck membership appears here after this card has been saved.",
         "empty.saveCardToViewDecksHint":
           "Once the card has a saved record, any decks that include it will be listed here.",
         "status.loadingDecks": "Loading decks...",

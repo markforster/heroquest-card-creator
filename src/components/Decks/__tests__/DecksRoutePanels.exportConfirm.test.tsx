@@ -41,6 +41,10 @@ jest.mock("@/components/Stockpile/StockpileMissingAssetsModal", () => () => null
 jest.mock("@/components/Cards/CardPreview", () => () => null);
 jest.mock("@/components/Decks/pdf/DeckPdfExportModal", () => () => null);
 jest.mock("@/components/Providers/ExportSettingsContext", () => ({
+  useExportProfilesState: () => ({
+    profiles: [],
+    defaultProfile: null,
+  }),
   useExportSettingsState: () => ({
     settings: {
       bleed: { enabled: false, bleedPx: 0, askBeforeExport: false },
@@ -153,8 +157,10 @@ jest.mock("@/i18n/I18nProvider", () => ({
     t: (key: string) => {
       const map: Record<string, string> = {
         "decks.exportConfirm.title": "Export deck images?",
-        "decks.exportConfirm.summary": "This will export {totalCount} unique images from {setCount} sets.",
-        "decks.exportConfirm.breakdown": "Includes {frontCount} front-facing and {backCount} back-facing cards.",
+        "decks.exportConfirm.summary":
+          "This will export {totalCount} unique images from {setCount} sets.",
+        "decks.exportConfirm.breakdown":
+          "Includes {frontCount} front-facing and {backCount} back-facing cards.",
         "decks.exportConfirm.uniqueNotice": "Cards repeated across sets are exported once.",
         "actions.proceedExport": "Proceed with export",
         "actions.cancel": "Cancel",
@@ -204,9 +210,7 @@ describe("DecksRoutePanels export confirmation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Trigger Deck Export" }));
 
     expect(await screen.findByText("Export deck images?")).toBeInTheDocument();
-    expect(
-      screen.getByText("This will export 2 unique images from 3 sets."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("This will export 2 unique images from 3 sets.")).toBeInTheDocument();
     expect(
       screen.getByText("Includes 1 front-facing and 1 back-facing cards."),
     ).toBeInTheDocument();

@@ -16,6 +16,13 @@ import { useEditorForm } from "@/components/Providers/EditorFormContext";
 import { usePreviewCanvas } from "@/components/Providers/PreviewCanvasContext";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useSmartSwatches } from "@/hooks/useSmartSwatches";
+import { useI18n } from "@/i18n/I18nProvider";
+import {
+  BACKGROUND_TINT_BLEND_MODES,
+  DEFAULT_BACKGROUND_TINT_BLEND_MODE,
+  normalizeBackgroundTintBlendModeForStorage,
+  type BackgroundTintBlendMode,
+} from "@/types/background-tint";
 import type { TemplateId } from "@/types/templates";
 
 const TRANSPARENT_TINT = "transparent";
@@ -33,6 +40,7 @@ type BackgroundTintFieldProps = {
 };
 
 export default function BackgroundTintField({ label, templateId }: BackgroundTintFieldProps) {
+  const { t } = useI18n();
   const { control, setValue } = useFormContext();
   const { savedValues } = useEditorForm();
   const { renderPreviewCanvas } = usePreviewCanvas();
@@ -44,7 +52,12 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
   const popoverState = usePopupState();
 
   const { field } = useController({ name: "backgroundTint", control });
+  const { field: blendModeField } = useController({ name: "backgroundTintBlendMode", control });
   const tintValue = typeof field.value === "string" ? field.value : "";
+  const blendModeValue =
+    typeof blendModeField.value === "string"
+      ? (blendModeField.value as BackgroundTintBlendMode)
+      : DEFAULT_BACKGROUND_TINT_BLEND_MODE;
   const normalizedSelected = useMemo(
     () => normalizeInspectorColor(tintValue, TINT_COLOR_OPTIONS),
     [tintValue],
@@ -52,6 +65,7 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
   const inputValue =
     normalizedSelected === TRANSPARENT_TINT ? "" : normalizeHexValue(normalizedSelected);
   const savedColorRef = useRef<string | undefined>(undefined);
+  const blendModeLabel = t("form.backgroundTintBlendMode");
 
   useEffect(() => {
     const saved = savedValues as { backgroundTint?: string } | null;
@@ -93,7 +107,36 @@ export default function BackgroundTintField({ label, templateId }: BackgroundTin
         onClose={popoverState.close}
         popoverAlign="auto"
         popoverVAlign="center"
+        popoverExtraControls={
+          <label className={layoutStyles.backgroundTintBlendModeField}>
+            <span>{blendModeLabel}</span>
+            <select
+              value={blendModeValue}
+              aria-label={blendModeLabel}
+              onChange={(event) => {
+                blendModeField.onChange(
+                  normalizeBackgroundTintBlendModeForStorage(
+                    event.target.value as BackgroundTintBlendMode,
+                  ),
+                );
+              }}
+            >
+              {BACKGROUND_TINT_BLEND_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {formatBlendModeLabel(mode)}
+                </option>
+              ))}
+            </select>
+          </label>
+        }
       />
     </div>
   );
+}
+
+function formatBlendModeLabel(mode: BackgroundTintBlendMode) {
+  return mode
+    .split("-")
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }

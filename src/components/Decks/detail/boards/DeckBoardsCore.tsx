@@ -50,15 +50,9 @@ import type {
   SourceItemFace,
   UiItem,
 } from "@/components/Decks/detail/boards/deck-board-internal-types";
-import type {
-  BoardId,
-  GroupId,
-  SetId,
-} from "@/components/Decks/detail/boards/deck-board-types";
+import type { BoardId, GroupId, SetId } from "@/components/Decks/detail/boards/deck-board-types";
 import { OverlayCard } from "@/components/Decks/detail/boards/DeckBoardCards";
-import {
-  DefaultSetThumbnailContent,
-} from "@/components/Decks/detail/boards/DeckSortableBoardView";
+import { DefaultSetThumbnailContent } from "@/components/Decks/detail/boards/DeckSortableBoardView";
 import type { DeckSortableBoardViewModel } from "@/components/Decks/detail/boards/DeckSortableBoardView";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -234,12 +228,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-export function BoardInfoPill({
-  icon,
-  label,
-  bgColor,
-  borderColor,
-}: BoardInfoPillProps) {
+export function BoardInfoPill({ icon, label, bgColor, borderColor }: BoardInfoPillProps) {
   return (
     <span
       className={styles.boardInfoPill}
@@ -281,9 +270,8 @@ export function DeckMockDndProvider({
   const [activeSetId, setActiveSetId] = useState<SetId | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<GroupId | null>(null);
   const [activeTargetBoardId, setActiveTargetBoardId] = useState<BoardId | null>(null);
-  const [dragAffordanceByBoard, setDragAffordanceByBoard] = useState<Record<BoardId, boolean>>(
-    emptyAffordanceState(),
-  );
+  const [dragAffordanceByBoard, setDragAffordanceByBoard] =
+    useState<Record<BoardId, boolean>>(emptyAffordanceState());
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
     groups: null,
     entries: null,
@@ -414,8 +402,7 @@ export function DeckMockDndProvider({
         bestBoundary = index + 1;
       }
     }
-    const snappedBoundary =
-      bestDistance <= GROUP_BOUNDARY_GAP_SNAP_MAX_PX ? bestBoundary : null;
+    const snappedBoundary = bestDistance <= GROUP_BOUNDARY_GAP_SNAP_MAX_PX ? bestBoundary : null;
     if (snappedBoundary != null) return snappedBoundary;
 
     // Hysteresis: keep current boundary while pointer remains near that boundary's adjacent edges.
@@ -522,7 +509,9 @@ export function DeckMockDndProvider({
       });
       if (ephemeralGroupsToRemove.length > 0) {
         const removeSet = new Set(ephemeralGroupsToRemove);
-        nextGroupOrderByBoard.groups = groupsBoardGroups.filter((groupId) => !removeSet.has(groupId));
+        nextGroupOrderByBoard.groups = groupsBoardGroups.filter(
+          (groupId) => !removeSet.has(groupId),
+        );
         ephemeralGroupsToRemove.forEach((groupId) => {
           (nextItemsByGroup[groupId] ?? []).forEach((setId) => {
             if (isEmptySlotEphemeralSetId(setId)) {
@@ -708,7 +697,7 @@ export function DeckMockDndProvider({
     }
     const sourceBoardId = state.groupToBoard[sourceGroupId] ?? null;
     const targetBoardId = state.groupToBoard[targetGroupId] ?? null;
-    const targetContainer = targetGroupId ? state.containersById[targetGroupId] ?? null : null;
+    const targetContainer = targetGroupId ? (state.containersById[targetGroupId] ?? null) : null;
     const sourceBoardConfig = sourceBoardId ? BOARD_CONFIGS[sourceBoardId] : null;
     const targetBoardConfig = targetBoardId ? BOARD_CONFIGS[targetBoardId] : null;
     const sourceRouting = sourceBoardId ? boardRoutingById.current[sourceBoardId] : null;
@@ -832,7 +821,9 @@ export function DeckMockDndProvider({
         };
         void (async () => {
           const handlers = [...handlersRef.current.values()];
-          const settled = await Promise.allSettled(handlers.map((handler) => handler(eventPayload)));
+          const settled = await Promise.allSettled(
+            handlers.map((handler) => handler(eventPayload)),
+          );
           const hasFatal = settled.some(
             (result) =>
               result.status === "rejected" ||
@@ -941,9 +932,10 @@ export function DeckMockDndProvider({
       itemsByGroup: movedItemsByGroup,
       itemsByContainer: movedItemsByGroup,
     };
-    const targetGroupIndexBeforeCleanup = postDropStateBeforeNormalize.groupOrderByBoard.groups.findIndex(
-      (groupId) => groupId === targetGroupId,
-    );
+    const targetGroupIndexBeforeCleanup =
+      postDropStateBeforeNormalize.groupOrderByBoard.groups.findIndex(
+        (groupId) => groupId === targetGroupId,
+      );
     const postDropWithoutEphemeral = stripEphemeralItems(postDropStateBeforeNormalize);
     const postDropState = withManagedEmptySlots(
       normalizeAfterDrop(postDropWithoutEphemeral, ephemeralEmptyGroupId, BOARD_CONFIGS),
@@ -1072,7 +1064,8 @@ export function DeckMockDndProvider({
         targetRouting?.acceptTokens.includes("source-back") &&
         !isTempTargetGroup
       ) {
-        const targetItemsWithoutPending = postDropWithoutEphemeral.itemsByGroup[targetGroupId] ?? [];
+        const targetItemsWithoutPending =
+          postDropWithoutEphemeral.itemsByGroup[targetGroupId] ?? [];
         events.push({
           kind: "GROUPS_DROP_SOURCE_CARD_TO_GROUP",
           ...eventBase,

@@ -20,6 +20,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useWatch } from "react-hook-form";
 
+import type { AssetRecord } from "@/api/assets";
+import { apiClient } from "@/api/client";
 import layoutStyles from "@/app/page.module.css";
 import { AssetsModal } from "@/components/Assets";
 import {
@@ -35,8 +37,6 @@ import IconButton from "@/components/common/IconButton";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { usePopupState } from "@/hooks/usePopupState";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiClient } from "@/api/client";
-import type { AssetRecord } from "@/api/assets";
 import { getDisplayAssetName } from "@/lib/asset-filename";
 import { clamp } from "@/lib/math";
 
@@ -152,7 +152,8 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
 
     let cancelled = false;
 
-    apiClient.listAssets()
+    apiClient
+      .listAssets()
       .then((records) => {
         if (!cancelled) {
           setAssets(records);
@@ -235,9 +236,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
           const isPrefix = words.some((word) => word.startsWith(normalizedQuery));
           return { asset, score: isPrefix ? 0 : 1 };
         })
-        .filter(
-          (entry): entry is { asset: AssetRecord; score: number } => entry !== null,
-        )
+        .filter((entry): entry is { asset: AssetRecord; score: number } => entry !== null)
         .sort((a, b) => {
           if (a.score !== b.score) return a.score - b.score;
           const rankDiff = getAssetRank(a.asset) - getAssetRank(b.asset);
@@ -247,8 +246,7 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
         .map((entry) => entry.asset)
     : [];
 
-  const cappedAssets =
-    normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
+  const cappedAssets = normalizedQuery.length < 4 ? rankedAssets.slice(0, 8) : rankedAssets;
 
   const positionPopover = () => {
     const position = computeCardInspectorPopoverPosition(
@@ -284,8 +282,36 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
       data-hqcc-hovered={isHovered ? "true" : "false"}
       onFocusCapture={handleFieldFocusCapture}
     >
-      <div className={layoutStyles.inspectorFieldHeader}>
-        <FormLabelWithIcon label={label} icon={Image} className="form-label" />
+      <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
+        <div className="flex-grow-1 flex-shrink-0">
+          <FormLabelWithIcon label={label} icon={Image} className="form-label mb-0" />
+        </div>
+        <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}>
+          <button
+            ref={adjustmentsButtonRef}
+            type="button"
+            className={`${layoutStyles.bodyTextToolbarButton} ${
+              isAdjustmentsOpen ? layoutStyles.bodyTextToolbarButtonActive : ""
+            } ${!iconAssetId ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+            title={t("form.imageAdjustments")}
+            aria-label={t("form.imageAdjustments")}
+            aria-pressed={isAdjustmentsOpen}
+            disabled={!iconAssetId}
+            onClick={() => {
+              setIsAdjustmentsOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  requestAnimationFrame(() => {
+                    positionPopover();
+                  });
+                }
+                return next;
+              });
+            }}
+          >
+            <SlidersHorizontal size={14} aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <div ref={inputWrapRef} className={layoutStyles.imageAutocompleteWrap}>
         <div className="input-group input-group-sm">
@@ -327,70 +353,50 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             }}
             title={iconAssetId ? (iconAssetName ?? iconAssetId) : t("status.noIconSelected")}
           />
-        <IconButton
-          className="btn btn-outline-secondary btn-sm"
-          icon={ImagePlus}
-          title={t("tooltip.openIconPicker")}
-          onClick={() => {
-            picker.open();
-          }}
-        >
-          {t("actions.chooseImage")}
-        </IconButton>
-        <IconButton
-          className="btn btn-outline-secondary btn-sm"
-          icon={SlidersHorizontal}
-          title={t("form.imageAdjustments")}
-          disabled={!iconAssetId}
-          buttonRef={adjustmentsButtonRef}
-          iconOnly
-          onClick={() => {
-            setIsAdjustmentsOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                requestAnimationFrame(() => {
-                  positionPopover();
-                });
-              }
-              return next;
-            });
-          }}
-        >
-          <span className="visually-hidden">{t("form.imageAdjustments")}</span>
-        </IconButton>
-        {iconAssetId ? (
           <IconButton
             className="btn btn-outline-secondary btn-sm"
-            icon={XCircle}
-            title={t("tooltip.clearSelectedIcon")}
+            icon={ImagePlus}
+            title={t("tooltip.openIconPicker")}
+            iconOnly
             onClick={() => {
-              if (iconAssetId) {
-                setLastCleared({
-                  id: iconAssetId,
-                  name: iconAssetName,
-                });
-              }
-              setValue("iconAssetId", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("iconAssetName", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("iconOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("iconOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("iconScale", undefined, { shouldDirty: true, shouldTouch: true });
-              setValue("iconRotation", undefined, { shouldDirty: true, shouldTouch: true });
+              picker.open();
             }}
           >
-            <span className="visually-hidden">{t("actions.clear")}</span>
+            <span className="visually-hidden">{t("actions.chooseImage")}</span>
           </IconButton>
-        ) : lastCleared ? (
-          <IconButton
-            className="btn btn-outline-secondary btn-sm"
-            icon={RotateCcw}
-            title={t("tooltip.restoreSelectedImage")}
-            onClick={() => {
-              handleRestoreLastCleared();
-            }}
-          >
-            <span className="visually-hidden">{t("actions.restore")}</span>
-          </IconButton>
+          {iconAssetId ? (
+            <IconButton
+              className="btn btn-outline-secondary btn-sm"
+              icon={XCircle}
+              title={t("tooltip.clearSelectedIcon")}
+              onClick={() => {
+                if (iconAssetId) {
+                  setLastCleared({
+                    id: iconAssetId,
+                    name: iconAssetName,
+                  });
+                }
+                setValue("iconAssetId", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("iconAssetName", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("iconOffsetX", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("iconOffsetY", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("iconScale", undefined, { shouldDirty: true, shouldTouch: true });
+                setValue("iconRotation", undefined, { shouldDirty: true, shouldTouch: true });
+              }}
+            >
+              <span className="visually-hidden">{t("actions.clear")}</span>
+            </IconButton>
+          ) : lastCleared ? (
+            <IconButton
+              className="btn btn-outline-secondary btn-sm"
+              icon={RotateCcw}
+              title={t("tooltip.restoreSelectedImage")}
+              onClick={() => {
+                handleRestoreLastCleared();
+              }}
+            >
+              <span className="visually-hidden">{t("actions.restore")}</span>
+            </IconButton>
           ) : null}
         </div>
         {isDropdownOpen ? (
@@ -419,7 +425,10 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                             inputRef.current?.blur();
                           }}
                         >
-                          <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true" />
+                          <div
+                            className={layoutStyles.imageAutocompleteMarker}
+                            aria-hidden="true"
+                          />
                           <div className={layoutStyles.imageAutocompleteThumb}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
@@ -454,14 +463,14 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                       resetSearchState();
                       inputRef.current?.blur();
                     }}
-                    >
-                      <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
-                        <Pin className={layoutStyles.icon} aria-hidden="true" />
-                      </div>
-                      <div className={layoutStyles.imageAutocompleteThumb}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
-                      </div>
+                  >
+                    <div className={layoutStyles.imageAutocompleteMarker} aria-hidden="true">
+                      <Pin className={layoutStyles.icon} aria-hidden="true" />
+                    </div>
+                    <div className={layoutStyles.imageAutocompleteThumb}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {thumbUrls[asset.id] ? <img src={thumbUrls[asset.id]} alt="" /> : null}
+                    </div>
                     <div
                       className={layoutStyles.imageAutocompleteName}
                       title={getDisplayAssetName(asset.name)}
@@ -715,7 +724,11 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                       className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
                       title={t("tooltip.rotateLeft")}
                       onClick={() => {
-                        const next = clamp(iconRotation - ROTATION_STEP, MIN_ROTATION, MAX_ROTATION);
+                        const next = clamp(
+                          iconRotation - ROTATION_STEP,
+                          MIN_ROTATION,
+                          MAX_ROTATION,
+                        );
                         setValue("iconRotation", next, {
                           shouldDirty: true,
                           shouldTouch: true,
@@ -729,7 +742,11 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
                       className={`${layoutStyles.imageControlButton} btn btn-outline-secondary btn-sm`}
                       title={t("tooltip.rotateRight")}
                       onClick={() => {
-                        const next = clamp(iconRotation + ROTATION_STEP, MIN_ROTATION, MAX_ROTATION);
+                        const next = clamp(
+                          iconRotation + ROTATION_STEP,
+                          MIN_ROTATION,
+                          MAX_ROTATION,
+                        );
                         setValue("iconRotation", next, {
                           shouldDirty: true,
                           shouldTouch: true,
@@ -758,18 +775,18 @@ export default function MonsterIconField({ label }: MonsterIconFieldProps) {
             document.body,
           )
         : null}
-        <AssetsModal
-          isOpen={picker.isOpen}
-          onClose={picker.close}
-          mode="select"
-          onSelect={(asset) => {
-            setValue("iconAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
-            setValue("iconAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
-            setLastCleared(null);
-          }}
-          preferredKindOrder={["icon"]}
-          initialSelectedAssetId={iconAssetId}
-        />
+      <AssetsModal
+        isOpen={picker.isOpen}
+        onClose={picker.close}
+        mode="select"
+        onSelect={(asset) => {
+          setValue("iconAssetId", asset.id, { shouldDirty: true, shouldTouch: true });
+          setValue("iconAssetName", asset.name, { shouldDirty: true, shouldTouch: true });
+          setLastCleared(null);
+        }}
+        preferredKindOrder={["icon"]}
+        initialSelectedAssetId={iconAssetId}
+      />
     </div>
   );
 }

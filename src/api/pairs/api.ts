@@ -3,9 +3,13 @@ import { z } from "zod";
 
 import {
   createPairInputSchema,
+  deletePairsForFacesInputSchema,
   deletePairInputSchema,
   listPairsFilterSchema,
+  pairDeleteResolutionSchema,
   pairRecordSchema,
+  pairUsageReportSchema,
+  previewDeletePairInputSchema,
 } from "@/api/pairs/schema";
 
 export const pairsApi = makeApi([
@@ -47,5 +51,31 @@ export const pairsApi = makeApi([
       },
     ],
     response: z.void(),
+  },
+  {
+    method: "post",
+    path: "/pairs/preview-delete",
+    alias: "previewDeletePair",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: previewDeletePairInputSchema,
+      },
+    ],
+    response: pairUsageReportSchema,
+  },
+  {
+    method: "post",
+    path: "/pairs/delete-for-faces",
+    alias: "deletePairsForFaces",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: deletePairsForFacesInputSchema,
+      },
+    ],
+    response: pairDeleteResolutionSchema,
   },
 ]);

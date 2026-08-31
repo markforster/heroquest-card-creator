@@ -1,4 +1,4 @@
-import { cardRecordToCardData } from "@/lib/card-record-mapper";
+import { cardDataToCardRecordPatch, cardRecordToCardData } from "@/lib/card-record-mapper";
 import { computeContainScale, getImageLayerBounds } from "@/lib/image-scale";
 import type { CardRecord } from "@/types/cards-db";
 
@@ -22,7 +22,11 @@ describe("cardRecordToCardData", () => {
 
     const data = cardRecordToCardData(record);
     const bounds = getImageLayerBounds("hero", "imageAssetId");
-    const containScale = computeContainScale(bounds, record.imageOriginalWidth, record.imageOriginalHeight);
+    const containScale = computeContainScale(
+      bounds,
+      record.imageOriginalWidth,
+      record.imageOriginalHeight,
+    );
 
     expect(data.imageScaleMode).toBe("relative");
     expect(data.imageScale).toBeCloseTo((record.imageScale ?? 1) / containScale, 6);
@@ -80,9 +84,49 @@ describe("cardRecordToCardData", () => {
       createdAt: 1,
       updatedAt: 1,
       schemaVersion: 2,
+      customNameEnabled: true,
     };
 
     expect(cardRecordToCardData(record).name).toBe("Treasure Deck");
+    expect(cardRecordToCardData(record).customNameEnabled).toBe(true);
+  });
+
+  it("round-trips custom name state through flat card records", () => {
+    const record: CardRecord & { templateId: "hero" } = {
+      id: "custom-name-card",
+      templateId: "hero",
+      status: "saved",
+      name: "Female Barbarian",
+      nameLower: "female barbarian",
+      customNameEnabled: true,
+      title: "Barbarian",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+    };
+
+    const data = cardRecordToCardData(record);
+    const patch = cardDataToCardRecordPatch("hero", "Female Barbarian", data);
+
+    expect(data.customNameEnabled).toBe(true);
+    expect(patch).toEqual(
+      expect.objectContaining({
+        name: "Female Barbarian",
+        customNameEnabled: true,
+        title: "Barbarian",
+      }),
+    );
+  });
+
+  it("syncs the saved name to title when custom naming is disabled", () => {
+    const patch = cardDataToCardRecordPatch("hero", "Female Barbarian", {
+      name: "Female Barbarian",
+      customNameEnabled: false,
+      title: "Barbarian",
+    });
+
+    expect(patch.name).toBe("Barbarian");
+    expect(patch.customNameEnabled).toBeUndefined();
   });
 
   it("maps persisted stat asterisk flags into editor form data", () => {
@@ -118,7 +162,10 @@ describe("cardRecordToCardData", () => {
       updatedAt: 1,
       schemaVersion: 2,
       face: "front",
+      titleTypography: "boldItalic",
       description: "**Movement**\nMove around the board.",
+      backgroundTint: "#efe2bf",
+      backgroundTintBlendMode: "screen",
       bodyTextColor: "#22170f",
       bodyTextFitToBounds: true,
     };
@@ -127,11 +174,75 @@ describe("cardRecordToCardData", () => {
       expect.objectContaining({
         name: "Turn Summary",
         face: "front",
+        titleTypography: "boldItalic",
         description: "**Movement**\nMove around the board.",
+        backgroundTint: "#efe2bf",
+        backgroundTintBlendMode: "screen",
         bodyTextColor: "#22170f",
         bodyTextFitToBounds: true,
       }),
     );
+  });
+
+  it("omits multiply when mapping editor form data to a card record patch", () => {
+    const patch = cardDataToCardRecordPatch("rules", "Turn Summary", {
+      backgroundTint: "#efe2bf",
+      backgroundTintBlendMode: "multiply",
+    });
+
+    expect(patch.backgroundTint).toBe("#efe2bf");
+    expect(patch.backgroundTintBlendMode).toBeUndefined();
+  });
+
+  it("round-trips artwork clip edge fields through flat card records", () => {
+    const record: CardRecord & { templateId: "hero" } = {
+      id: "clip-card",
+      templateId: "hero",
+      status: "saved",
+      name: "Clipped Hero",
+      nameLower: "clipped hero",
+      createdAt: 1,
+      updatedAt: 1,
+      schemaVersion: 2,
+      imageClipEdgeMask: 1,
+      imageClipBottom: 760,
+    };
+
+    const data = cardRecordToCardData(record);
+    const patch = cardDataToCardRecordPatch("hero", "Clipped Hero", data);
+
+    expect(data.imageClipEdgeMask).toBe(1);
+    expect(data.imageClipBottom).toBe(760);
+    expect(patch.imageClipEdgeMask).toBe(1);
+    expect(patch.imageClipBottom).toBe(760);
+  });
+
+  it("omits standard template default title typography and persists bold italic opt-in", () => {
+    const defaultPatch = cardDataToCardRecordPatch("hero", "Sir Ragnar", {
+      title: "Sir Ragnar",
+      titleTypography: "bold",
+    });
+    const boldItalicPatch = cardDataToCardRecordPatch("hero", "Sir Ragnar", {
+      title: "Sir Ragnar",
+      titleTypography: "boldItalic",
+    });
+
+    expect(defaultPatch.titleTypography).toBeUndefined();
+    expect(boldItalicPatch.titleTypography).toBe("boldItalic");
+  });
+
+  it("omits labelled-back default bold italic typography and persists bold opt-out", () => {
+    const defaultPatch = cardDataToCardRecordPatch("labelled-back", "Treasure Deck", {
+      title: "Treasure Deck",
+      titleTypography: "boldItalic",
+    });
+    const boldPatch = cardDataToCardRecordPatch("labelled-back", "Treasure Deck", {
+      title: "Treasure Deck",
+      titleTypography: "bold",
+    });
+
+    expect(defaultPatch.titleTypography).toBeUndefined();
+    expect(boldPatch.titleTypography).toBe("bold");
   });
 
   it("maps persisted logo selection into Logo Back editor data", () => {

@@ -59,6 +59,10 @@ jest.mock("@/components/Providers/CopyrightSettingsContext", () => ({
   }),
 }));
 
+jest.mock("@/components/Providers/ThemeProvider", () => ({
+  useTheme: () => ({ theme: "light" }),
+}));
+
 jest.mock("@/components/common/ModalShell", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -69,7 +73,11 @@ jest.mock("@/components/Cards/CardInspector/FormattingHelpContent", () => ({
   default: () => <div>FORMATTING_HELP</div>,
 }));
 
-function SvgHoverProbe({ targetId }: { targetId: (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS] }) {
+function SvgHoverProbe({
+  targetId,
+}: {
+  targetId: (typeof EDITOR_TARGET_IDS)[keyof typeof EDITOR_TARGET_IDS];
+}) {
   const focusProps = useSvgFocusTarget(targetId);
 
   return (
@@ -103,10 +111,7 @@ function expectHovered(container: HTMLElement, targetId: string) {
 }
 
 function expectNotHovered(container: HTMLElement, targetId: string) {
-  expect(getInspectorTargetNode(container, targetId)).toHaveAttribute(
-    "data-hqcc-hovered",
-    "false",
-  );
+  expect(getInspectorTargetNode(container, targetId)).toHaveAttribute("data-hqcc-hovered", "false");
 }
 
 describe("inspector hover highlights", () => {

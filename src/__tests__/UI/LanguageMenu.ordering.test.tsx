@@ -100,7 +100,9 @@ describe("LanguageMenu (UI) - detected ordering", () => {
     const expectedDetected = languageLabels.sv;
     const expectedWithoutDetected = expected.filter((label) => label !== expectedDetected);
     expect(labels).toEqual(expectedWithoutDetected);
-    expect(detectedSection!.querySelector('[role=\"menuitem\"]')?.textContent).toBe(expectedDetected);
+    expect(detectedSection!.querySelector('[role=\"menuitem\"]')?.textContent).toBe(
+      expectedDetected,
+    );
   });
 
   it("does not render a detected section when detected language matches the current language", async () => {

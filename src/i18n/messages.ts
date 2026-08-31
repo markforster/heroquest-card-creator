@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 import type { TemplateId } from "@/types/templates";
 
-import { resources } from "./resources";
+import { englishResources, resources } from "./resources";
 
 export const supportedLanguages = [
   "en",
@@ -67,11 +67,12 @@ export const languageLabels: Record<SupportedLanguage, string> = {
   fi: "🇫🇮 Suomi",
 };
 
-type EnglishResources = typeof resources.en;
+type EnglishResources = typeof englishResources;
 
 export type MessageKey = {
   [NS in keyof EnglishResources]: keyof EnglishResources[NS];
-}[keyof EnglishResources] & string;
+}[keyof EnglishResources] &
+  string;
 
 export const languageNameKeys: Record<SupportedLanguage, MessageKey> = {
   en: "languages.en",
@@ -123,17 +124,16 @@ const TEMPLATE_LABEL_KEYS: Record<TemplateId, MessageKey> = {
   "labelled-back": "templates.labelled-back",
 };
 
-export const templateNameLabels: Record<SupportedLanguage, Partial<Record<TemplateId, string>>> =
-  supportedLanguages.reduce(
-    (acc, language) => {
-      const bundle = messages[language];
-      acc[language] = Object.fromEntries(
-        Object.entries(TEMPLATE_LABEL_KEYS).map(([templateId, key]) => [
-          templateId,
-          bundle[key],
-        ]),
-      ) as Partial<Record<TemplateId, string>>;
-      return acc;
-    },
-    {} as Record<SupportedLanguage, Partial<Record<TemplateId, string>>>,
-  );
+export const templateNameLabels: Record<
+  SupportedLanguage,
+  Partial<Record<TemplateId, string>>
+> = supportedLanguages.reduce(
+  (acc, language) => {
+    const bundle = messages[language];
+    acc[language] = Object.fromEntries(
+      Object.entries(TEMPLATE_LABEL_KEYS).map(([templateId, key]) => [templateId, bundle[key]]),
+    ) as Partial<Record<TemplateId, string>>;
+    return acc;
+  },
+  {} as Record<SupportedLanguage, Partial<Record<TemplateId, string>>>,
+);

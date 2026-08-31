@@ -16,6 +16,11 @@ export const RULES_INSPECTOR_FIELDS: InspectorField[] = [
     },
   },
   {
+    fieldType: "backgroundTint",
+    bind: "backgroundTint",
+    labelKey: "form.backgroundTint",
+  },
+  {
     fieldType: "copyright",
     bind: "copyright",
     labelKey: "form.copyright",

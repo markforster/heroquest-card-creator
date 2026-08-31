@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { createPairWithOverrides } from "@/lib/pairs-service";
-
+import { createPairWithOverrides } from "@/lib/data/pairs-service";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   deleteDb,
   installFakeIndexedDb,
@@ -9,11 +8,11 @@ import {
 
 const enqueueDbEstimateChange = jest.fn();
 
-jest.mock("@/lib/indexeddb-size-tracker", () => ({
+jest.mock("@/lib/db/maintenance/indexeddb-size-tracker", () => ({
   enqueueDbEstimateChange: (...args: unknown[]) => enqueueDbEstimateChange(...args),
 }));
 
-jest.mock("@/lib/cards-db", () => ({
+jest.mock("@/lib/data/cards-db", () => ({
   getCard: jest.fn(async () => null),
 }));
 

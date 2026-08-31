@@ -14,10 +14,7 @@ describe("CardTextBlock numeric features", () => {
   it("does not apply lining and tabular figure features to body text", () => {
     render(
       <svg>
-        <CardTextBlock
-          text="Room 101"
-          bounds={{ x: 0, y: 0, width: 300, height: 80 }}
-        />
+        <CardTextBlock text="Room 101" bounds={{ x: 0, y: 0, width: 300, height: 80 }} />
       </svg>,
     );
 

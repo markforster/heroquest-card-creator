@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0012, Q-0013, Q-0014, Q-0037, Q-0038, Q-0039, Q-0040, Q-0041, Q-0042, Q-0043, Q-0044, Q-0045, Q-0046, Q-0051, Q-0052, Q-0053, Q-0054]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Organize and Recover Cards
 
@@ -17,11 +17,14 @@ If cards appear missing or an action is unexpectedly unavailable, see [Fix Cards
 ## Find cards
 
 - Use [Recent](./view-your-recent-cards.md) in the left navigation to quickly reopen a card you viewed before.
-- Search by saved-card name.
+- Search by saved-card name or printed title.
 - Filter by template type.
+- Filter by pairing status with **All**, **Not paired**, or **Paired**.
 - Sort and group the current results.
 - Switch between Grid and Table views.
 - Use **Recent**, **All cards**, **Unfiled**, named collections, and **Recently deleted** in the Collections panel.
+
+Use **Not paired** when you are looking for cards that still need a matching face. Use **Paired** when you want to review cards that already have pairing work in place.
 
 ## Select cards
 

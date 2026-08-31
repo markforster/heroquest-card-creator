@@ -2,8 +2,14 @@ import { DEFAULT_STAT_LABELS, normalizeStatLabelOverrides } from "@/lib/stat-lab
 
 describe("normalizeStatLabelOverrides", () => {
   it("returns defaults and changed=true for non-objects", () => {
-    expect(normalizeStatLabelOverrides(null)).toEqual({ value: DEFAULT_STAT_LABELS, changed: true });
-    expect(normalizeStatLabelOverrides("nope")).toEqual({ value: DEFAULT_STAT_LABELS, changed: true });
+    expect(normalizeStatLabelOverrides(null)).toEqual({
+      value: DEFAULT_STAT_LABELS,
+      changed: true,
+    });
+    expect(normalizeStatLabelOverrides("nope")).toEqual({
+      value: DEFAULT_STAT_LABELS,
+      changed: true,
+    });
     expect(normalizeStatLabelOverrides([])).toEqual({ value: DEFAULT_STAT_LABELS, changed: true });
   });
 

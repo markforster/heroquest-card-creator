@@ -6,6 +6,7 @@ import styles from "@/app/page.module.css";
 import { inspectorFieldsByTemplate } from "@/data/inspector-fields";
 import { useI18n } from "@/i18n/I18nProvider";
 import { descriptionSupportsBodyTextFitToBounds } from "@/lib/blueprint-text";
+import { getImageLayerClipEdgeSettings } from "@/lib/image-clip-edges";
 import { getImageLayerBounds } from "@/lib/image-scale";
 import type { TemplateId } from "@/types/templates";
 
@@ -13,8 +14,8 @@ import BackgroundTintField from "./BackgroundTintField";
 import BorderColorField from "./BorderColorField";
 import ContentField from "./ContentField";
 import CopyrightField from "./CopyrightField";
-import HeroStatsInspector from "./HeroStatsInspector";
 import HeroBackLogoField from "./HeroBackLogoField";
+import HeroStatsInspector from "./HeroStatsInspector";
 import ImageField from "./ImageField";
 import MonsterIconField from "./MonsterIconField";
 import MonsterStatsInspector from "./MonsterStatsInspector";
@@ -58,6 +59,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               showStyleToggle={field.showStyleToggle}
               showToolbar={field.showToolbar}
               showTitleColor={field.showTitleColor}
+              templateId={templateId}
             />
           );
         }
@@ -111,6 +113,7 @@ export default function GenericInspectorForm({ templateId }: GenericInspectorFor
               label={t(field.labelKey)}
               boundsWidth={bounds.width}
               boundsHeight={bounds.height}
+              clipEdgeSettings={getImageLayerClipEdgeSettings(templateId, field.bind)}
             />
           );
         }

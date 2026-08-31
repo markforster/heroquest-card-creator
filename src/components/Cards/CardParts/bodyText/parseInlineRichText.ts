@@ -60,14 +60,17 @@ export default function parseInlineRichText(line: string): TextRun[] {
 }
 
 function resolveStyle(scopes: StyleScope[]): InlineTextStyle {
-  return scopes.reduce<InlineTextStyle>((acc, scope) => ({
-    ...acc,
-    ...scope.style,
-    scale:
-      typeof scope.style.scale === "number"
-        ? clampScale((acc.scale ?? 1) * scope.style.scale)
-        : acc.scale,
-  }), {});
+  return scopes.reduce<InlineTextStyle>(
+    (acc, scope) => ({
+      ...acc,
+      ...scope.style,
+      scale:
+        typeof scope.style.scale === "number"
+          ? clampScale((acc.scale ?? 1) * scope.style.scale)
+          : acc.scale,
+    }),
+    {},
+  );
 }
 
 function closeScope(scopes: StyleScope[], tag: StyleScope["tag"]) {
@@ -137,9 +140,7 @@ function parseRichTag(raw: string): TagParseResult {
     };
   }
 
-  const colorMatch = trimmed.match(
-    /^<\s*color\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))\s*>$/i,
-  );
+  const colorMatch = trimmed.match(/^<\s*color\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))\s*>$/i);
   if (colorMatch) {
     const rawValue = colorMatch[1] ?? colorMatch[2] ?? colorMatch[3];
     const color = normalizeColor(rawValue);
@@ -178,13 +179,11 @@ function clampScale(value: number): number {
 function readMarkdownEmphasis(
   line: string,
   start: number,
-):
-  | {
-      content: string;
-      nextIndex: number;
-      style: InlineTextStyle;
-    }
-  | null {
+): {
+  content: string;
+  nextIndex: number;
+  style: InlineTextStyle;
+} | null {
   if (line[start] !== "*") return null;
 
   const options: Array<{ marker: string; style: InlineTextStyle }> = [

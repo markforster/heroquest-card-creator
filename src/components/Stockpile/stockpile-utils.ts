@@ -1,7 +1,4 @@
-export const formatMessage = (
-  template: string,
-  vars: Record<string, string | number>,
-) => {
+export const formatMessage = (template: string, vars: Record<string, string | number>) => {
   let text = template;
   Object.entries(vars).forEach(([name, value]) => {
     const safeName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -66,16 +63,11 @@ export const waitForAssetElements = async (
   }
 };
 
-export const resolveZipFileName = (
-  getCollectionName: () => string | null | undefined,
-) => {
+export const resolveZipFileName = (getCollectionName: () => string | null | undefined) => {
   const now = new Date();
   const pad = (value: number) => (value < 10 ? `0${value}` : `${value}`);
-  const timestamp = [
-    now.getFullYear(),
-    pad(now.getMonth() + 1),
-    pad(now.getDate()),
-  ].join("") +
+  const timestamp =
+    [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join("") +
     "-" +
     [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
   const collectionName = getCollectionName();

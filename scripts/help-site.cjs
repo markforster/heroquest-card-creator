@@ -1,14 +1,18 @@
+const { spawnSync } = require("child_process");
 const { existsSync, mkdirSync } = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
 
 const repoRoot = path.resolve(__dirname, "..");
 const helpSiteRoot = path.join(repoRoot, "help-site");
 const venvRoot = path.join(helpSiteRoot, ".venv");
-const venvBinDir = process.platform === "win32" ? path.join(venvRoot, "Scripts") : path.join(venvRoot, "bin");
-const pythonBin = process.platform === "win32" ? path.join(venvBinDir, "python.exe") : path.join(venvBinDir, "python");
-const pipBin = process.platform === "win32" ? path.join(venvBinDir, "pip.exe") : path.join(venvBinDir, "pip");
-const mkdocsBin = process.platform === "win32" ? path.join(venvBinDir, "mkdocs.exe") : path.join(venvBinDir, "mkdocs");
+const venvBinDir =
+  process.platform === "win32" ? path.join(venvRoot, "Scripts") : path.join(venvRoot, "bin");
+const pipBin =
+  process.platform === "win32" ? path.join(venvBinDir, "pip.exe") : path.join(venvBinDir, "pip");
+const mkdocsBin =
+  process.platform === "win32"
+    ? path.join(venvBinDir, "mkdocs.exe")
+    : path.join(venvBinDir, "mkdocs");
 const requirementsFile = path.join(helpSiteRoot, "requirements.txt");
 const mkdocsConfigFile = path.join(helpSiteRoot, "mkdocs.yml");
 const validationScript = path.join(repoRoot, "scripts", "help-site", "validate-public-content.cjs");
@@ -34,7 +38,9 @@ function ensureVenv() {
 
 function assertMkDocsInstalled() {
   if (!existsSync(mkdocsBin)) {
-    console.error("Help-site virtual environment is missing MkDocs. Run `npm run help:setup` first.");
+    console.error(
+      "Help-site virtual environment is missing MkDocs. Run `npm run help:setup` first.",
+    );
     process.exit(1);
   }
 }

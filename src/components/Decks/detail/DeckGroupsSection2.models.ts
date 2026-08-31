@@ -8,8 +8,9 @@ import type { DeckSetEntriesModel } from "@/components/Decks/hooks/useDeckSetEnt
 import { useStockpileFilters } from "@/components/Stockpile/hooks/useStockpileFilters";
 import { useI18n } from "@/i18n/I18nProvider";
 
-import type { BoardId, BoardModel } from "./DeckGroupsSection2";
 import { toEntriesBoardModel, toGroupsBoardModel, toSourceBoardModel } from "./DeckGroupsSection2";
+
+import type { BoardId, BoardModel } from "./DeckGroupsSection2";
 
 export function useDeckBoardsModels({
   selection,
@@ -56,7 +57,6 @@ export function useDeckBoardsModels({
     activeFilter: rightPanel.backFilter,
     isPairMode: true,
     isPairBacks: sourceFaceMode === "back",
-    showUnpairedOnly: false,
     showMissingArtworkOnly: false,
   });
 

@@ -88,7 +88,7 @@ export async function renderBleedCanvas({
     renderBleedBands: !DISABLE_BLEED_BAND_RENDER_FOR_TESTING,
     cropMarks,
     cutMarks: cutMarks
-        ? {
+      ? {
           enabled: cutMarks.enabled,
           color: cutMarks.color,
           style: cutMarks.style,

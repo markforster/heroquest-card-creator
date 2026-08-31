@@ -5,47 +5,55 @@ import axios, { AxiosHeaders } from "axios";
 
 import { api } from "@/api";
 import { logFakeApiError, logFakeApiResponse, shouldLogFakeApi } from "@/api/apiDebug";
+import { readApiConfig } from "@/api/config";
 import { addAssetRequestPlugin } from "@/api/local/addAssetRequest";
+import { addDeckEntriesRequestPlugin } from "@/api/local/addDeckEntriesRequest";
+import { addHeroBackLogoRequestPlugin } from "@/api/local/addHeroBackLogoRequest";
 import { checkDbVersionRequestPlugin } from "@/api/local/checkDbVersionRequest";
 import { createCardRequestPlugin } from "@/api/local/createCardRequest";
 import { createCollectionRequestPlugin } from "@/api/local/createCollectionRequest";
-import { createDeckRequestPlugin } from "@/api/local/createDeckRequest";
 import { createDeckGroupRequestPlugin } from "@/api/local/createDeckGroupRequest";
+import { createDeckRequestPlugin } from "@/api/local/createDeckRequest";
 import { createDeckSetRequestPlugin } from "@/api/local/createDeckSetRequest";
 import { createPairRequestPlugin } from "@/api/local/createPairRequest";
 import { deleteAssetsRequestPlugin } from "@/api/local/deleteAssetsRequest";
 import { deleteCardRequestPlugin } from "@/api/local/deleteCardRequest";
 import { deleteCardsRequestPlugin } from "@/api/local/deleteCardsRequest";
 import { deleteCollectionRequestPlugin } from "@/api/local/deleteCollectionRequest";
-import { deleteDeckRequestPlugin } from "@/api/local/deleteDeckRequest";
 import { deleteDeckGroupRequestPlugin } from "@/api/local/deleteDeckGroupRequest";
+import { deleteDeckRequestPlugin } from "@/api/local/deleteDeckRequest";
 import { deleteDeckSetRequestPlugin } from "@/api/local/deleteDeckSetRequest";
+import { deleteHeroBackLogoRequestPlugin } from "@/api/local/deleteHeroBackLogoRequest";
 import { deletePairRequestPlugin } from "@/api/local/deletePairRequest";
+import { deletePairsForFacesRequestPlugin } from "@/api/local/deletePairsForFacesRequest";
 import { duplicateDeckRequestPlugin } from "@/api/local/duplicateDeckRequest";
 import { exportLibraryRequestPlugin } from "@/api/local/exportLibraryRequest";
-import { getDeckRequestPlugin } from "@/api/local/getDeckRequest";
-import { getDeckSetRequestPlugin } from "@/api/local/getDeckSetRequest";
 import { getAssetBlobRequestPlugin } from "@/api/local/getAssetBlobRequest";
 import { getAssetObjectUrlRequestPlugin } from "@/api/local/getAssetObjectUrlRequest";
 import { getBorderSwatchesRequestPlugin } from "@/api/local/getBorderSwatchesRequest";
 import { getCardRequestPlugin } from "@/api/local/getCardRequest";
 import { getCardThumbnailRequestPlugin } from "@/api/local/getCardThumbnailRequest";
 import { getCollectionRequestPlugin } from "@/api/local/getCollectionRequest";
-import { getDefaultCopyrightRequestPlugin } from "@/api/local/getDefaultCopyrightRequest";
 import { getCopyrightTemplateDefaultsRequestPlugin } from "@/api/local/getCopyrightTemplateDefaultsRequest";
+import { getDeckRequestPlugin } from "@/api/local/getDeckRequest";
+import { getDeckSetRequestPlugin } from "@/api/local/getDeckSetRequest";
+import { getDefaultCopyrightRequestPlugin } from "@/api/local/getDefaultCopyrightRequest";
+import { getHeroBackLogoObjectUrlRequestPlugin } from "@/api/local/getHeroBackLogoObjectUrlRequest";
+import { getHeroBackLogoUsageRequestPlugin } from "@/api/local/getHeroBackLogoUsageRequest";
 import { importLibraryRequestPlugin } from "@/api/local/importLibraryRequest";
 import { listAssetsRequestPlugin } from "@/api/local/listAssetsRequest";
 import { listAssetsWithBlobsRequestPlugin } from "@/api/local/listAssetsWithBlobsRequest";
-import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
 import { listCardDecksRequestPlugin } from "@/api/local/listCardDecksRequest";
+import { listCardsRequestPlugin } from "@/api/local/listCardsRequest";
 import { listCollectionsRequestPlugin } from "@/api/local/listCollectionsRequest";
 import { listDeckEntriesRequestPlugin } from "@/api/local/listDeckEntriesRequest";
 import { listDeckGroupsRequestPlugin } from "@/api/local/listDeckGroupsRequest";
 import { listDeckSetsRequestPlugin } from "@/api/local/listDeckSetsRequest";
 import { listDecksRequestPlugin } from "@/api/local/listDecksRequest";
+import { listHeroBackLogosRequestPlugin } from "@/api/local/listHeroBackLogosRequest";
 import { listPairsRequestPlugin } from "@/api/local/listPairsRequest";
 import { normalizeSelfPairingsRequestPlugin } from "@/api/local/normalizeSelfPairingsRequest";
-import { addDeckEntriesRequestPlugin } from "@/api/local/addDeckEntriesRequest";
+import { previewDeletePairRequestPlugin } from "@/api/local/previewDeletePairRequest";
 import { rebuildDeckSetBackRequestPlugin } from "@/api/local/rebuildDeckSetBackRequest";
 import { removeDeckEntriesRequestPlugin } from "@/api/local/removeDeckEntriesRequest";
 import { reorderDeckEntriesRequestPlugin } from "@/api/local/reorderDeckEntriesRequest";
@@ -56,8 +64,8 @@ import { resetAssetClassificationAllRequestPlugin } from "@/api/local/resetAsset
 import { resetAssetClassificationRequestPlugin } from "@/api/local/resetAssetClassificationRequest";
 import { restoreCardsRequestPlugin } from "@/api/local/restoreCardsRequest";
 import { setBorderSwatchesRequestPlugin } from "@/api/local/setBorderSwatchesRequest";
-import { setDefaultCopyrightRequestPlugin } from "@/api/local/setDefaultCopyrightRequest";
 import { setCopyrightTemplateDefaultsRequestPlugin } from "@/api/local/setCopyrightTemplateDefaultsRequest";
+import { setDefaultCopyrightRequestPlugin } from "@/api/local/setDefaultCopyrightRequest";
 import { softDeleteCardsRequestPlugin } from "@/api/local/softDeleteCardsRequest";
 import { touchCardLastViewedRequestPlugin } from "@/api/local/touchCardLastViewedRequest";
 import { updateAssetMetadataRequestPlugin } from "@/api/local/updateAssetMetadataRequest";
@@ -65,17 +73,16 @@ import { updateCardRequestPlugin } from "@/api/local/updateCardRequest";
 import { updateCardsRequestPlugin } from "@/api/local/updateCardsRequest";
 import { updateCardThumbnailRequestPlugin } from "@/api/local/updateCardThumbnailRequest";
 import { updateCollectionRequestPlugin } from "@/api/local/updateCollectionRequest";
-import { updateDeckRequestPlugin } from "@/api/local/updateDeckRequest";
-import { updateDeckGroupRequestPlugin } from "@/api/local/updateDeckGroupRequest";
-import { updateDeckSetRequestPlugin } from "@/api/local/updateDeckSetRequest";
 import { updateDeckEntryCountRequestPlugin } from "@/api/local/updateDeckEntryCountRequest";
-import { readApiConfig } from "@/api/config";
+import { updateDeckGroupRequestPlugin } from "@/api/local/updateDeckGroupRequest";
+import { updateDeckRequestPlugin } from "@/api/local/updateDeckRequest";
+import { updateDeckSetRequestPlugin } from "@/api/local/updateDeckSetRequest";
 import { blobTransportPlugin } from "@/api/remote/blobTransport";
 
 const apiConfig = readApiConfig();
 
 const axiosInstance = axios.create({
-  baseURL: apiConfig.mode === "remote" ? apiConfig.baseUrl ?? "/" : "/",
+  baseURL: apiConfig.mode === "remote" ? (apiConfig.baseUrl ?? "/") : "/",
 });
 
 if (shouldLogFakeApi()) {
@@ -85,9 +92,7 @@ if (shouldLogFakeApi()) {
 if (apiConfig.mode === "remote" && apiConfig.authToken) {
   axiosInstance.interceptors.request.use((config) => {
     const headers =
-      config.headers instanceof AxiosHeaders
-        ? config.headers
-        : new AxiosHeaders(config.headers);
+      config.headers instanceof AxiosHeaders ? config.headers : new AxiosHeaders(config.headers);
     headers.set("Authorization", `Bearer ${apiConfig.authToken}`);
     config.headers = headers;
     return config;
@@ -100,6 +105,7 @@ export const apiClient = new Zodios(api, {
 
 if (apiConfig.mode === "remote") {
   apiClient.use("addAsset", blobTransportPlugin);
+  apiClient.use("addHeroBackLogo", blobTransportPlugin);
   apiClient.use("replaceAsset", blobTransportPlugin);
   apiClient.use("updateCardThumbnail", blobTransportPlugin);
   apiClient.use("createCard", blobTransportPlugin);
@@ -139,6 +145,12 @@ if (apiConfig.mode === "remote") {
   apiClient.use("resetAssetClassificationAll", resetAssetClassificationAllRequestPlugin);
   apiClient.use("deleteAssets", deleteAssetsRequestPlugin);
 
+  apiClient.use("listHeroBackLogos", listHeroBackLogosRequestPlugin);
+  apiClient.use("getHeroBackLogoObjectUrl", getHeroBackLogoObjectUrlRequestPlugin);
+  apiClient.use("getHeroBackLogoUsage", getHeroBackLogoUsageRequestPlugin);
+  apiClient.use("addHeroBackLogo", addHeroBackLogoRequestPlugin);
+  apiClient.use("deleteHeroBackLogo", deleteHeroBackLogoRequestPlugin);
+
   apiClient.use("listCollections", listCollectionsRequestPlugin);
   apiClient.use("getCollection", getCollectionRequestPlugin);
   apiClient.use("createCollection", createCollectionRequestPlugin);
@@ -172,6 +184,8 @@ if (apiConfig.mode === "remote") {
   apiClient.use("listPairs", listPairsRequestPlugin);
   apiClient.use("createPair", createPairRequestPlugin);
   apiClient.use("deletePair", deletePairRequestPlugin);
+  apiClient.use("previewDeletePair", previewDeletePairRequestPlugin);
+  apiClient.use("deletePairsForFaces", deletePairsForFacesRequestPlugin);
 
   apiClient.use("exportLibrary", exportLibraryRequestPlugin);
   apiClient.use("importLibrary", importLibraryRequestPlugin);

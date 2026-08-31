@@ -66,13 +66,14 @@ function buildEmbeddedFontsCss(embeddedFontsByFileName) {
     { file: "Carter Sans W04 Regular.ttf", weight: 400 },
     { file: "Carter Sans W04 Medium.ttf", weight: 550 },
     { file: "Carter Sans W04 Bold.ttf", weight: 700 },
+    { file: "Carter Sans W04 Bold Italic.ttf", weight: 700, style: "italic" },
   ];
 
   const heroQuest = [{ file: "HeroQuest.ttf", weight: 400 }];
 
   const rules = [];
 
-  for (const { file, weight } of carter) {
+  for (const { file, weight, style = "normal" } of carter) {
     const dataUrl = embeddedFontsByFileName[file];
     if (!dataUrl) {
       throw new Error(`[generate-embedded-assets] Missing expected font: ${file}`);
@@ -82,7 +83,7 @@ function buildEmbeddedFontsCss(embeddedFontsByFileName) {
 @font-face {
   font-family: "Carter Sans W04";
   src: url("${dataUrl}") format("truetype");
-  font-style: normal;
+  font-style: ${style};
   font-weight: ${weight};
   font-display: swap;
 }`.trim(),

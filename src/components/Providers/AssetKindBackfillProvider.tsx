@@ -1,10 +1,17 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-
-import { apiClient } from "@/api/client";
 import type { AssetRecord } from "@/api/assets";
+import { apiClient } from "@/api/client";
 import { getAssetAutoClassifyEnabled } from "@/lib/asset-auto-classify";
 import { classifyAssetBlob } from "@/lib/asset-kind/classify";
 import { compareAssetsByDefaultOrder } from "@/lib/assets-grouping";
@@ -45,9 +52,9 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
   const processingRef = useRef(false);
   const classifyStartRef = useRef<Map<string, number>>(new Map());
   const assetDimensionsRef = useRef<Map<string, { width?: number; height?: number }>>(new Map());
-  const assetStatusRef = useRef<Map<string, { status?: AssetRecord["assetKindStatus"]; updatedAt?: number }>>(
-    new Map(),
-  );
+  const assetStatusRef = useRef<
+    Map<string, { status?: AssetRecord["assetKindStatus"]; updatedAt?: number }>
+  >(new Map());
   const processedThisActivationRef = useRef(0);
   const cooldownUntilRef = useRef(0);
   const warnedUpdateIdsRef = useRef<Set<string>>(new Set());
@@ -57,10 +64,7 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
   const [isAutoClassifyEnabled, setIsAutoClassifyEnabled] = useState(() =>
     getAssetAutoClassifyEnabled(),
   );
-  const isSafari = useMemo(
-    () => (typeof window !== "undefined" ? isSafariBrowser() : false),
-    [],
-  );
+  const isSafari = useMemo(() => (typeof window !== "undefined" ? isSafariBrowser() : false), []);
   const setIsActive = useCallback(
     (next: boolean) => {
       requestedActiveRef.current = next;
@@ -435,9 +439,7 @@ export function AssetKindBackfillProvider({ children }: { children: ReactNode })
     [enqueueAsset, cancelAsset, setAutoClassifyEnabled, setIsActive],
   );
 
-  return (
-    <AssetKindQueueContext.Provider value={value}>{children}</AssetKindQueueContext.Provider>
-  );
+  return <AssetKindQueueContext.Provider value={value}>{children}</AssetKindQueueContext.Provider>;
 }
 
 export function useAssetKindQueue(): AssetKindQueueContextValue {

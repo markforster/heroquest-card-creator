@@ -37,7 +37,9 @@ if (!url || /localhost/.test(url)) {
   console.error(
     `Missing or invalid NEXT_PUBLIC_SITE_URL. Set it in the environment or in one of: ${filesToLoad
       .map((f) => path.basename(f))
-      .join(", ")}. Value must be a non-localhost URL (e.g., https://heroquest-card-maker.example).`,
+      .join(
+        ", ",
+      )}. Value must be a non-localhost URL (e.g., https://heroquest-card-maker.example).`,
   );
   process.exit(1);
 }

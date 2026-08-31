@@ -1,6 +1,6 @@
 "use client";
 
-import { Copyright } from "lucide-react";
+import { Copyright, WandSparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -93,25 +93,42 @@ export default function CopyrightField({
       onFocusCapture={handleFieldFocusCapture}
     >
       <div className={`d-flex align-items-center gap-2 ${layoutStyles.inspectorFieldHeader}`}>
-        <FormLabelWithIcon
-          htmlFor={inputId}
-          label={label}
-          icon={Copyright}
-          className="form-label mb-0 flex-grow-1"
-        />
-        {showToggle ? (
-          <label className="form-check form-switch m-0">
-            <input
-              id="showCopyright"
-              type="checkbox"
-              className="form-check-input hq-toggle"
-              checked={Boolean(effectiveVisible)}
-              onChange={handleToggle}
-              aria-label={t("form.showCopyright")}
-              title={t("form.showCopyright")}
-            />
-          </label>
-        ) : null}
+        <div className="flex-grow-1 flex-shrink-0">
+          <FormLabelWithIcon
+            htmlFor={inputId}
+            label={label}
+            icon={Copyright}
+            className="form-label mb-0"
+          />
+        </div>
+        <div className={`${layoutStyles.bodyTextToolbar} d-inline-flex align-items-center gap-1`}>
+          <button
+            type="button"
+            className={`${layoutStyles.bodyTextToolbarButton} ${
+              normalizedColor.length === 0 ? layoutStyles.bodyTextToolbarButtonActive : ""
+            } ${!effectiveVisible ? layoutStyles.bodyTextToolbarButtonDisabled : ""}`}
+            onClick={handleSelectAuto}
+            disabled={!effectiveVisible}
+            title={t("actions.auto")}
+            aria-label={t("actions.auto")}
+            aria-pressed={normalizedColor.length === 0}
+          >
+            <WandSparkles size={14} aria-hidden="true" />
+          </button>
+          {showToggle ? (
+            <label className="form-check form-switch m-0">
+              <input
+                id="showCopyright"
+                type="checkbox"
+                className="form-check-input hq-toggle"
+                checked={Boolean(effectiveVisible)}
+                onChange={handleToggle}
+                aria-label={t("form.showCopyright")}
+                title={t("form.showCopyright")}
+              />
+            </label>
+          ) : null}
+        </div>
       </div>
       <div className="d-flex align-items-center gap-2">
         <div style={{ flex: "1 0 auto", minWidth: 0 }}>
@@ -155,17 +172,6 @@ export default function CopyrightField({
             popoverVAlign="center"
             isDisabled={!effectiveVisible}
           />
-        </div>
-        <div style={{ flex: "0 0 auto" }}>
-          <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm"
-            onClick={handleSelectAuto}
-            disabled={!effectiveVisible || normalizedColor.length === 0}
-            title={t("actions.auto")}
-          >
-            {t("actions.auto")}
-          </button>
         </div>
       </div>
       <div className="form-text">{t("helper.copyrightUsesDefault")}</div>

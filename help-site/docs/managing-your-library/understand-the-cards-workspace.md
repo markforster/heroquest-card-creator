@@ -4,7 +4,7 @@ type: screen-guide
 status: first-draft
 source_questions: [Q-0012, Q-0013, Q-0014, Q-0037, Q-0038, Q-0039, Q-0040, Q-0044, Q-0045, Q-0046, Q-0052, Q-0073, Q-0074, Q-0081, Q-0082, Q-0085, Q-0119, Q-0120, Q-0121, Q-0122]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Understand the Cards Workspace
 
@@ -42,11 +42,11 @@ The controls above the cards change which saved cards you see and how they are a
 <!-- help-visual:p043:end -->
 
 
-- **Search saved cards by name** narrows the results using the saved card name.
+- **Search saved cards** narrows the results using the saved library name and, where different, the printed card title.
 - **Filter cards by template type** can show all cards, only front-facing or back-facing cards, or one specific card template.
 - **Sort cards** orders results by Last modified, Card name, or Card type.
 - **Group cards** can leave one continuous list or divide results by Card type or Card face.
-- **Not paired** limits the results to cards that do not currently have a paired face.
+- **Pairing status** can show All cards, only cards that are Not paired, or only cards that are Paired.
 - **Grid** and **Table** change how much information is visible for each result.
 
 These controls do not change or move the cards. They only change the current view.
@@ -57,7 +57,7 @@ These controls do not change or move the cards. They only change the current vie
 
 **Table** is the detail-oriented view. It presents columns for the card, name, type, face, last modification, and pairing information. Use it when you want to compare several cards without opening each one.
 
-Grouping adds headings to either view. Search, collection scope, face or template filtering, and **Not paired** work together, so a narrow result can be caused by more than one active control.
+Grouping adds headings to either view. Search, collection scope, face or template filtering, and pairing status work together, so a narrow result can be caused by more than one active control.
 
 ### Selection and action bar
 
@@ -90,25 +90,29 @@ The Collections panel controls the library scope before the controls above it na
 - **Recently deleted** appears when recoverable deleted cards exist.
 - Named collections show only their members.
 
-Counts beside these choices can respond to broad filters such as the active search and **Not paired**. Sorting, grouping, and switching between Grid and Table do not change the counts. On a narrow screen, use the collections-panel control to open this area as a drawer.
+Counts beside these choices can respond to broad filters such as the active search and pairing status. Sorting, grouping, and switching between Grid and Table do not change the counts. On a narrow screen, use the collections-panel control to open this area as a drawer.
 
 ## How the filters work together
 
 Think of the workspace as narrowing the library in stages:
 
 1. Choose the broad scope, such as All cards, Unfiled, Recent, Recently deleted, or a named collection.
-2. Search by saved name if needed.
+2. Search by saved name or printed title if needed.
 3. Limit the results by face or template.
-4. Turn on **Not paired** if you only want cards without a pairing.
+4. Set **Pairing status** to **Not paired** if you only want cards without a pairing, or **Paired** if you only want cards that already have a pairing.
 5. Sort, group, or switch view without changing which cards qualify.
 
-If a card seems to be missing, clear the search, return the face/template filter to **All cards**, turn off **Not paired**, and check the selected collection scope.
+If a card seems to be missing, clear the search, return the face/template filter to **All cards**, set pairing status to **All**, and check the selected collection scope.
 
-## What Not paired means
+## What pairing status means
+
+**All** shows cards regardless of whether they are linked to another face.
 
 **Not paired** shows cards that are not currently linked to another card face. It is useful for finding fronts that still need a back or backs that have not yet been connected to fronts.
 
-The control is an additional filter. Turning it on does not remove an existing pairing or change the card.
+**Paired** shows cards that already have at least one linked face. It is useful when you want to review pairing work you have already completed.
+
+The control is an additional filter. Changing it does not create, remove, or edit a pairing.
 
 ## Why an action may be unavailable
 

@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import Select, {
-  type SingleValue,
-} from "react-select";
+import Select, { type SingleValue } from "react-select";
 
 import {
   FormSelectDropdownIndicator,
@@ -27,12 +25,7 @@ type CutMarkStyleSelectProps = {
 function renderPreview(style: CutMarkStyleValue) {
   if (style === "ticks") {
     return (
-      <svg
-        viewBox="0 0 60 12"
-        className={styles.previewSvg}
-        aria-hidden="true"
-        focusable="false"
-      >
+      <svg viewBox="0 0 60 12" className={styles.previewSvg} aria-hidden="true" focusable="false">
         <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <line x1="6" y1="8.5" x2="10" y2="3.5" />
           <line x1="18" y1="8.5" x2="22" y2="3.5" />
@@ -55,12 +48,7 @@ function renderPreview(style: CutMarkStyleValue) {
   const lineCap = style === "dotted" ? "round" : "butt";
 
   return (
-    <svg
-      viewBox="0 0 60 12"
-      className={styles.previewSvg}
-      aria-hidden="true"
-      focusable="false"
-    >
+    <svg viewBox="0 0 60 12" className={styles.previewSvg} aria-hidden="true" focusable="false">
       <line
         x1="2"
         y1="6"

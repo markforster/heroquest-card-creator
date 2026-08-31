@@ -18,11 +18,11 @@ describe("formatPdfExportBleedSummary", () => {
       },
       ((key: string, options?: Record<string, unknown>) =>
         (
-          {
+          ({
             "decks.pdf.summary.bleed.amount": `Bleed ${options?.count ?? ""}px`,
             "decks.pdf.summary.bleed.cropMarks": `Crop marks (${options?.style ?? ""})`,
             "label.cropMarkStyleTriangles": "Triangles",
-          } as Record<string, string>
+          }) as Record<string, string>
         )[key] ?? key) as never,
     );
 
@@ -46,10 +46,10 @@ describe("formatPdfExportBleedSummary", () => {
       },
       ((key: string) =>
         (
-          {
+          ({
             "decks.pdf.summary.bleed.cutMarks": "Cut marks",
             "label.cutMarkStyleTicks": "Ticks",
-          } as Record<string, string>
+          }) as Record<string, string>
         )[key] ?? key) as never,
     );
 
@@ -73,10 +73,10 @@ describe("formatPdfExportBleedSummary", () => {
       },
       ((key: string) =>
         (
-          {
+          ({
             "decks.pdf.summary.bleed.cutMarks": "Cut marks",
             "label.cutMarkStyleLongDashed": "Long dashed",
-          } as Record<string, string>
+          }) as Record<string, string>
         )[key] ?? key) as never,
     );
 

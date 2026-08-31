@@ -1,6 +1,5 @@
-import { getHqccDexieDb, openHqccDexieDb } from "@/lib/hqcc-dexie";
-import { touchCardLastViewed } from "@/lib/cards-db";
-
+import { touchCardLastViewed } from "@/lib/data/cards-db";
+import { getHqccDexieDb, openHqccDexieDb } from "@/lib/db/hqcc-dexie";
 import {
   createCardRecord,
   deleteDb,

@@ -193,7 +193,11 @@ button {
 .form-check-input[type="radio"]:checked,
 .settingsPanelOption input[type="radio"]:checked {
   background-color: transparent !important;
-  background-image: radial-gradient(circle at center, var(--hq-accent) 0 45%, transparent 50%) !important;
+  background-image: radial-gradient(
+    circle at center,
+    var(--hq-accent) 0 45%,
+    transparent 50%
+  ) !important;
   background-repeat: no-repeat !important;
   background-position: center !important;
   background-size: 100% 100% !important;

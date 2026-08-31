@@ -1,11 +1,11 @@
 "use client";
 
+import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import {
   EDITOR_TARGET_IDS,
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
-import { padBounds } from "@/components/Cards/CardEditor/EditorTargetHoverVisual";
 import CardTextBlock, { layoutCardText } from "@/components/Cards/CardParts/CardTextBlock";
 import HeroStatsBlock, {
   HERO_STATS_HEIGHT,
@@ -179,7 +179,7 @@ function GroupTextLayer({
         align={align}
         debug={debug}
         fitToBounds={fitToBounds}
-        showOverflowWarning={!suppressPreviewOnlyWarnings}
+        showOverflowWarning={fitToBounds && !suppressPreviewOnlyWarnings ? true : undefined}
       />
     </Layer>
   );
@@ -210,7 +210,11 @@ function GroupIconLayer({
   } = useAssetImageUrl(assetId);
   const svgFocusProps = useSvgFocusTarget(EDITOR_TARGET_IDS.imageIcon);
   const slotBounds = { x, y, width: size, height: size };
-  const fitScale = computeContainScale(slotBounds, imageWidth ?? undefined, imageHeight ?? undefined);
+  const fitScale = computeContainScale(
+    slotBounds,
+    imageWidth ?? undefined,
+    imageHeight ?? undefined,
+  );
   const baseRenderedWidth = (imageWidth ?? size) * fitScale;
   const baseRenderedHeight = (imageHeight ?? size) * fitScale;
   const renderedWidth = baseRenderedWidth * scale;
@@ -327,7 +331,11 @@ function buildGroupItems({
       const fontFamily =
         typeof child.props?.fontFamily === "string" ? child.props.fontFamily : undefined;
 
-      const { lines, lineHeight: measuredLineHeight, totalHeight } = layoutCardText({
+      const {
+        lines,
+        lineHeight: measuredLineHeight,
+        totalHeight,
+      } = layoutCardText({
         text,
         width: group.width,
         fontSize,

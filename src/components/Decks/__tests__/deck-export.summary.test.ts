@@ -100,8 +100,12 @@ describe("resolveDeckPdfExportSummary", () => {
   });
 
   it("uses fronts-only mode totals and defaults quantity to one", async () => {
-    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([{ id: "set-1", title: null, backFaceId: "back-1" }]);
-    (apiClient.listCards as jest.Mock).mockResolvedValue([{ id: "back-1", title: "Fallback Title", name: "" }]);
+    (apiClient.listDeckSets as jest.Mock).mockResolvedValue([
+      { id: "set-1", title: null, backFaceId: "back-1" },
+    ]);
+    (apiClient.listCards as jest.Mock).mockResolvedValue([
+      { id: "back-1", title: "Fallback Title", name: "" },
+    ]);
     (apiClient.listDeckEntries as jest.Mock).mockResolvedValue([
       { id: "e1", pairId: "pair-1", sortIndex: 0 },
       { id: "e2", pairId: "pair-2", count: 0, sortIndex: 1 },
@@ -134,15 +138,21 @@ describe("resolveDeckPdfExportSummary", () => {
         return Promise.resolve([]);
       },
     );
-    (apiClient.listPairs as jest.Mock).mockResolvedValue([{ id: "pair-1", frontFaceId: "front-1" }]);
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([
+      { id: "pair-1", frontFaceId: "front-1" },
+    ]);
 
     const runData = await resolveDeckPdfRunData("deck-1", "frontAndBack", "all", []);
     const summary = summarizeDeckPdfRunData(runData, "frontAndBack", "all", new Set());
 
     expect(runData.slotPairs).toHaveLength(2);
-    const placeholderSlot = runData.slotPairs.find((slot) => slot.slotId.startsWith("set-2:empty:"));
+    const placeholderSlot = runData.slotPairs.find((slot) =>
+      slot.slotId.startsWith("set-2:empty:"),
+    );
     expect(placeholderSlot?.frontId).toBeTruthy();
-    expect(parseDeckPdfPlaceholderFrontId(placeholderSlot?.frontId ?? "")).toEqual({ setId: "set-2" });
+    expect(parseDeckPdfPlaceholderFrontId(placeholderSlot?.frontId ?? "")).toEqual({
+      setId: "set-2",
+    });
     expect(summary.includedSetCount).toBe(2);
     expect(summary.includedEmptySetCount).toBe(1);
     expect(summary.excludedEmptySetCount).toBe(0);
@@ -162,10 +172,14 @@ describe("resolveDeckPdfExportSummary", () => {
     (apiClient.listDeckEntries as jest.Mock).mockImplementation(
       ({ params }: { params: { setId: string } }) => {
         if (params.setId === "set-2") return Promise.resolve([]);
-        return Promise.resolve([{ id: `${params.setId}-e1`, pairId: "pair-1", count: 1, sortIndex: 0 }]);
+        return Promise.resolve([
+          { id: `${params.setId}-e1`, pairId: "pair-1", count: 1, sortIndex: 0 },
+        ]);
       },
     );
-    (apiClient.listPairs as jest.Mock).mockResolvedValue([{ id: "pair-1", frontFaceId: "front-1" }]);
+    (apiClient.listPairs as jest.Mock).mockResolvedValue([
+      { id: "pair-1", frontFaceId: "front-1" },
+    ]);
 
     const runData = await resolveDeckPdfRunData("deck-1", "frontsOnly", "selected", ["set-2"]);
     const summary = summarizeDeckPdfRunData(runData, "frontsOnly", "selected", new Set(["set-2"]));

@@ -1,8 +1,11 @@
-import { deletePair } from "@/lib/pairs-service";
+import { deletePair } from "@/lib/data/pairs-service";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+/**
+ * Serves the local delete-pair endpoint through the IndexedDB-backed service layer.
+ */
 export const deletePairRequestPlugin: ZodiosPlugin = {
   name: "local-delete-pair",
   request: async (apiDefinitions, config) => {

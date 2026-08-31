@@ -4,7 +4,7 @@ type: troubleshooting
 status: first-draft
 source_questions: [Q-0184, Q-0185, Q-0186]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.1
 ---
 # Fix Backup and Restore Problems
 
@@ -41,12 +41,12 @@ Treat the current library as potentially incomplete. Import replaces the existin
 
 1. Do not continue editing the partially restored library.
 2. Import the safety backup you created immediately before the attempt.
-3. Check that the recovery completes and review the card, asset, collection, and deck counts shown by the app.
+3. Check that the recovery completes and review the card, asset, collection, and deck counts shown in the import result window.
 4. Retry the other file only after you have another safe recovery copy.
 
 ## Import completed but something appears to be missing
 
-The completion message reports totals for cards, assets, collections, and decks. Compare these with the source library or with what you expected from the backup.
+The import result window reports totals for cards, assets, collections, and decks. Compare these with the source library or with what you expected from the backup.
 
 - Clear any active search, collection, template, or other filters before deciding cards are absent.
 - Check **Recently deleted** for cards that were already there when the backup was made.
@@ -59,6 +59,12 @@ The completion message reports totals for cards, assets, collections, and decks.
 Allow the app time to finish **Preparing**, **Exporting data**, and **Finalizing**. Then check the browser's downloads and whether downloads are blocked for the app.
 
 If no file appears, retry once. If the app reports that data could not be exported, keep the current browser data intact and avoid clearing it until a backup succeeds.
+
+## I want to empty the current library
+
+Use **Settings > Library > New** only after creating an export if there is anything you may need again. Starting a new library removes the current local cards, assets, collections, pairings, and decks instead of importing another backup.
+
+See [Start a New Library](../settings-and-data/start-a-new-library.md) for the full confirmation flow.
 
 ## Related guides
 

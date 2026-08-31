@@ -132,7 +132,9 @@ export function summarizeDeckPdfRunData(
     if (scopeMode === "complete") return set.hasEntries;
     return selectedSetIds.has(set.setId);
   });
-  const excludedSets = runData.sets.filter((set) => !includedSets.some((included) => included.setId === set.setId));
+  const excludedSets = runData.sets.filter(
+    (set) => !includedSets.some((included) => included.setId === set.setId),
+  );
   const includedEmptySetCount = includedSets.filter((set) => !set.hasEntries).length;
   const excludedEmptySetCount = excludedSets.filter((set) => !set.hasEntries).length;
   const excludedNonEmptySetCount = excludedSets.filter((set) => set.hasEntries).length;

@@ -151,7 +151,9 @@ export function normalizeAfterDrop(
   (Object.keys(current.groupOrderByBoard) as BoardId[]).forEach((boardId) => {
     const config = boardConfigs[boardId];
     current.groupOrderByBoard[boardId].forEach((groupId) => {
-      const sets = (current.itemsByGroup[groupId] ?? []).filter((id) => !isEmptySlotEphemeralSetId(id));
+      const sets = (current.itemsByGroup[groupId] ?? []).filter(
+        (id) => !isEmptySlotEphemeralSetId(id),
+      );
       const keepEmpty = !config.allowMultipleGroups;
       if (sets.length > 0 || keepEmpty || groupId === tempGroupId) {
         nextGroupOrderByBoard[boardId].push(groupId);

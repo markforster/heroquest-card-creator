@@ -2,11 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const {
+import {
   buildRows,
   collectUsageByKey,
   renderMarkdown,
-} = require("../i18n/generate-untranslated-remediation-report.cjs");
+} from "../i18n/generate-untranslated-remediation-report.cjs";
 
 describe("i18n remediation report generator", () => {
   it("maps statically declared keys to production usage files", () => {
@@ -125,8 +125,12 @@ describe("i18n remediation report generator", () => {
     });
 
     expect(markdown).toContain("# i18n Untranslated Remediation Report");
-    expect(markdown).toContain("| de | actions.apply | Apply | Apply | untranslated | `src/components/Example.tsx` |  |");
-    expect(markdown).toContain("| de | decks.addCards | Add cards… | Add cards… | missing | `src/components/Decks/DecksGridPanel.tsx` |  |");
+    expect(markdown).toContain(
+      "| de | actions.apply | Apply | Apply | untranslated | `src/components/Example.tsx` |  |",
+    );
+    expect(markdown).toContain(
+      "| de | decks.addCards | Add cards… | Add cards… | missing | `src/components/Decks/DecksGridPanel.tsx` |  |",
+    );
     expect(markdown).toContain("Source scan: Production files under `src/` only");
   });
 });

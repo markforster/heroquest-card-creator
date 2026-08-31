@@ -173,7 +173,8 @@ describe("CardTextBlock rich text rendering", () => {
     const unfittedTextNodes = Array.from(unfittedContainer.querySelectorAll("text"));
     const fittedTextNodes = Array.from(fittedContainer.querySelectorAll("text"));
     const unfittedGap =
-      Number(unfittedTextNodes[1]?.getAttribute("y")) - Number(unfittedTextNodes[0]?.getAttribute("y"));
+      Number(unfittedTextNodes[1]?.getAttribute("y")) -
+      Number(unfittedTextNodes[0]?.getAttribute("y"));
     const fittedGap =
       Number(fittedTextNodes[1]?.getAttribute("y")) - Number(fittedTextNodes[0]?.getAttribute("y"));
 

@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { useEscapeKey } from "./useEscapeKey";
 import { useEscapeListener } from "./useEscapeListener";
@@ -27,9 +35,7 @@ export function EscapeStackProvider({ children }: { children: React.ReactNode })
   const register = useCallback((id: string, onEscape: () => void, enabled: boolean) => {
     setEntries((prev) => {
       if (prev.some((entry) => entry.id === id)) {
-        return prev.map((entry) =>
-          entry.id === id ? { ...entry, onEscape, enabled } : entry,
-        );
+        return prev.map((entry) => (entry.id === id ? { ...entry, onEscape, enabled } : entry));
       }
       orderRef.current += 1;
       return [...prev, { id, onEscape, enabled, order: orderRef.current }];
@@ -55,9 +61,7 @@ export function EscapeStackProvider({ children }: { children: React.ReactNode })
     (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
-      const active = entries
-        .filter((entry) => entry.enabled)
-        .sort((a, b) => b.order - a.order)[0];
+      const active = entries.filter((entry) => entry.enabled).sort((a, b) => b.order - a.order)[0];
       if (!active) return;
       event.preventDefault();
       event.stopPropagation();

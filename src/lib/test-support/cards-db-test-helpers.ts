@@ -1,6 +1,3 @@
-import type { CardRecord } from "@/types/cards-db";
-import type { CollectionRecord } from "@/types/collections-db";
-
 import {
   TEST_NOW,
   createDeckEntryRecord,
@@ -12,6 +9,8 @@ import {
   installFakeIndexedDb,
   restoreIndexedDb,
 } from "@/lib/test-support/decks-service-test-helpers";
+import type { CardRecord } from "@/types/cards-db";
+import type { CollectionRecord } from "@/types/collections-db";
 
 export {
   TEST_NOW,

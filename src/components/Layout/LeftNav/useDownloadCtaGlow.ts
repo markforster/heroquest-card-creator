@@ -41,8 +41,7 @@ const parseStoredGlowState = (raw: string | null, now: number): GlowState => {
   try {
     const parsed = JSON.parse(raw) as Partial<GlowState> | null;
     if (!parsed || typeof parsed !== "object") return createDefaultGlowState(now);
-    const phase =
-      parsed.phase === "active" || parsed.phase === "snooze" ? parsed.phase : "waiting";
+    const phase = parsed.phase === "active" || parsed.phase === "snooze" ? parsed.phase : "waiting";
     return {
       phase,
       phaseStartMs: Number.isFinite(parsed.phaseStartMs ?? NaN)
@@ -218,10 +217,13 @@ export function useDownloadCtaGlow({
           setIsGlowActive(false);
           const nextBurstStart = now + (burstCycle - cycleOffset);
           const nextEventAt = Math.min(nextBurstStart, activeEnd);
-          setTimer(() => {
-            const current = glowStateRef.current;
-            if (current) scheduleFromState(current);
-          }, Math.max(0, nextEventAt - now));
+          setTimer(
+            () => {
+              const current = glowStateRef.current;
+              if (current) scheduleFromState(current);
+            },
+            Math.max(0, nextEventAt - now),
+          );
         } else {
           const pulseIndex = Math.floor(cycleOffset / ACTIVE_PULSE_EVERY_MS);
           const isOn = pulseIndex % 2 === 0;
@@ -232,10 +234,13 @@ export function useDownloadCtaGlow({
           const nextPulseAt = burstStart + (pulseIndex + 1) * ACTIVE_PULSE_EVERY_MS;
           const nextEventAt = Math.min(nextPulseAt, burstEnd, activeEnd);
 
-          setTimer(() => {
-            const current = glowStateRef.current;
-            if (current) scheduleFromState(current);
-          }, Math.max(0, nextEventAt - now));
+          setTimer(
+            () => {
+              const current = glowStateRef.current;
+              if (current) scheduleFromState(current);
+            },
+            Math.max(0, nextEventAt - now),
+          );
         }
         setTimer(() => {
           const snoozeState = {

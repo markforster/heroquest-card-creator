@@ -75,8 +75,20 @@ describe("resolvePairedOppositeFace", () => {
 
   it("uses updatedAt as the secondary tie-breaker when lastViewedAt is tied", () => {
     const cards = [
-      createCardRecord({ id: "back-1", updatedAt: 5, lastViewedAt: 10, name: "Back 1", nameLower: "back 1" }),
-      createCardRecord({ id: "back-2", updatedAt: 20, lastViewedAt: 10, name: "Back 2", nameLower: "back 2" }),
+      createCardRecord({
+        id: "back-1",
+        updatedAt: 5,
+        lastViewedAt: 10,
+        name: "Back 1",
+        nameLower: "back 1",
+      }),
+      createCardRecord({
+        id: "back-2",
+        updatedAt: 20,
+        lastViewedAt: 10,
+        name: "Back 2",
+        nameLower: "back 2",
+      }),
     ];
     const pairs = [
       createPairRecord({ frontFaceId: "front-1", backFaceId: "back-1" }),
@@ -95,8 +107,20 @@ describe("resolvePairedOppositeFace", () => {
 
   it("uses normalized name as the final tie-breaker", () => {
     const cards = [
-      createCardRecord({ id: "back-b", updatedAt: 10, lastViewedAt: 10, name: "Zulu", nameLower: "zulu" }),
-      createCardRecord({ id: "back-a", updatedAt: 10, lastViewedAt: 10, name: "Alpha", nameLower: "alpha" }),
+      createCardRecord({
+        id: "back-b",
+        updatedAt: 10,
+        lastViewedAt: 10,
+        name: "Zulu",
+        nameLower: "zulu",
+      }),
+      createCardRecord({
+        id: "back-a",
+        updatedAt: 10,
+        lastViewedAt: 10,
+        name: "Alpha",
+        nameLower: "alpha",
+      }),
     ];
     const pairs = [
       createPairRecord({ frontFaceId: "front-1", backFaceId: "back-b" }),
