@@ -20,7 +20,7 @@ import {
 } from "@/config/flags";
 import { buildNumericFontStyle } from "@/config/typography";
 import { normalizeFileProtocolAssetUrl } from "@/lib/browser";
-import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+import { CARD_TEXT_BOLD_ITALIC_FONT_FAMILY, CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import fitText from "@/lib/text-fitting/fitText";
 import { DEFAULT_TITLE_TYPOGRAPHY } from "@/lib/title-typography";
 import { useTypographyNumericSettings } from "@/lib/typography-settings";
@@ -118,7 +118,7 @@ export default function RibbonTitle({
     tabular: titleFixedWidthNumerals,
   });
   const titleTextStyle: CSSProperties = {
-    fontFamily: CARD_TEXT_FONT_FAMILY,
+    fontFamily: titleIsBoldItalic ? CARD_TEXT_BOLD_ITALIC_FONT_FAMILY : CARD_TEXT_FONT_FAMILY,
     fontSize: `${titleFontSize}px`,
     fontWeight: titleFontWeight,
     fontStyle: titleIsBoldItalic ? "italic" : undefined,
