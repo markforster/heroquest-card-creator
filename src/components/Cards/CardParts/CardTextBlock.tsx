@@ -10,7 +10,7 @@ import type {
   TextAlignment,
   TextRun,
 } from "@/components/Cards/CardParts/bodyText/types";
-import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
+import { CARD_TEXT_BOLD_ITALIC_FONT_FAMILY, CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
 import { runsToTokens, wrapTokens, type WrapToken } from "@/lib/text-fitting/wrap";
@@ -1078,7 +1078,7 @@ function createStyledTextMeasure({
     if (!measure) {
       measure = createTextMeasurer(
         resolvedFontSize,
-        fontFamily,
+        token?.bold && token?.italic ? CARD_TEXT_BOLD_ITALIC_FONT_FAMILY : fontFamily,
         token?.bold ? "700" : baseWeight,
         token?.italic ? "italic" : "normal",
       );
@@ -1287,6 +1287,7 @@ function renderTokenSequence({
     }
 
     const spanStyle: CSSProperties = {};
+    if (token.bold && token.italic) spanStyle.fontFamily = CARD_TEXT_BOLD_ITALIC_FONT_FAMILY;
     if (token.bold) spanStyle.fontWeight = "700";
     if (token.italic) spanStyle.fontStyle = "italic";
     if (token.underline) spanStyle.textDecoration = "underline";
