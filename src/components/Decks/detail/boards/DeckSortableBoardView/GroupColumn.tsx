@@ -18,6 +18,7 @@ export function GroupColumn({
   groupId,
   label,
   children,
+  leadingContent,
   fillParent,
   canReceiveDrops,
   showHeader,
@@ -27,6 +28,7 @@ export function GroupColumn({
   style,
   bodyClassName,
   bodyStyle,
+  registerGroupRef,
   onHoverChange,
   allowGroupReorder,
   isGroupDragSource,
@@ -51,63 +53,72 @@ export function GroupColumn({
   });
 
   return (
-    <section
-      className={[
-        styles.group,
-        isGroupDragSource || isDragSource ? styles.groupDragGhost : "",
-        fillParent ? styles.groupFillParent : "",
-        sourceLayout ? styles.groupSource : "",
-        className ?? "",
-      ]
+    <div
+      className={[styles.groupSlot, fillParent ? styles.groupWrapperFillParent : ""]
         .filter(Boolean)
         .join(" ")}
       ref={(node) => {
         droppable.ref(node);
         ref(node);
       }}
-      data-testid={`group-${groupId}`}
-      style={style}
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
+      data-testid={`group-slot-${groupId}`}
     >
-      {allowGroupReorder ? (
-        <button
-          type="button"
-          ref={handleRef}
-          className={[styles.groupDragHandle, isDragging ? styles.groupDragHandleActive : ""]
-            .filter(Boolean)
-            .join(" ")}
-          aria-label={t("decks.groups.actions.reorder")}
-          title={t("decks.groups.actions.reorder")}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <span aria-hidden="true">⋮⋮</span>
-        </button>
-      ) : null}
-      {showHeader ? (
-        <header className={styles.groupHeader}>
-          <span>{label ?? parseGroupLabel(groupId)}</span>
-          <span className={styles.grip} aria-hidden="true">
-            ⠿
-          </span>
-        </header>
-      ) : null}
-      <div
+      {leadingContent}
+      <section
         className={[
-          styles.groupBody,
-          fillParent ? styles.groupBodyFillParent : "",
-          sourceLayout ? styles.groupBodySource : "",
-          sourceLayout && fillParent ? styles.groupBodySourceFillParent : "",
-          entriesLayout && fillParent ? styles.groupBodyEntriesFillParent : "",
-          bodyClassName ?? "",
+          styles.group,
+          isGroupDragSource || isDragSource ? styles.groupDragGhost : "",
+          fillParent ? styles.groupFillParent : "",
+          sourceLayout ? styles.groupSource : "",
+          className ?? "",
         ]
           .filter(Boolean)
           .join(" ")}
-        style={bodyStyle}
+        ref={registerGroupRef}
+        data-testid={`group-${groupId}`}
+        style={style}
+        onMouseEnter={() => onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
       >
-        {children}
-      </div>
-    </section>
+        {allowGroupReorder ? (
+          <button
+            type="button"
+            ref={handleRef}
+            className={[styles.groupDragHandle, isDragging ? styles.groupDragHandleActive : ""]
+              .filter(Boolean)
+              .join(" ")}
+            aria-label={t("decks.groups.actions.reorder")}
+            title={t("decks.groups.actions.reorder")}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span aria-hidden="true">⋮⋮</span>
+          </button>
+        ) : null}
+        {showHeader ? (
+          <header className={styles.groupHeader}>
+            <span>{label ?? parseGroupLabel(groupId)}</span>
+            <span className={styles.grip} aria-hidden="true">
+              ⠿
+            </span>
+          </header>
+        ) : null}
+        <div
+          className={[
+            styles.groupBody,
+            fillParent ? styles.groupBodyFillParent : "",
+            sourceLayout ? styles.groupBodySource : "",
+            sourceLayout && fillParent ? styles.groupBodySourceFillParent : "",
+            entriesLayout && fillParent ? styles.groupBodyEntriesFillParent : "",
+            bodyClassName ?? "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          style={bodyStyle}
+        >
+          {children}
+        </div>
+      </section>
+    </div>
   );
 }

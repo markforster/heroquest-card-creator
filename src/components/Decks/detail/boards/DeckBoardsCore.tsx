@@ -170,7 +170,6 @@ type DeckMockDndContextValue = {
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
   handleLeaveBoard: (boardId: BoardId) => void;
-  setBoundaryHoverState: (boardId: BoardId, index: number, isHovered: boolean) => void;
   createGroupAtIndex: (boardId: BoardId, index: number) => void;
   registerDropHandler: (controllerId: string, handler: DeckDropHandler) => () => void;
 };
@@ -201,12 +200,6 @@ const BOARD_CONFIGS: Record<BoardId, BoardConfig> = {
     allowDropTarget: false,
   },
 };
-
-const GROUP_BOUNDARY_EDGE_PCT = 0.1;
-const GROUP_BOUNDARY_EDGE_MIN_PX = 12;
-const GROUP_BOUNDARY_EDGE_MAX_PX = 28;
-const GROUP_BOUNDARY_GAP_SNAP_MAX_PX = 14;
-const GROUP_BOUNDARY_STICKY_HOLD_PX = 26;
 
 export const BOARD_ROUTING_META_BY_ID: Record<BoardId, BoardRoutingMeta> = {
   groups: { emitToken: "set", acceptTokens: ["source-back"] },
@@ -257,6 +250,7 @@ export function DeckMockDndProvider({
     [boardModels],
   );
   const initialLabels = useMemo(() => collectLabels(boardModels), [boardModels]);
+  const groupStructureKey = boardModels.groups.groupIds.join("|");
   const [state, setState] = useState<DnDState>(initialState);
   const [groupLabelsById, setGroupLabelsById] = useState<Record<GroupId, string>>(
     initialLabels.groupLabelsById,
@@ -273,13 +267,6 @@ export function DeckMockDndProvider({
   const [dragAffordanceByBoard, setDragAffordanceByBoard] =
     useState<Record<BoardId, boolean>>(emptyAffordanceState());
   const [hoverBoundaryByBoard, setHoverBoundaryByBoard] = useState<Record<BoardId, number | null>>({
-    groups: null,
-    entries: null,
-    source: null,
-  });
-  const [hoveredBoundaryByBoard, setHoveredBoundaryByBoard] = useState<
-    Record<BoardId, number | null>
-  >({
     groups: null,
     entries: null,
     source: null,
@@ -361,69 +348,43 @@ export function DeckMockDndProvider({
     }
   };
 
-  const resolveBoundaryForBoard = (
-    boardId: BoardId,
-    clientX: number,
-    currentBoundary: number | null = null,
-  ): number | null => {
-    const groups = state.groupOrderByBoard[boardId]
-      .map((groupId, index) => ({ index, node: groupRefs.current.get(groupId) }))
-      .filter((entry): entry is { index: number; node: HTMLElement } => Boolean(entry.node))
-      .map(({ index, node }) => ({ index, rect: node.getBoundingClientRect() }));
+  const resolveBoundaryForBoard = (boardId: BoardId, clientX: number): number | null => {
+    const groupOrder = state.groupOrderByBoard[boardId];
+    const boundaryIndexByGroupId = new Map(groupOrder.map((groupId, index) => [groupId, index]));
+    const groups = groupOrder
+      .map((groupId) => ({ groupId, node: groupRefs.current.get(groupId) }))
+      .filter((entry): entry is { groupId: GroupId; node: HTMLElement } => Boolean(entry.node))
+      .map(({ groupId, node }) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          groupId,
+          index: boundaryIndexByGroupId.get(groupId) ?? 0,
+          // getBoundingClientRect already includes the sortable slot's visual translate.
+          // Hit-testing must use that rendered geometry, not the pre-drag layout position.
+          rect,
+        };
+      })
+      .sort((left, right) => left.rect.left - right.rect.left);
 
     if (groups.length === 0) return null;
 
+    const firstGroup = groups[0];
+    // The visually first group may not be the logical first group after a reorder.
+    // Its leading rail is the boundary immediately before that group's logical slot.
+    if (clientX < firstGroup.rect.left) return firstGroup.index;
+
     for (let i = 0; i < groups.length; i += 1) {
-      const { index, rect } = groups[i];
-      const edgeSize = clamp(
-        rect.width * GROUP_BOUNDARY_EDGE_PCT,
-        GROUP_BOUNDARY_EDGE_MIN_PX,
-        GROUP_BOUNDARY_EDGE_MAX_PX,
-      );
-      const leftEdgeZoneEnd = rect.left + edgeSize;
-      const rightEdgeZoneStart = rect.right - edgeSize;
-      if (clientX >= rect.left && clientX <= leftEdgeZoneEnd) return index;
-      if (clientX >= rightEdgeZoneStart && clientX <= rect.right) return index + 1;
+      const { rect } = groups[i];
+      const nextGroup = groups[i + 1];
+      if (nextGroup && clientX >= rect.right && clientX <= nextGroup.rect.left) {
+        return nextGroup?.index ?? groupOrder.length;
+      }
     }
 
-    // Pointer is in a middle-zone or inter-group gap: optionally snap only when very near an edge.
-    let bestBoundary = 0;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    for (let i = 0; i < groups.length; i += 1) {
-      const { index, rect } = groups[i];
-      const leftDistance = Math.abs(clientX - rect.left);
-      if (leftDistance < bestDistance) {
-        bestDistance = leftDistance;
-        bestBoundary = index;
-      }
-      const rightDistance = Math.abs(clientX - rect.right);
-      if (rightDistance < bestDistance) {
-        bestDistance = rightDistance;
-        bestBoundary = index + 1;
-      }
-    }
-    const snappedBoundary = bestDistance <= GROUP_BOUNDARY_GAP_SNAP_MAX_PX ? bestBoundary : null;
-    if (snappedBoundary != null) return snappedBoundary;
-
-    // Hysteresis: keep current boundary while pointer remains near that boundary's adjacent edges.
-    if (currentBoundary != null) {
-      let stickyDistance = Number.POSITIVE_INFINITY;
-      if (currentBoundary > 0) {
-        const leftNeighbor = groups[currentBoundary - 1];
-        if (leftNeighbor) {
-          stickyDistance = Math.min(stickyDistance, Math.abs(clientX - leftNeighbor.rect.right));
-        }
-      }
-      if (currentBoundary < groups.length) {
-        const rightNeighbor = groups[currentBoundary];
-        if (rightNeighbor) {
-          stickyDistance = Math.min(stickyDistance, Math.abs(clientX - rightNeighbor.rect.left));
-        }
-      }
-      if (stickyDistance <= GROUP_BOUNDARY_STICKY_HOLD_PX) {
-        return currentBoundary;
-      }
-    }
+    const lastGroup = groups[groups.length - 1];
+    // As with the leading edge, the visual last group can have a different logical
+    // index after reordering. Resolve the rail immediately after that group.
+    if (clientX > lastGroup.rect.right) return lastGroup.index + 1;
 
     return null;
   };
@@ -431,15 +392,7 @@ export function DeckMockDndProvider({
   const handleHoverBoundary = (boardId: BoardId, clientX: number) => {
     if (activeSetId || activeGroupId) return;
     setHoverBoundaryByBoard((current) => {
-      const hoveredBoundary = hoveredBoundaryByBoard[boardId];
-      if (hoveredBoundary != null) {
-        if (hoveredBoundary === current[boardId]) return current;
-        return {
-          ...current,
-          [boardId]: hoveredBoundary,
-        };
-      }
-      const nextBoundary = resolveBoundaryForBoard(boardId, clientX, current[boardId]);
+      const nextBoundary = resolveBoundaryForBoard(boardId, clientX);
       if (nextBoundary === current[boardId]) return current;
       return {
         ...current,
@@ -451,26 +404,8 @@ export function DeckMockDndProvider({
   const handleLeaveBoard = (boardId: BoardId) => {
     if (activeSetId || activeGroupId) return;
     setHoverBoundaryByBoard((current) => {
-      if (hoveredBoundaryByBoard[boardId] != null) return current;
       if (current[boardId] == null) return current;
       return { ...current, [boardId]: null };
-    });
-  };
-
-  const setBoundaryHoverState = (boardId: BoardId, index: number, isHovered: boolean) => {
-    setHoveredBoundaryByBoard((current) => {
-      const nextValue = isHovered ? index : current[boardId] === index ? null : current[boardId];
-      if (current[boardId] === nextValue) return current;
-      return {
-        ...current,
-        [boardId]: nextValue,
-      };
-    });
-    setHoverBoundaryByBoard((current) => {
-      if (isHovered) {
-        return current[boardId] === index ? current : { ...current, [boardId]: index };
-      }
-      return current[boardId] === index ? { ...current, [boardId]: null } : current;
     });
   };
 
@@ -483,10 +418,6 @@ export function DeckMockDndProvider({
 
     const newGroupId = `${boardId}:N${nextGroupIdRef.current}`;
     nextGroupIdRef.current += 1;
-    // Boundary button can unmount before mouseleave fires; clear hover-latch to avoid stale lock.
-    setHoveredBoundaryByBoard((current) =>
-      current[boardId] == null ? current : { ...current, [boardId]: null },
-    );
     setHoverBoundaryByBoard((current) =>
       current[boardId] == null ? current : { ...current, [boardId]: null },
     );
@@ -581,6 +512,7 @@ export function DeckMockDndProvider({
   const handleDragStart = (event: DragStartEvent) => {
     if (event.operation.source?.type === "group") {
       previousState.current = state;
+      setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
       setActiveGroupId(
         extractGroupIdFromOperationEntity(event.operation.source) ||
           String(event.operation.source.id ?? "") ||
@@ -622,7 +554,6 @@ export function DeckMockDndProvider({
       }),
     );
     setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
-    setHoveredBoundaryByBoard({ groups: null, entries: null, source: null });
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -796,6 +727,7 @@ export function DeckMockDndProvider({
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.operation.source?.type === "group") {
+      setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
       setActiveGroupId(null);
       if (event.canceled) {
         dragSourceEmptySlotGroupIdRef.current = null;
@@ -1170,12 +1102,12 @@ export function DeckMockDndProvider({
         registerGroupRef,
         handleHoverBoundary,
         handleLeaveBoard,
-        setBoundaryHoverState,
         createGroupAtIndex,
         registerDropHandler,
       }}
     >
       <DragDropProvider
+        key={groupStructureKey}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -1246,7 +1178,6 @@ export function useDeckSortableBoardViewModel(
     registerGroupRef,
     handleHoverBoundary,
     handleLeaveBoard,
-    setBoundaryHoverState,
     createGroupAtIndex,
   } = useDeckMockDnd();
 
@@ -1275,8 +1206,6 @@ export function useDeckSortableBoardViewModel(
     hoverBoundaryIndex: hoverBoundaryByBoard[boardId],
     onHoverBoundary: (clientX: number) => handleHoverBoundary(boardId, clientX),
     onLeaveBoard: () => handleLeaveBoard(boardId),
-    onBoundaryHoverChange: (index: number, isHovered: boolean) =>
-      setBoundaryHoverState(boardId, index, isHovered),
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
     allowGroupReorder: options?.allowGroupReorder ?? false,

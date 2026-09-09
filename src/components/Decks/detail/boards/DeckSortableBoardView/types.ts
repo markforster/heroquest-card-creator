@@ -36,7 +36,6 @@ export type DeckSortableBoardViewModel = {
   hoverBoundaryIndex: number | null;
   onHoverBoundary: (clientX: number) => void;
   onLeaveBoard: () => void;
-  onBoundaryHoverChange: (index: number, isHovered: boolean) => void;
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
   allowGroupReorder?: boolean;
@@ -74,6 +73,7 @@ export type GroupColumnProps = {
   groupId: GroupId;
   label?: string;
   children: ReactNode;
+  leadingContent?: ReactNode;
   fillParent: boolean;
   canReceiveDrops: boolean;
   showHeader: boolean;
@@ -83,6 +83,7 @@ export type GroupColumnProps = {
   style?: CSSProperties;
   bodyClassName?: string;
   bodyStyle?: CSSProperties;
+  registerGroupRef?: (node: HTMLElement | null) => void;
   onHoverChange?: (isHovered: boolean) => void;
   allowGroupReorder?: boolean;
   isGroupDragSource?: boolean;
@@ -98,7 +99,6 @@ export type DefaultSetThumbnailContentProps = {
 export type CreateBoundaryPlaceholderProps = {
   index: number;
   onCreate: (index: number) => void;
-  onHoverChange: (index: number, isHovered: boolean) => void;
   visible: boolean;
 };
 
