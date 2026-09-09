@@ -115,6 +115,7 @@ export function DeckSortableBoardView({
           <GroupColumn
             key={groupId}
             registerGroupRef={(node) => model.registerGroupRef(groupId, node)}
+            onGroupDragIntent={model.onGroupDragIntent}
             boardId={config.boardId}
             index={index}
             groupId={groupId}

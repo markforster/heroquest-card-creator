@@ -135,7 +135,7 @@
   align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 4px 2px;
+  padding: 14px 2px 4px;
 }
 
 .board[data-testid="board-groups"] .groupsRow {
@@ -284,8 +284,8 @@
 
 .groupDragHandle {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -11px;
+  right: 8px;
   width: 22px;
   height: 22px;
   border-radius: 999px;

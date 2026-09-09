@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { apiClient } from "@/api/client";
 import { listPairsMap } from "@/components/Decks/deck-preview";
 import type { DeckMutationCommands } from "@/components/Decks/types/deck-route";
+import { isDebugToolsEnabled } from "@/lib/env";
 
 export function useDeckMutations(): DeckMutationCommands {
   const queryClient = useQueryClient();
@@ -135,6 +136,12 @@ export function useDeckMutations(): DeckMutationCommands {
       },
       createGroup: async (deckId) => apiClient.createDeckGroup({}, { params: { deckId } }),
       reorderGroups: async (deckId, orderedGroupIds) => {
+        if (isDebugToolsEnabled()) {
+          console.debug("[groups:reorder] api mutation", {
+            deckId,
+            orderedGroupIds: JSON.stringify(orderedGroupIds),
+          });
+        }
         await apiClient.reorderDeckGroups({ orderedGroupIds }, { params: { deckId } });
       },
       reorderSets: async (setId, orderedSetIds) => {

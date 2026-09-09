@@ -55,6 +55,7 @@ import { OverlayCard } from "@/components/Decks/detail/boards/DeckBoardCards";
 import { DefaultSetThumbnailContent } from "@/components/Decks/detail/boards/DeckSortableBoardView";
 import type { DeckSortableBoardViewModel } from "@/components/Decks/detail/boards/DeckSortableBoardView";
 import { useI18n } from "@/i18n/I18nProvider";
+import { isDebugToolsEnabled } from "@/lib/env";
 
 import styles from "../DeckGroupsSection2.module.css";
 
@@ -168,6 +169,7 @@ type DeckMockDndContextValue = {
   dragAffordanceByBoard: Record<BoardId, boolean>;
   hoverBoundaryByBoard: Record<BoardId, number | null>;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
+  markGroupDragSource: (groupId: GroupId) => void;
   handleHoverBoundary: (boardId: BoardId, clientX: number) => void;
   handleLeaveBoard: (boardId: BoardId) => void;
   createGroupAtIndex: (boardId: BoardId, index: number) => void;
@@ -250,8 +252,10 @@ export function DeckMockDndProvider({
     [boardModels],
   );
   const initialLabels = useMemo(() => collectLabels(boardModels), [boardModels]);
-  const groupStructureKey = boardModels.groups.groupIds.join("|");
   const [state, setState] = useState<DnDState>(initialState);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const groupOrderByBoardRef = useRef(initialState.groupOrderByBoard);
   const [groupLabelsById, setGroupLabelsById] = useState<Record<GroupId, string>>(
     initialLabels.groupLabelsById,
   );
@@ -296,6 +300,7 @@ export function DeckMockDndProvider({
   const activeEphemeralIdRef = useRef<SetId | null>(null);
   const nextGroupIdRef = useRef<number>(1);
   const groupRefs = useRef<Map<GroupId, HTMLElement>>(new Map());
+  const groupDragSourceIntentRef = useRef<GroupId | null>(null);
   const handlersRef = useRef<Map<string, DeckDropHandler>>(new Map());
   const lastPublishedDragIdRef = useRef<string | null>(null);
   const dragSequenceRef = useRef<number>(0);
@@ -329,6 +334,7 @@ export function DeckMockDndProvider({
       initialState,
       initialState.groupOrderByBoard.groups ?? [],
     );
+    groupOrderByBoardRef.current = normalizedInitialState.groupOrderByBoard;
     setState(normalizedInitialState);
     previousState.current = normalizedInitialState;
   }, [
@@ -346,6 +352,29 @@ export function DeckMockDndProvider({
     } else {
       groupRefs.current.delete(groupId);
     }
+  };
+
+  const markGroupDragSource = (groupId: GroupId) => {
+    groupDragSourceIntentRef.current = groupId;
+  };
+
+  const resolveGroupEntityId = (entity: unknown): GroupId => {
+    const explicitGroupId = extractGroupIdFromOperationEntity(entity);
+    if (explicitGroupId && !explicitGroupId.startsWith("board:")) {
+      return explicitGroupId;
+    }
+    const entityId =
+      entity && typeof entity === "object" && "id" in entity
+        ? String((entity as { id?: unknown }).id ?? "")
+        : "";
+    if (entityId.startsWith("group:")) return entityId;
+    return "";
+  };
+
+  const resolveGroupDragSourceId = (entity: unknown): GroupId => {
+    const groupEntityId = resolveGroupEntityId(entity);
+    if (groupEntityId) return groupEntityId;
+    return groupDragSourceIntentRef.current ?? "";
   };
 
   const resolveBoundaryForBoard = (boardId: BoardId, clientX: number): number | null => {
@@ -514,13 +543,12 @@ export function DeckMockDndProvider({
       previousState.current = state;
       setHoverBoundaryByBoard({ groups: null, entries: null, source: null });
       setActiveGroupId(
-        extractGroupIdFromOperationEntity(event.operation.source) ||
-          String(event.operation.source.id ?? "") ||
-          null,
+        resolveGroupDragSourceId(event.operation.source) || null,
       );
       return;
     }
     if (event.operation.source?.type !== "set") return;
+    groupDragSourceIntentRef.current = null;
     const sourceSetId = String(event.operation.source.id);
     const sourceGroupId =
       extractGroupIdFromOperationEntity(event.operation.source) ||
@@ -558,31 +586,44 @@ export function DeckMockDndProvider({
 
   const handleDragOver = (event: DragOverEvent) => {
     if (event.operation.source?.type === "group") {
-      const sourceGroupId =
-        extractGroupIdFromOperationEntity(event.operation.source) ||
-        String(event.operation.source.id ?? "");
+      if (isDebugToolsEnabled()) {
+        console.debug("[groups:reorder] drag-over", {
+          source: {
+            id: String(event.operation.source.id ?? ""),
+            type: String(event.operation.source.type ?? ""),
+            group: extractGroupIdFromOperationEntity(event.operation.source),
+          },
+          target: {
+            id: String(event.operation.target?.id ?? ""),
+            type: String(event.operation.target?.type ?? ""),
+            group: extractGroupIdFromOperationEntity(event.operation.target),
+          },
+        });
+      }
+      const sourceGroupId = resolveGroupDragSourceId(event.operation.source);
       const targetId = String(event.operation.target?.id ?? "");
       const targetGroupId =
         event.operation.target?.type === "group"
-          ? extractGroupIdFromOperationEntity(event.operation.target) || targetId
+          ? resolveGroupEntityId(event.operation.target) || targetId
           : extractGroupIdFromOperationEntity(event.operation.target) ||
             (targetId ? findContainerByItemId(state, targetId) || "" : "");
       if (!sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) return;
-      const sourceBoardId = state.groupToBoard[sourceGroupId] ?? null;
+      const sourceBoardId = stateRef.current.groupToBoard[sourceGroupId] ?? null;
       const targetBoardId = state.groupToBoard[targetGroupId] ?? null;
       if (!sourceBoardId || sourceBoardId !== targetBoardId) return;
+      const currentOrder = groupOrderByBoardRef.current[sourceBoardId] ?? [];
+      const sourceIndex = currentOrder.indexOf(sourceGroupId);
+      const targetIndex = currentOrder.indexOf(targetGroupId);
+      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+      const nextOrder = currentOrder.slice();
+      const [moved] = nextOrder.splice(sourceIndex, 1);
+      nextOrder.splice(targetIndex, 0, moved);
+      const nextGroupOrderByBoard = {
+        ...groupOrderByBoardRef.current,
+        [sourceBoardId]: nextOrder,
+      };
+      groupOrderByBoardRef.current = nextGroupOrderByBoard;
       setState((current) => {
-        const currentOrder = current.groupOrderByBoard[sourceBoardId] ?? [];
-        const sourceIndex = currentOrder.indexOf(sourceGroupId);
-        const targetIndex = currentOrder.indexOf(targetGroupId);
-        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return current;
-        const nextOrder = currentOrder.slice();
-        const [moved] = nextOrder.splice(sourceIndex, 1);
-        nextOrder.splice(targetIndex, 0, moved);
-        const nextGroupOrderByBoard = {
-          ...current.groupOrderByBoard,
-          [sourceBoardId]: nextOrder,
-        };
         return {
           ...current,
           groupOrderByBoard: nextGroupOrderByBoard,
@@ -731,15 +772,29 @@ export function DeckMockDndProvider({
       setActiveGroupId(null);
       if (event.canceled) {
         dragSourceEmptySlotGroupIdRef.current = null;
+        groupDragSourceIntentRef.current = null;
         setState(previousState.current);
         return;
       }
-      const sourceGroupId =
-        extractGroupIdFromOperationEntity(event.operation.source) ||
-        String(event.operation.source.id ?? "");
-      const sourceBoardId = sourceGroupId ? (state.groupToBoard[sourceGroupId] ?? null) : null;
+      const sourceGroupId = resolveGroupDragSourceId(event.operation.source);
+      const currentState = stateRef.current;
+      const sourceBoardId = sourceGroupId
+        ? (currentState.groupToBoard[sourceGroupId] ?? null)
+        : null;
+      if (isDebugToolsEnabled()) {
+        console.debug("[groups:reorder] drag-end", {
+          sourceGroupId,
+          sourceBoardId,
+          handlerIds: [...handlersRef.current.keys()],
+          orderedGroupIds: JSON.stringify(
+            (groupOrderByBoardRef.current.groups ?? []).map((groupUiId) =>
+              groupUiId.replace(/^group:/, ""),
+            ),
+          ),
+        });
+      }
       if (sourceBoardId === "groups" && handlersRef.current.size > 0) {
-        const orderedGroupIds = (state.groupOrderByBoard.groups ?? [])
+        const orderedGroupIds = (groupOrderByBoardRef.current.groups ?? [])
           .map((groupUiId) => groupUiId.replace(/^group:/, ""))
           .filter(Boolean);
         const dragId = `drag:${Date.now()}:${++dragSequenceRef.current}:${sourceGroupId}`;
@@ -770,6 +825,7 @@ export function DeckMockDndProvider({
           }
         })();
       }
+      groupDragSourceIntentRef.current = null;
       return;
     }
     if (event.operation.source?.type !== "set") {
@@ -1100,6 +1156,7 @@ export function DeckMockDndProvider({
         dragAffordanceByBoard,
         hoverBoundaryByBoard,
         registerGroupRef,
+        markGroupDragSource,
         handleHoverBoundary,
         handleLeaveBoard,
         createGroupAtIndex,
@@ -1107,7 +1164,6 @@ export function DeckMockDndProvider({
       }}
     >
       <DragDropProvider
-        key={groupStructureKey}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -1179,6 +1235,7 @@ export function useDeckSortableBoardViewModel(
     handleHoverBoundary,
     handleLeaveBoard,
     createGroupAtIndex,
+    markGroupDragSource,
   } = useDeckMockDnd();
 
   return {
@@ -1208,6 +1265,7 @@ export function useDeckSortableBoardViewModel(
     onLeaveBoard: () => handleLeaveBoard(boardId),
     onCreateGroupAtIndex: (index: number) => createGroupAtIndex(boardId, index),
     registerGroupRef,
+    onGroupDragIntent: markGroupDragSource,
     allowGroupReorder: options?.allowGroupReorder ?? false,
     onSetClick: options?.onSetClick,
     onSetHoverChange: options?.onSetHoverChange,

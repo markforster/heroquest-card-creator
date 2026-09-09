@@ -38,6 +38,7 @@ export type DeckSortableBoardViewModel = {
   onLeaveBoard: () => void;
   onCreateGroupAtIndex: (index: number) => void;
   registerGroupRef: (groupId: GroupId, node: HTMLElement | null) => void;
+  onGroupDragIntent?: (groupId: GroupId) => void;
   allowGroupReorder?: boolean;
   onSetClick?: (setUiId: SetId, groupUiId: GroupId, options?: { additive: boolean }) => void;
   onSetHoverChange?: (args: SetHoverContext) => void;
@@ -84,6 +85,7 @@ export type GroupColumnProps = {
   bodyClassName?: string;
   bodyStyle?: CSSProperties;
   registerGroupRef?: (node: HTMLElement | null) => void;
+  onGroupDragIntent?: (groupId: GroupId) => void;
   onHoverChange?: (isHovered: boolean) => void;
   allowGroupReorder?: boolean;
   isGroupDragSource?: boolean;

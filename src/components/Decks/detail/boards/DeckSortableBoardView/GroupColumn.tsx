@@ -29,6 +29,7 @@ export function GroupColumn({
   bodyClassName,
   bodyStyle,
   registerGroupRef,
+  onGroupDragIntent,
   onHoverChange,
   allowGroupReorder,
   isGroupDragSource,
@@ -89,7 +90,10 @@ export function GroupColumn({
               .join(" ")}
             aria-label={t("decks.groups.actions.reorder")}
             title={t("decks.groups.actions.reorder")}
-            onPointerDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => {
+              onGroupDragIntent?.(groupId);
+              event.stopPropagation();
+            }}
             onClick={(event) => event.stopPropagation()}
           >
             <span aria-hidden="true">⋮⋮</span>

@@ -7,6 +7,7 @@ import { useDeckDetailSelection } from "@/components/Decks/detail/context/DeckDe
 import { useDeckRightPanel } from "@/components/Decks/detail/context/DeckRightPanelContext";
 import { useDeckMutations } from "@/components/Decks/hooks/useDeckMutations";
 import { useI18n } from "@/i18n/I18nProvider";
+import { isDebugToolsEnabled } from "@/lib/env";
 
 import styles from "../DeckGroupsSection2.module.css";
 
@@ -608,6 +609,12 @@ export default function DeckGroupsBoardController({
     };
     return registerDropHandler("groups-controller", async (event) => {
       if (event.kind === "GROUPS_REORDER_GROUPS") {
+        if (isDebugToolsEnabled()) {
+          console.debug("[groups:reorder] controller", {
+            deckId,
+            orderedGroupIds: JSON.stringify(event.orderedGroupIds),
+          });
+        }
         if (!deckId || event.orderedGroupIds.length <= 1) {
           return { handled: true, success: true };
         }

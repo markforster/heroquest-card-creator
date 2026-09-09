@@ -1,6 +1,6 @@
 import { TransformStream } from "node:stream/web";
 
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import * as React from "react";
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
@@ -646,6 +646,36 @@ describe("DeckGroupsSection2 mock boards", () => {
     expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "-1");
     expect(getCreateBoundaryButton(2)).toHaveAttribute("tabindex", "-1");
     expect(getCreateBoundaryButton(3)).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("persists the latest group order when drag-end uses a stale callback", async () => {
+    renderWorkspace();
+    const staleDragEnd = callbacks.onDragEnd;
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+        },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+        },
+      });
+      staleDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(mutationMocks.reorderGroups).toHaveBeenCalledWith("deck-1", ["B", "A", "C"]);
+    });
   });
 
   it("resolves the middle boundary against the reordered group geometry", () => {
