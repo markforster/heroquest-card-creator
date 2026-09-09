@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
 import CardTextBlock from "@/components/Cards/CardParts/CardTextBlock";
+import { CARD_TEXT_BOLD_ITALIC_FONT_FAMILY } from "@/lib/fonts";
 
 jest.mock("@/lib/inline-dice", () => ({
   tokenizeInlineDice: (text: string) => [{ kind: "text", text }],
@@ -48,6 +49,50 @@ describe("CardTextBlock rich text rendering", () => {
 
     const scaledSpan = screen.getByText("Beta");
     expect((scaledSpan as unknown as SVGElement).style.fontSize).toBe("30px");
+  });
+
+  it("leaves plain italic body text on the regular card text family", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Plain <i>Italic</i> and *Markdown*"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+        />
+      </svg>,
+    );
+
+    const tagItalicSpan = screen.getByText("Italic");
+    const markdownItalicSpan = screen.getByText("Markdown");
+
+    expect((tagItalicSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+    expect((tagItalicSpan as unknown as SVGElement).style.fontFamily).toBe("");
+    expect((markdownItalicSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+    expect((markdownItalicSpan as unknown as SVGElement).style.fontFamily).toBe("");
+  });
+
+  it("uses the explicit bold italic face only for bold italic body text", () => {
+    render(
+      <svg>
+        <CardTextBlock
+          text={"Plain ***Bold Italic*** and <b><i>Tagged</i></b>"}
+          bounds={{ x: 0, y: 0, width: 300, height: 120 }}
+        />
+      </svg>,
+    );
+
+    const markdownSpan = screen.getByText("Bold Italic");
+    const taggedSpan = screen.getByText("Tagged");
+
+    expect((markdownSpan as unknown as SVGElement).style.fontWeight).toBe("700");
+    expect((markdownSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+    expect((markdownSpan as unknown as SVGElement).style.fontFamily).toBe(
+      CARD_TEXT_BOLD_ITALIC_FONT_FAMILY,
+    );
+    expect((taggedSpan as unknown as SVGElement).style.fontWeight).toBe("700");
+    expect((taggedSpan as unknown as SVGElement).style.fontStyle).toBe("italic");
+    expect((taggedSpan as unknown as SVGElement).style.fontFamily).toBe(
+      CARD_TEXT_BOLD_ITALIC_FONT_FAMILY,
+    );
   });
 
   it("renders sc alias spans with token-specific font sizes", () => {

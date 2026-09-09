@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 
 import RibbonTitle from "@/components/Cards/CardParts/RibbonTitle";
 import { LocalStorageProvider } from "@/components/Providers/LocalStorageProvider";
+import { CARD_TEXT_BOLD_ITALIC_FONT_FAMILY } from "@/lib/fonts";
 import { TYPOGRAPHY_NUMERIC_STORAGE_KEYS } from "@/lib/typography-settings";
 
 jest.mock("@/lib/text-fitting/fitText", () => ({
@@ -87,5 +88,6 @@ describe("RibbonTitle numeric features", () => {
     const textElement = screen.getByText("Quest 123").closest("text");
     expect(textElement?.style.fontWeight).toBe("700");
     expect(textElement?.style.fontStyle).toBe("italic");
+    expect(textElement?.style.fontFamily).toBe(CARD_TEXT_BOLD_ITALIC_FONT_FAMILY);
   });
 });

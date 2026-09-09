@@ -8,6 +8,7 @@ export const releaseNotesSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-2", "Update 06/09/2026 (v0.8.2)"],
   ["about-update-v0-8-1", "Update 29/08/2026 (v0.8.1)"],
   ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
   ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
@@ -226,6 +227,23 @@ export default function ReleaseNotesContent() {
             svg icons
           </a>
           &nbsp;is licensed by CC BY 4.0
+        </DocParagraph>
+      </DocSection>
+
+      <DocSection
+        id="about-update-v0-8-2"
+        title="Update 06/09/2026 (v0.8.2)"
+        className={docStyles.docSectionSpaced}
+      >
+        <DocParagraph>
+          v0.8.2 is a small bug-fix release for a font issue in card body text. It fixes a
+          regression where italic formatting, including <code>*italic text*</code> and{" "}
+          <code>&lt;i&gt;italic text&lt;/i&gt;</code>, could appear as bold italic instead of
+          regular italic.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          There are no new features in this update; I wanted to get this specific fix out quickly
+          for the people who reported it.
         </DocParagraph>
       </DocSection>
 
