@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listy",
+  "formattingHelp.lists.move": "Ruch",
+  "formattingHelp.lists.door": "Otwórz drzwi",
+  "formattingHelp.lists.attack": "Atak",
+  "formattingHelp.lists.rules": "Po - lub 1. wpisz 1–4 spacje. Podpunkt zaczyna się dokładnie od 2 spacji (jeden poziom). Numeracja jest kontynuowana od pierwszej liczby. Pusty lub zwykły wiersz kończy listę. Zawinięte wiersze są pod tekstem; listy są wyrównane do lewej. Style i kości działają, listy HTML nie.",
+  "formattingHelp.lists.compatibility": "Dotyczy także istniejących kart. Wpisz \\- lub \\1., aby zachować znak dosłownie (jeden ukośnik odwrotny). Pozostałe ukośniki się nie zmieniają. Podpunkty zajmują więcej miejsca; sprawdź dopasowanie i obcięty tekst.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Wyrównanie",

@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listen",
+  "formattingHelp.lists.move": "Bewegen",
+  "formattingHelp.lists.door": "Eine Tür öffnen",
+  "formattingHelp.lists.attack": "Angreifen",
+  "formattingHelp.lists.rules": "Nach - oder 1. folgen 1–4 Leerzeichen. Unterpunkte beginnen mit genau 2 Leerzeichen (eine Unterebene). Die Nummerierung läuft ab der ersten Zahl weiter. Eine Leerzeile oder normaler Text beendet die Liste. Umbrüche stehen unter dem Text; Listen sind linksbündig. Textstile und Würfel sind möglich, HTML-Listen nicht.",
+  "formattingHelp.lists.compatibility": "Dies gilt auch für vorhandene Karten. Mit \\- oder \\1. bleibt das Zeichen wörtlich (ein Rückstrich). Andere Rückstriche bleiben erhalten. Unterpunkte brauchen mehr Platz; Einpassen und Abschneidewarnung prüfen.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Ausrichtung",

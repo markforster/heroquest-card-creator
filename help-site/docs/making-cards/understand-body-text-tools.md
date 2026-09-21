@@ -26,7 +26,7 @@ Most body-text fields provide:
 
 - **Insert emoji** to choose and insert a symbol.
 - **Insert inline dice** to build a die symbol without typing its formatting code.
-- **Formatting help** for emphasis, colour, size, headings, alignment, leader lines, and dice examples.
+- **Formatting help** for emphasis, colour, size, headings, bullet and numbered lists, alignment, leader lines, and dice examples.
 - A text-colour control when that template supports body-text colour changes.
 - **Scale to fit** when the template has a fixed-size text area.
 

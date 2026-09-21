@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listák",
+  "formattingHelp.lists.move": "Mozgás",
+  "formattingHelp.lists.door": "Ajtó kinyitása",
+  "formattingHelp.lists.attack": "Támadás",
+  "formattingHelp.lists.rules": "A - vagy 1. után 1–4 szóköz álljon. Az alpont pontosan 2 szóközzel kezdődik (egy szint). A számozás az első számtól folytatódik. Üres vagy normál sor lezárja a listát. A tördelt sorok a szöveg alá kerülnek; a lista balra igazított. Stílusok és kockák használhatók, HTML-listák nem.",
+  "formattingHelp.lists.compatibility": "A meglévő kártyákra is érvényes. A \\- vagy \\1. szó szerinti jelölőt ad (egy fordított perjel). Más perjelek megmaradnak. Az alpontok több helyet igényelnek; ellenőrizze az illesztést és a levágott szöveget.",
   "formattingHelp.markdown": "Markdown (jelölőnyelv)",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Igazítás",

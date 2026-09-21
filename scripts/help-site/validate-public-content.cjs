@@ -92,7 +92,7 @@ function main() {
   );
   const faqSourceIds = unique(faqSourceRows);
   const expectedIds = Array.from(
-    { length: 351 },
+    { length: 352 },
     (_, index) => `Q-${String(index + 1).padStart(4, "0")}`,
   );
   const expectedIdSet = new Set(expectedIds);
@@ -102,8 +102,8 @@ function main() {
     return faqQuestionSections(markdown).map((section) => ({ ...section, file }));
   });
 
-  if (faqSourceRows.length !== 351) {
-    errors.push(`Expected 351 FAQ source-question mappings, found ${faqSourceRows.length}`);
+  if (faqSourceRows.length !== 352) {
+    errors.push(`Expected 352 FAQ source-question mappings, found ${faqSourceRows.length}`);
   }
   const duplicateFaqIds = duplicateValues(faqSourceRows);
   if (duplicateFaqIds.length) {
@@ -121,7 +121,7 @@ function main() {
 
   if (faqSections.length !== faqSourceRows.length - 1) {
     errors.push(
-      `Expected 350 FAQ answer sections for 351 source questions, found ${faqSections.length}`,
+      `Expected 351 FAQ answer sections for 352 source questions, found ${faqSections.length}`,
     );
   }
   const duplicateQuestions = duplicateValues(faqSections.map((section) => section.question));

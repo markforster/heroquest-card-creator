@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Lists",
+  "formattingHelp.lists.move": "Move",
+  "formattingHelp.lists.door": "Open a door",
+  "formattingHelp.lists.attack": "Attack",
+  "formattingHelp.lists.rules": "Use - or 1. followed by 1–4 spaces. Indent a child by exactly 2 spaces (one nested level). Numbers continue from the first item. A blank or ordinary line ends a list. Wrapping hangs beneath the words; lists stay left aligned. Inline styles and dice work; HTML lists do not.",
+  "formattingHelp.lists.compatibility": "Existing cards also use this syntax. Write \\- or \\1. for a literal marker (one backslash). Other backslashes stay unchanged. Nesting uses more space; check Scale to fit and Text clipped.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Alignment",

@@ -14,6 +14,8 @@ import d6Pips3Url from "@/assets/dice/d6_pips_3.svg?url";
 import d6Pips6Url from "@/assets/dice/d6_pips_6.svg?url";
 import { useI18n } from "@/i18n/I18nProvider";
 
+import FormattingHelpLists from "./FormattingHelpLists";
+
 type CheatRow = {
   code: string | string[];
   output: React.ReactNode;
@@ -109,6 +111,7 @@ export default function FormattingHelpContent() {
   return (
     <div className={styles.formattingHelpBody}>
       <div className={styles.formattingHelpGrid}>
+        <FormattingHelpLists />
         <CheatCard
           title={t("formattingHelp.markdown")}
           rows={[

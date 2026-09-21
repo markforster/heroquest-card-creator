@@ -15,6 +15,8 @@ function buildMockLayout({
     kind: "text" as const,
     tokens: [],
     height: fontSize,
+    maxFontSize: fontSize,
+    baselineOffset: fontSize,
   }));
   const paragraphRows = Array.from({ length: paragraphGapCount }, () => ({
     kind: "paragraph-gap" as const,

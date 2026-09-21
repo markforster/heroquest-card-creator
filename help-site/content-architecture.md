@@ -49,8 +49,8 @@ The structure deliberately keeps concepts, screen orientation, capabilities, goa
 The first public draft is complete only when:
 
 - every source reader article is mapped to one public destination or deliberately replaced by a section landing page;
-- all 351 canonical question IDs occur in public-page metadata;
-- all canonical question wordings and concise answers appear in the FAQ (350 distinct wordings across 351 IDs);
+- all 352 canonical question IDs occur in public-page metadata;
+- all canonical question wordings and concise answers appear in the FAQ (351 distinct wordings across 352 IDs);
 - no public page contains unresolved Obsidian links;
 - every Markdown link resolves;
 - MkDocs builds successfully in strict mode;

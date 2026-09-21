@@ -50,6 +50,16 @@ Hero and Monster cards use a flexible text area instead. Logo Back has no body-t
 
 Scale to fit prioritizes keeping all wording visible. For a more readable result, remove blank lines, shorten the copy, reduce larger formatting, or use a more suitable template. Turning fitting off restores the ordinary text size, but the preview may then clip the overflow.
 
+## A list looks wrong or takes too much space
+
+Use `- ` or a number followed by `. `, and exactly two ordinary spaces for a child.
+A double dash does not create nesting, and HTML list tags are not supported.
+An ordinary line ends the list. See the [exact list syntax](../making-cards/format-card-text.md#lists).
+
+Nested items have less width and can wrap more. Reduce nesting or blank lines,
+shorten the items, or enable Scale to fit. Clipping keeps only the content before
+the first row that cannot fit; it does not skip that row to show a later item.
+
 ## The field will not accept more text
 
 Body text has a 2,000-character limit. Shorten the content before continuing. Reaching this limit is different from visual clipping: shorter text can still overflow because of its formatting or the available area.

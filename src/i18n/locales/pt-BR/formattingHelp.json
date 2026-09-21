@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listas",
+  "formattingHelp.lists.move": "Mover",
+  "formattingHelp.lists.door": "Abrir uma porta",
+  "formattingHelp.lists.attack": "Atacar",
+  "formattingHelp.lists.rules": "Use 1–4 espaços após - ou 1. Um subitem começa com exatamente 2 espaços (um nível). A numeração continua a partir do primeiro número. Uma linha vazia ou normal encerra a lista. As linhas seguintes se alinham ao texto; listas ficam à esquerda. Estilos e dados funcionam, listas HTML não.",
+  "formattingHelp.lists.compatibility": "Isso também vale para cartas existentes. Digite \\- ou \\1. para um marcador literal (uma barra invertida). As outras barras não mudam. Subitens ocupam mais espaço; confira o ajuste e o texto cortado.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Alinhamento",

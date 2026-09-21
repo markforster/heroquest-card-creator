@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Elenchi",
+  "formattingHelp.lists.move": "Muovi",
+  "formattingHelp.lists.door": "Apri una porta",
+  "formattingHelp.lists.attack": "Attacca",
+  "formattingHelp.lists.rules": "Dopo - o 1. usa da 1 a 4 spazi. Un sottoelemento inizia con esattamente 2 spazi (un livello). La numerazione prosegue dal primo numero. Una riga vuota o normale termina l’elenco. Il testo a capo resta allineato alle parole; gli elenchi sono a sinistra. Stili e dadi funzionano, gli elenchi HTML no.",
+  "formattingHelp.lists.compatibility": "Vale anche per le carte esistenti. Scrivi \\- o \\1. per un marcatore letterale (una barra inversa). Le altre barre restano invariate. I sottoelenchi occupano più spazio; controlla adattamento e testo tagliato.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Allineamento",

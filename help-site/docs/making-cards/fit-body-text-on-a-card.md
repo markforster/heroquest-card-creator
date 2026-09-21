@@ -41,6 +41,11 @@ Formatting also affects how much room the text needs. Larger scale tags, heading
 
 ## What if Scale to fit is not enough?
 
+List markers and indentation use some of the available width. Nested items can
+wrap onto more rows than ordinary paragraphs. Fitting recalculates marker columns,
+indentation and line wrapping together at each size. Reduce nesting or unnecessary
+blank lines if the result is crowded; fitting cannot guarantee that every list fits.
+
 Fitting has a minimum readable size. If the content still cannot fit, the preview continues to show **Text clipped**. The app does not remove your saved wording, but the part outside the visible area is not shown on the card.
 
 Use [Fix Clipped or Overflowing Card Text](../troubleshooting/fix-clipped-or-overflowing-card-text.md) to recover it.

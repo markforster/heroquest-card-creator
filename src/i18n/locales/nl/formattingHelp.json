@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Lijsten",
+  "formattingHelp.lists.move": "Bewegen",
+  "formattingHelp.lists.door": "Een deur openen",
+  "formattingHelp.lists.attack": "Aanvallen",
+  "formattingHelp.lists.rules": "Gebruik 1–4 spaties na - of 1. Een subitem begint met precies 2 spaties (één subniveau). Nummering gaat door vanaf het eerste getal. Een lege of gewone regel beëindigt de lijst. Vervolgregels staan onder de woorden; lijsten zijn links uitgelijnd. Tekststijlen en dobbelstenen werken, HTML-lijsten niet.",
+  "formattingHelp.lists.compatibility": "Dit geldt ook voor bestaande kaarten. Typ \\- of \\1. voor een letterlijk teken (één backslash). Andere backslashes blijven staan. Inspringen kost ruimte; controleer passend maken en afgekapt tekst.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Uitlijning",

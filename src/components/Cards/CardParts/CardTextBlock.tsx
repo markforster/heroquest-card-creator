@@ -9,11 +9,19 @@ import type {
   InlineTextStyle,
   TextAlignment,
   TextRun,
+  CardTextLayout,
+  TextLine,
+  RowMetrics,
+  LeaderLayout,
 } from "@/components/Cards/CardParts/bodyText/types";
 import { CARD_TEXT_BOLD_ITALIC_FONT_FAMILY, CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 import { tokenizeInlineDice, type InlineDiceSegment } from "@/lib/inline-dice";
 import { createTextMeasurer } from "@/lib/text-fitting/measure";
 import { runsToTokens, wrapTokens, type WrapToken } from "@/lib/text-fitting/wrap";
+
+import { collectListRun } from "./bodyText/listBlocks";
+import { layoutListRun } from "./bodyText/listLayout";
+import { classifyListLine } from "./bodyText/listSyntax";
 
 import type { CSSProperties } from "react";
 
@@ -37,14 +45,10 @@ type CardTextBlockProps = {
   debug?: boolean;
   fitToBounds?: boolean;
   showOverflowWarning?: boolean;
+  enableLists?: boolean;
 };
 
 type TextMeasureToken = Extract<WrapToken, { kind: "text" }>;
-type RowMetrics = {
-  height: number;
-  maxFontSize: number;
-  baselineOffset: number;
-};
 
 const CARD_BODY_LINE_HEIGHT = 1.05;
 const OVERFLOW_WARNING_COLOR = "#d62839";
@@ -73,42 +77,9 @@ const DICE_BG_COLOR = "#ffffff";
 const DICE_BORDER_COLOR = "#111111";
 const DICE_BORDER_WIDTH = 1;
 
-type TextLine =
-  | ({ kind: "text"; tokens: BodyTextToken[]; align?: TextAlignment } & RowMetrics)
-  | ({
-      kind: "leader";
-      labelTokens: BodyTextToken[];
-      valueTokens: BodyTextToken[];
-      separator: string;
-      leaderLayout?: LeaderLayout;
-      align?: TextAlignment;
-    } & RowMetrics)
-  | ({
-      kind: "leader-continuation";
-      valueTokens: BodyTextToken[];
-      leaderLayout: LeaderLayout;
-      align?: TextAlignment;
-    } & RowMetrics)
-  | {
-      kind: "paragraph-gap";
-      height: number;
-    };
-
-export type CardTextLayout = {
-  rows: TextLine[];
-  lines: TextLine[];
-  lineHeight: number;
-  paragraphGap: number;
-  totalHeight: number;
-};
+export type { CardTextLayout } from "./bodyText/types";
 
 type TextToken = BodyTextToken;
-
-type LeaderLayout = {
-  valueStartOffset: number;
-  valueColumnWidth: number;
-  leaderPadding: number;
-};
 
 type LeaderGroupSettings = {
   pivotMode: "auto" | "fixed";
@@ -143,6 +114,7 @@ export function layoutCardText({
   fontWeight,
   letterSpacingEm,
   defaultAlign = "left",
+  enableLists = false,
 }: {
   text?: string | null;
   width: number;
@@ -152,6 +124,7 @@ export function layoutCardText({
   fontWeight?: number | string;
   letterSpacingEm?: number;
   defaultAlign?: TextAlignment;
+  enableLists?: boolean;
 }): CardTextLayout {
   const effectiveLineHeight = lineHeight ?? fontSize * CARD_BODY_LINE_HEIGHT;
   const paragraphGap = effectiveLineHeight;
@@ -169,6 +142,7 @@ export function layoutCardText({
 
   const logicalLines = text.split(/\r?\n/);
   const rows: TextLine[] = [];
+  let horizontalOverflow = false;
   let currentAlign: TextAlignment = defaultAlign;
   const measure = createStyledTextMeasure({
     fontSize,
@@ -608,6 +582,29 @@ export function layoutCardText({
       continue;
     }
 
+    if (enableLists) {
+      const candidate = classifyListLine(logicalLine);
+      if (candidate?.kind === "escaped") {
+        pushAlignedLine(candidate.text, currentAlign);
+        continue;
+      }
+      if (candidate?.kind === "item" && candidate.depth === 0) {
+        const collected = collectListRun(logicalLines, index);
+        const result = layoutListRun({
+          runs: collected.runs,
+          safeWidth,
+          fontSize,
+          measure,
+          tokenize: (content) =>
+            injectDiceAdjacentSpaces(segmentsToTokens(tokenizeInlineDice(content), fontSize)),
+          metrics: (tokens) => computeRowMetrics(tokens, fontSize, lineHeightRatio),
+        });
+        rows.push(...result.rows);
+        horizontalOverflow ||= result.horizontalOverflow;
+        index = collected.nextIndex - 1;
+        continue;
+      }
+    }
     pushAlignedLine(logicalLine, currentAlign);
   }
 
@@ -618,7 +615,14 @@ export function layoutCardText({
   const lines = rows.filter((row) => row.kind !== "paragraph-gap");
   const totalHeight = rows.reduce((sum, row) => sum + row.height, 0);
 
-  return { rows, lines, lineHeight: effectiveLineHeight, paragraphGap, totalHeight };
+  return {
+    rows,
+    lines,
+    lineHeight: effectiveLineHeight,
+    paragraphGap,
+    totalHeight,
+    ...(horizontalOverflow ? { horizontalOverflow: true } : {}),
+  };
 }
 
 export default function CardTextBlock({
@@ -634,6 +638,7 @@ export default function CardTextBlock({
   debug = false,
   fitToBounds = false,
   showOverflowWarning = false,
+  enableLists = false,
 }: CardTextBlockProps) {
   const maskPrefix = useId().replace(/:/g, "");
   const { rows, lines, fittedFontSize, overflowed } = layoutCardTextToBounds({
@@ -647,6 +652,7 @@ export default function CardTextBlock({
     fontWeight,
     letterSpacingEm,
     defaultAlign: align,
+    enableLists,
     fitToBounds,
   });
 
@@ -701,14 +707,30 @@ export default function CardTextBlock({
 
           const lineY = bounds.y + verticalOffset + line.baselineOffset;
 
-          if (line.kind === "text") {
+          if (line.kind === "text" || line.kind === "list") {
+            if (line.kind === "list" && line.marker) {
+              elements.push(
+                <text
+                  key={`${renderedLineIndex}-marker`}
+                  data-list-marker="true"
+                  x={bounds.x + line.markerEnd}
+                  y={lineY}
+                  textAnchor="end"
+                  fill={fill}
+                  style={textStyle}
+                >
+                  {line.marker}
+                </text>,
+              );
+            }
             elements.push(
               ...renderTokenLine({
                 lineTokens: line.tokens,
                 lineY,
                 lineHeight: line.height,
-                bounds,
-                lineAlign: line.align ?? align,
+                bounds:
+                  line.kind === "list" ? { ...bounds, x: bounds.x + line.contentOffset } : bounds,
+                lineAlign: line.kind === "list" ? "left" : (line.align ?? align),
                 measure: measureWithSpacing,
                 fill,
                 textStyle,
@@ -931,11 +953,11 @@ export function clipRowsToHeight(rows: TextLine[], maxHeight: number): TextLine[
   const clipped: TextLine[] = [];
   let consumedHeight = 0;
 
-  rows.forEach((row) => {
-    if (consumedHeight + row.height > maxHeight) return;
+  for (const row of rows) {
+    if ((row.kind === "list" && row.blocked) || consumedHeight + row.height > maxHeight) break;
     clipped.push(row);
     consumedHeight += row.height;
-  });
+  }
 
   while (clipped.length > 0 && clipped[clipped.length - 1]?.kind === "paragraph-gap") {
     clipped.pop();
@@ -1100,6 +1122,7 @@ export function measureCardTextMaxLineWidth({
   fontWeight,
   letterSpacingEm,
   defaultAlign = "left",
+  enableLists = false,
 }: {
   text?: string | null;
   width: number;
@@ -1109,6 +1132,7 @@ export function measureCardTextMaxLineWidth({
   fontWeight?: number | string;
   letterSpacingEm?: number;
   defaultAlign?: "left" | "center" | "right";
+  enableLists?: boolean;
 }): { maxLineWidth: number; lineHeight: number; lines: CardTextLayout["lines"] } {
   const { lines, lineHeight: effectiveLineHeight } = layoutCardText({
     text,
@@ -1119,6 +1143,7 @@ export function measureCardTextMaxLineWidth({
     fontWeight,
     letterSpacingEm,
     defaultAlign,
+    enableLists,
   });
 
   if (!lines.length) {
@@ -1135,6 +1160,13 @@ export function measureCardTextMaxLineWidth({
   let maxLineWidth = 0;
 
   lines.forEach((line) => {
+    if (line.kind === "list") {
+      maxLineWidth = Math.max(
+        maxLineWidth,
+        line.contentOffset + measureTokensWidth(line.tokens, measure),
+      );
+      return;
+    }
     if (line.kind === "text") {
       const widthValue = measureTokensWidth(line.tokens, measure);
       maxLineWidth = Math.max(maxLineWidth, widthValue);

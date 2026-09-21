@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Lister",
+  "formattingHelp.lists.move": "Flyt",
+  "formattingHelp.lists.door": "Åbn en dør",
+  "formattingHelp.lists.attack": "Angrib",
+  "formattingHelp.lists.rules": "Brug 1–4 mellemrum efter - eller 1. Underpunkter begynder med præcis 2 mellemrum (ét niveau). Nummereringen fortsætter fra første tal. En tom eller almindelig linje afslutter listen. Ombrydninger står under ordene; lister er venstrestillede. Tekststile og terninger virker, HTML-lister gør ikke.",
+  "formattingHelp.lists.compatibility": "Gælder også eksisterende kort. Skriv \\- eller \\1. for et bogstaveligt tegn (én omvendt skråstreg). Andre skråstreger bevares. Underpunkter kræver mere plads; kontrollér tilpasning og afskåret tekst.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Justering",

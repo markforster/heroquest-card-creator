@@ -2,10 +2,18 @@
 title: Card, Template, and Text Questions
 type: faq
 status: first-draft
-source_questions: [Q-0004, Q-0006, Q-0007, Q-0008, Q-0009, Q-0010, Q-0011, Q-0015, Q-0026, Q-0027, Q-0028, Q-0029, Q-0030, Q-0031, Q-0032, Q-0033, Q-0034, Q-0035, Q-0036, Q-0065, Q-0088, Q-0090, Q-0091, Q-0092, Q-0093, Q-0094, Q-0095, Q-0096, Q-0097, Q-0098, Q-0099, Q-0100, Q-0101, Q-0102, Q-0103, Q-0104, Q-0105, Q-0106, Q-0189, Q-0190, Q-0191, Q-0192, Q-0193, Q-0194, Q-0195, Q-0196, Q-0197, Q-0198, Q-0199, Q-0200, Q-0253, Q-0254, Q-0255, Q-0256, Q-0257, Q-0258, Q-0259, Q-0260, Q-0262, Q-0263, Q-0264, Q-0265, Q-0266, Q-0267, Q-0268, Q-0269, Q-0270, Q-0271, Q-0272, Q-0273, Q-0274, Q-0275, Q-0276, Q-0277, Q-0278, Q-0279, Q-0282, Q-0283, Q-0284, Q-0285, Q-0286, Q-0287, Q-0288, Q-0289, Q-0290, Q-0291, Q-0296, Q-0297, Q-0301, Q-0345]
+source_questions: [Q-0004, Q-0006, Q-0007, Q-0008, Q-0009, Q-0010, Q-0011, Q-0015, Q-0026, Q-0027, Q-0028, Q-0029, Q-0030, Q-0031, Q-0032, Q-0033, Q-0034, Q-0035, Q-0036, Q-0065, Q-0088, Q-0090, Q-0091, Q-0092, Q-0093, Q-0094, Q-0095, Q-0096, Q-0097, Q-0098, Q-0099, Q-0100, Q-0101, Q-0102, Q-0103, Q-0104, Q-0105, Q-0106, Q-0189, Q-0190, Q-0191, Q-0192, Q-0193, Q-0194, Q-0195, Q-0196, Q-0197, Q-0198, Q-0199, Q-0200, Q-0253, Q-0254, Q-0255, Q-0256, Q-0257, Q-0258, Q-0259, Q-0260, Q-0262, Q-0263, Q-0264, Q-0265, Q-0266, Q-0267, Q-0268, Q-0269, Q-0270, Q-0271, Q-0272, Q-0273, Q-0274, Q-0275, Q-0276, Q-0277, Q-0278, Q-0279, Q-0282, Q-0283, Q-0284, Q-0285, Q-0286, Q-0287, Q-0288, Q-0289, Q-0290, Q-0291, Q-0296, Q-0297, Q-0301, Q-0345, Q-0352]
 ---
 
 # Card, Template, and Text Questions
+
+## Can I use bullet and numbered lists in card text?
+
+Yes. Start an item with `- ` or `1. ` and indent a child by exactly two spaces.
+Numbers continue automatically from the first item. A blank or ordinary line ends
+the list. Existing rich text and dice work inside items; HTML lists do not.
+
+[Read the full guidance](../making-cards/format-card-text.md#lists)
 
 These concise answers use the same wording captured during product exploration. Follow the linked guide when you need fuller context or step-by-step instructions.
 
