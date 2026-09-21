@@ -86,7 +86,7 @@ Duplicates and failed files are not included in Recently uploaded. Renamed accep
 
 The upload itself has completed, but the app is still deciding whether to organize the image as Artwork or Icon. Wait for **Classifying** to change to Artwork, Icon, or Unknown before trying to override it.
 
-If the final result is unsuitable, select the asset and use **Override classification**. In Safari, automatic classification is unavailable; manual classification remains available.
+If the final result is unsuitable, click the classification pill with the downward chevron below the thumbnail, or select the asset and click its **Asset kind** pill in the inspector. Under **Override classification**, choose **Artwork** or **Icon**. See [Correct an image's kind](../managing-your-library/assets/upload-and-organize-assets.md#correct-an-images-kind). In Safari, automatic classification is unavailable; manual classification remains available.
 
 ## Safest way to retry a partial batch
 

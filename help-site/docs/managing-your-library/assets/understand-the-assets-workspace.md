@@ -64,7 +64,7 @@ Selecting an image opens its inspector. It shows:
 
 <!-- help-visual:p050:start -->
 <figure class="hqcc-help-figure hqcc-help-figure--wide" markdown="span">
-  ![Assets workspace with selected thumbnails and an inspector previewing a snowy landscape asset.](../../assets/placements/p050--managing-your-library-assets-understand-the-assets-workspace--inspector.jpg)
+  ![Assets workspace with a selected parchment image, classification chevrons, and the right-hand inspector.](../../assets/placements/p050--managing-your-library-assets-understand-the-assets-workspace--inspector.jpg)
   <figcaption>Selecting an asset opens its full preview, metadata, classification, and usage information.</figcaption>
 </figure>
 <!-- help-visual:p050:end -->
@@ -82,7 +82,7 @@ When several images are selected, the inspector becomes a carousel. Use **Previo
 
 Asset kind helps the app offer suitable images in card fields. **Artwork** is intended for the main illustration or background area. **Icon** is intended for smaller icon fields, such as the Monster Card icon.
 
-The app classifies uploads automatically, but the result is only organization. To correct it, select the image, choose its current kind in the inspector, and choose **Artwork** or **Icon** under **Override classification**. This does not alter the image file.
+When automatic classification is enabled and supported, the app suggests a kind for each upload. To change it, click the classification pill and downward chevron below the thumbnail, or select the image and use the **Asset kind** pill in the inspector. Choose **Artwork** or **Icon** under **Override classification**. The chevron points up while the menu is open. This does not alter the image file. See [Correct an image's kind](./upload-and-organize-assets.md#correct-an-images-kind) for the full steps.
 
 ## Known v0.8.0 usage issue
 

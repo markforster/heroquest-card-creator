@@ -2,6 +2,8 @@
 
 import {
   BookOpen,
+  ChevronDown,
+  ChevronUp,
   CircleUserRound,
   Download,
   ImagePlus,
@@ -10,7 +12,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext } from "react-hook-form";
 
@@ -24,6 +26,7 @@ import AssetsEmptyState from "@/components/Assets/AssetsEmptyState";
 import { RESOURCES_MENU_LINKS, type ResourceMenuIcon } from "@/components/Assets/assetsResources";
 import getImageDimensions from "@/components/Assets/getImageDimensions";
 import UploadProgressOverlay from "@/components/Assets/UploadProgressOverlay";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import IconButton from "@/components/common/IconButton";
 import ModalShell from "@/components/common/ModalShell";
 import { WarningNotice } from "@/components/common/Notice";
@@ -348,9 +351,22 @@ export default function AssetsPanelContent({
       if (kindAnchorRef.current?.contains(target)) return;
       setActiveKindPopoverId(null);
     };
+    kindPopoverRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
     window.addEventListener("mousedown", handlePointer);
-    return () => window.removeEventListener("mousedown", handlePointer);
+    return () => {
+      window.removeEventListener("mousedown", handlePointer);
+    };
   }, [activeKindPopoverId]);
+
+  const kindEscapeId = useId();
+  useEscapeModalAware({
+    id: kindEscapeId,
+    isOpen: Boolean(activeKindPopoverId),
+    onEscape: () => {
+      setActiveKindPopoverId(null);
+      kindAnchorRef.current?.focus();
+    },
+  });
 
   useLayoutEffect(() => {
     if (!activeKindPopoverId) return;
@@ -1284,6 +1300,12 @@ export default function AssetsPanelContent({
       { params: { id: activeKindAsset.id } },
     );
     setActiveKindPopoverId(null);
+    requestAnimationFrame(() => {
+      const trigger = assetsGridRef.current?.querySelector<HTMLElement>(
+        `[data-asset-id="${CSS.escape(activeKindAsset.id)}"] [aria-haspopup="dialog"]`,
+      );
+      (trigger ?? searchInputRef.current)?.focus();
+    });
   };
 
   return (
@@ -1625,7 +1647,8 @@ export default function AssetsPanelContent({
                                   : styles.assetsKindBadgeUnknown
                             }`}
                             role="button"
-                            tabIndex={0}
+                            tabIndex={kindStatus === "classifying" ? -1 : 0}
+                            aria-disabled={kindStatus === "classifying"}
                             aria-haspopup="dialog"
                             aria-expanded={activeKindPopoverId === asset.id}
                             onMouseDown={(event) => {
@@ -1636,17 +1659,35 @@ export default function AssetsPanelContent({
                               event.preventDefault();
                               if (kindStatus === "classifying") return;
                               kindAnchorRef.current = event.currentTarget;
-                              setActiveKindPopoverId(asset.id);
+                              setActiveKindPopoverId((prev) =>
+                                prev === asset.id ? null : asset.id,
+                              );
                             }}
                             onKeyDown={(event) => {
                               if (event.key !== "Enter" && event.key !== " ") return;
                               event.preventDefault();
+                              event.stopPropagation();
                               if (kindStatus === "classifying") return;
                               kindAnchorRef.current = event.currentTarget;
-                              setActiveKindPopoverId(asset.id);
+                              setActiveKindPopoverId((prev) =>
+                                prev === asset.id ? null : asset.id,
+                              );
                             }}
                           >
                             {kindLabel}
+                            {kindStatus !== "classifying" ? (
+                              activeKindPopoverId === asset.id ? (
+                                <ChevronUp
+                                  className={styles.assetsKindChevron}
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  className={styles.assetsKindChevron}
+                                  aria-hidden="true"
+                                />
+                              )
+                            ) : null}
                           </span>
                         </div>
                       </button>
@@ -1752,6 +1793,10 @@ export default function AssetsPanelContent({
                 onClick={() => void applyManualKind("icon")}
                 disabled={!canOverrideKind}
               >
+                <span
+                  className={`${styles.assetsKindDot} ${styles.assetsKindDotIcon}`}
+                  aria-hidden="true"
+                />
                 {t("label.assetKindIcon")}
               </button>
               <button
@@ -1760,6 +1805,10 @@ export default function AssetsPanelContent({
                 onClick={() => void applyManualKind("artwork")}
                 disabled={!canOverrideKind}
               >
+                <span
+                  className={`${styles.assetsKindDot} ${styles.assetsKindDotArtwork}`}
+                  aria-hidden="true"
+                />
                 {t("label.assetKindArtwork")}
               </button>
               {!canOverrideKind ? (

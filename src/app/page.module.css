@@ -8249,6 +8249,7 @@
 
 .assetsKindBadge {
   display: inline-flex;
+  gap: 4px;
   align-items: center;
   justify-content: center;
   font-size: var(--text-xs);
@@ -8262,7 +8263,19 @@
   backdrop-filter: blur(6px);
 }
 
-button.assetsKindBadge:disabled {
+.assetsKindChevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.assetsKindBadge:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+button.assetsKindBadge:disabled,
+.assetsKindBadge[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -8296,13 +8309,23 @@ button.assetsKindBadge:disabled {
   color: var(--hq-asset-kind-unknown-text);
 }
 
+.assetsKindBadgeIcon,
+.assetsKindDotIcon {
+  --asset-kind-accent: rgba(56, 189, 248, 0.9);
+}
+
+.assetsKindBadgeArtwork,
+.assetsKindDotArtwork {
+  --asset-kind-accent: rgba(251, 191, 36, 0.9);
+}
+
 .assetsKindBadgeIcon {
-  border-color: rgba(56, 189, 248, 0.9);
+  border-color: var(--asset-kind-accent);
   background: rgba(2, 132, 199, 0.35);
 }
 
 .assetsKindBadgeArtwork {
-  border-color: rgba(251, 191, 36, 0.9);
+  border-color: var(--asset-kind-accent);
   background: rgba(245, 158, 11, 0.28);
 }
 
@@ -8359,6 +8382,9 @@ button.assetsKindBadge:disabled {
 }
 
 .assetsKindPopoverOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   text-align: left;
   padding: 6px 8px;
@@ -8368,6 +8394,14 @@ button.assetsKindBadge:disabled {
   color: inherit;
   font-size: var(--hq-control-text-primary);
   line-height: var(--hq-control-line-height);
+}
+
+.assetsKindDot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--asset-kind-accent);
 }
 
 .assetsKindPopoverOption:hover {
