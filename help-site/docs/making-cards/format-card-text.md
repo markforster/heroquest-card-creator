@@ -4,7 +4,7 @@ type: reference
 status: first-draft
 source_questions: [Q-0030, Q-0031, Q-0032, Q-0033, Q-0034, Q-0035, Q-0036, Q-0284, Q-0299, Q-0352]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Format Card Text
 

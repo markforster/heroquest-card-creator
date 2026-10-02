@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0290, Q-0291, Q-0292, Q-0293, Q-0294, Q-0296, Q-0297, Q-0299, Q-0300]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Fit Body Text on a Card
 

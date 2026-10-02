@@ -105,6 +105,12 @@ export default function BundledHelpContent() {
             <code>**double asterisks**</code>, italic uses <code>*single asterisks*</code>, and
             bold+italic uses <code>***triple asterisks***</code>.
           </li>
+          <li>
+            Card text also supports bullet and numbered lists. Start a line with <code>- </code> or
+            <code>1. </code>; use exactly two spaces for one nested level. Numbers continue from the
+            first number, and a blank or ordinary line ends the list. Prefix a marker with one
+            backslash when you want it to remain literal.
+          </li>
           <li>Text wraps automatically inside the available area on the card.</li>
           <li>
             For dotted “leader lines” (e.g. cost lines), wrap a line like
@@ -183,6 +189,12 @@ export default function BundledHelpContent() {
           <li>
             Image and Icon fields support autocomplete search; the current asset stays pinned in the
             results.
+          </li>
+          <li>
+            Assets are grouped as Artwork, Icon, or Unclassified. When classification has finished,
+            click the classification pill and its chevron below a thumbnail, or use the Asset kind
+            pill in the inspector, to choose Artwork or Icon. This changes organization and filtering,
+            not the image file; wait while an asset says Classifying.
           </li>
           <li>
             In Assets, the Resources menu (book icon) provides quick links to artwork downloads and
@@ -265,6 +277,11 @@ export default function BundledHelpContent() {
           <li>
             Most deck editing is drag-and-drop: reorder groups, move sets between groups, reorder
             entries, create groups from insertion boundaries, and drag cards directly into sets.
+          </li>
+          <li>
+            To reorder groups, drag the dedicated handle at the top-right of a group. Drag the set
+            itself when moving a set. The group order is saved with the deck, and the plus-button
+            rails create groups at specific boundaries.
           </li>
           <li>
             Entries support quantities so you can model repeated encounters, weighted treasure

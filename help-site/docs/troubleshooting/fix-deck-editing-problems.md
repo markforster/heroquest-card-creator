@@ -4,7 +4,7 @@ type: troubleshooting
 status: first-draft
 source_questions: [Q-0218, Q-0220, Q-0221, Q-0222, Q-0225, Q-0228, Q-0230, Q-0231, Q-0232, Q-0233, Q-0234]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Fix Deck Editing Problems
 
@@ -51,7 +51,7 @@ Empty groups are cleaned up automatically when other groups remain. Moving the o
 
 ## I cannot name or reorder groups
 
-This is expected. Groups are unnamed visual sections and are not reordered. Move and reorder the sets inside them instead. Sets are identified by their back-facing cards rather than separate names.
+Groups are unnamed visual sections, but they can be reordered in version 0.8.3. Use the dedicated handle at the top-right of a group and drag it left or right. Drag the set itself when you want to move a set within or between groups. Sets are identified by their back-facing cards rather than separate names.
 
 ## I cannot duplicate a deck or change a set's back
 

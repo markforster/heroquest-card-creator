@@ -4,7 +4,7 @@ type: screen-guide
 status: first-draft
 source_questions: [Q-0048, Q-0049, Q-0050, Q-0083, Q-0089, Q-0123, Q-0124, Q-0125, Q-0126, Q-0130, Q-0131, Q-0214, Q-0215, Q-0219]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Understand the Decks Workspace
 
@@ -48,7 +48,7 @@ An open deck has three main working areas.
 
 **Groups** is the upper board. It contains the deck's larger sections and the sets inside them. Each set is represented by its back-facing card.
 
-A new deck starts with an empty group. Drag a card from **Back faces** onto the empty card-shaped slot to create the first set. When more sets exist, groups become overlapping card fans. Point to a group to inspect it or select a set to expand that group. Set insertion, movement, cover-card, edit, and delete controls appear around the cards when relevant.
+A new deck starts with an empty group. Drag a card from **Back faces** onto the empty card-shaped slot to create the first set. When more sets exist, groups become overlapping card fans. Point to a group to inspect it or select a set to expand that group. Set insertion, movement, cover-card, edit, and delete controls appear around the cards when relevant. When the deck has more than one group, use the dedicated handle at the top-right of a group to reorder the groups; the saved order remains after reopening the deck.
 
 ### Entries
 

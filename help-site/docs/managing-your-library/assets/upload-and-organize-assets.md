@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0018, Q-0019, Q-0020, Q-0021, Q-0022, Q-0134, Q-0135, Q-0136, Q-0139]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Upload and Organize Assets
 

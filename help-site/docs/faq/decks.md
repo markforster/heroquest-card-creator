@@ -261,7 +261,7 @@ Drop a back at the right-side new-group position to create another group around 
 
 ## Can I name sets or groups, or reorder groups?
 
-Groups and sets have no separate names, and groups are not reordered; sets are identified by backs and can be moved within or between visual groups.
+Groups and sets have no separate names. Sets are identified by their backs and can be moved within or between groups. Groups can be reordered by dragging the dedicated handle on a group; the new order is saved with the deck.
 
 [Read the full guidance](../building-decks/organize-deck-groups-and-sets.md)
 

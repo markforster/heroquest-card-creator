@@ -4,7 +4,7 @@ type: troubleshooting
 status: first-draft
 source_questions: [Q-0018, Q-0020, Q-0139, Q-0316, Q-0317, Q-0318, Q-0319, Q-0320, Q-0321, Q-0322, Q-0323, Q-0324, Q-0325, Q-0326, Q-0327]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Fix Asset Upload Problems
 

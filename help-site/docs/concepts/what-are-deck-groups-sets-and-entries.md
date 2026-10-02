@@ -4,7 +4,7 @@ type: concept
 status: first-draft
 source_questions: [Q-0048, Q-0049, Q-0050, Q-0069, Q-0070, Q-0219, Q-0221, Q-0230]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # What Are Deck Groups, Sets, and Entries?
 
@@ -32,7 +32,7 @@ A group could contain a set using a Treasure back. The individual treasure front
 
 Groups with several sets appear as overlapping card fans. Point to a group for a partial view or select one of its sets to expand it fully. The selected set controls which fronts appear in Entries.
 
-Groups and sets do not need separate names: the back cards identify the sets, and their visual arrangement identifies the groups. You can reorder sets or move them between groups, but the groups themselves are not reordered.
+Groups and sets do not need separate names: the back cards identify the sets, and their visual arrangement identifies the groups. You can reorder sets or move them between groups, and you can reorder the groups themselves with the dedicated group handle.
 
 Removing a deck entry does not necessarily remove its pairing. A paired front that is no longer an entry becomes **Paired (Not In Set)** and can be recovered into the set.
 

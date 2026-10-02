@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0219, Q-0220, Q-0221, Q-0222, Q-0223, Q-0224, Q-0225, Q-0226, Q-0233, Q-0234]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Organize Deck Groups and Sets
 
@@ -28,7 +28,19 @@ A group with one set stays open. When a group contains several sets, its cards o
 
 The selected set also determines what appears in **Entries**.
 
-Groups and sets do not have separate user-entered names. A set is identified by its back card, and groups are visual sections created by the way sets are arranged. Groups themselves are not reordered.
+Groups and sets do not have separate user-entered names. A set is identified by its back card, and groups are visual sections created by the way sets are arranged.
+
+## Reorder groups
+
+When a deck contains more than one group, each group has a dedicated reorder handle at the top-right of its border.
+
+1. Press and hold the group's reorder handle.
+2. Drag the group left or right to the required position.
+3. Release when the insertion position is highlighted.
+
+The group moves as a whole. Dragging the handle changes the order of groups without changing the sets or entries inside them. To move an individual set, drag the set itself rather than the group handle. The new group order is saved and remains after you leave and reopen the deck.
+
+The plus-button rails at the beginning, between, and end of the group row create a new group at that position. Rails are insertion controls, not additional saved groups.
 
 ## Add a set or group
 
@@ -66,7 +78,7 @@ If you delete the final set from the only group, the empty group remains ready f
 
 ## Can I change a set's back?
 
-Version 0.8.0 does not offer a Change back action in the deck workspace. To use another back, delete the set and create a new set with the required back, then add or recover its entries.
+Version 0.8.3 does not offer a Change back action in the deck workspace. To use another back, delete the set and create a new set with the required back, then add or recover its entries.
 
 ## Related guides
 

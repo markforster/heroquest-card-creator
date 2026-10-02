@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0090, Q-0091, Q-0092, Q-0093, Q-0094, Q-0095, Q-0096, Q-0097, Q-0098]
 verified: 2026-07-22
-app_version: 0.8.1
+app_version: 0.8.3
 ---
 # Understand the Card Editing View
 

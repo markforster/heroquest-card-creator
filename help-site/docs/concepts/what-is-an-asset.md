@@ -4,7 +4,7 @@ type: concept
 status: first-draft
 source_questions: [Q-0016, Q-0018, Q-0021, Q-0022, Q-0023, Q-0025, Q-0026, Q-0132, Q-0135]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # What Is an Asset?
 

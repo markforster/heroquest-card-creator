@@ -4,7 +4,7 @@ type: screen-guide
 status: first-draft
 source_questions: [Q-0016, Q-0017, Q-0020, Q-0021, Q-0025, Q-0132, Q-0133, Q-0134, Q-0135, Q-0136, Q-0137, Q-0138, Q-0146]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Understand the Assets Workspace
 

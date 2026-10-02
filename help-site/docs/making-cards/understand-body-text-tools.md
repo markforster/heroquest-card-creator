@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0282, Q-0289, Q-0290, Q-0292, Q-0296, Q-0300, Q-0301]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Understand Body Text Tools
 
