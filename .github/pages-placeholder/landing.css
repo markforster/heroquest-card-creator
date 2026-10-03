@@ -1,51 +1,4 @@
-@font-face {
-  font-family: "Carter Sans W04";
-  src: url("./assets/brand/fonts/Carter Sans W04 Regular.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Carter Sans W04";
-  src: url("./assets/brand/fonts/Carter Sans W04 Medium.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 550;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Carter Sans W04";
-  src: url("./assets/brand/fonts/Carter Sans W04 Bold.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "HeroQuest";
-  src: url("./assets/brand/fonts/HeroQuest.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
-:root {
-  color-scheme: dark;
-  --hq-bg: #11100e;
-  --hq-panel: rgba(25, 22, 18, 0.9);
-  --hq-panel-soft: rgba(255, 255, 255, 0.035);
-  --hq-border: rgba(225, 170, 91, 0.36);
-  --hq-border-soft: rgba(225, 170, 91, 0.2);
-  --hq-accent: #d9a957;
-  --hq-accent-bright: #f3d9a8;
-  --hq-text: #ddd2c1;
-  --hq-text-strong: #f7e4c3;
-  --hq-text-muted: #c9bdab;
-  --hq-font-body: "Carter Sans W04", Arial, Helvetica, sans-serif;
-  --hq-font-display: Georgia, "Times New Roman", serif;
-  --hq-font-brand: "HeroQuest", "Cinzel", "Trajan Pro", serif;
-}
+@import url("./assets/brand/theme.css");
 
 * {
   box-sizing: border-box;
@@ -74,7 +27,7 @@ a {
 }
 
 a:hover {
-  color: #fff4dc;
+  color: var(--hq-link-hover);
 }
 
 .skip-link {
@@ -118,7 +71,7 @@ a:hover {
   gap: 0.8rem;
   color: var(--hq-accent);
   font-family: var(--hq-font-brand);
-  font-size: 0.98rem;
+  font-size: var(--hq-size-brand);
   letter-spacing: 0.03em;
   text-decoration: none;
 }
@@ -137,7 +90,7 @@ a:hover {
 
 .site-header__nav a {
   color: var(--hq-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--hq-size-nav);
   text-decoration: none;
 }
 
@@ -220,7 +173,7 @@ a:hover {
 
 .cta--primary {
   background: rgba(217, 169, 87, 0.13);
-  color: #fff4dc;
+  color: var(--hq-link-hover);
 }
 
 .cta--secondary {
@@ -271,7 +224,7 @@ a:hover {
   margin: 0.8rem 0 0;
   color: var(--hq-text-muted);
   font-size: 1rem;
-  line-height: 1.65;
+  line-height: var(--hq-line-intro);
 }
 
 .demo-video__frame {
@@ -340,7 +293,7 @@ a:hover {
   display: block;
   margin-top: 0.8rem;
   color: var(--hq-text-muted);
-  font-size: 0.98rem;
+  font-size: var(--hq-size-brand);
   line-height: 1.55;
 }
 
@@ -407,14 +360,14 @@ a:hover {
 
 .page-content__intro h2 {
   color: var(--hq-accent-bright);
-  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-size: var(--hq-size-page-title);
 }
 
 .page-content__intro p {
   margin: 0.8rem 0 0;
   color: var(--hq-text-muted);
-  font-size: 1.05rem;
-  line-height: 1.65;
+  font-size: var(--hq-size-intro);
+  line-height: var(--hq-line-intro);
 }
 
 .page-content section + section {
@@ -423,12 +376,12 @@ a:hover {
 
 .page-content section h3 {
   margin-bottom: 1rem;
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-size: var(--hq-size-section-title);
 }
 
 .page-content section p {
   margin: 0.8rem 0 0;
-  line-height: 1.7;
+  line-height: var(--hq-line-body);
 }
 
 .feature-grid,
@@ -499,7 +452,7 @@ a:hover {
 .feature-row h4,
 .workflow-card h4,
 .faq-item h4 {
-  font-size: 1.15rem;
+  font-size: var(--hq-size-card-title);
 }
 
 .feature-row p,
@@ -507,7 +460,7 @@ a:hover {
 .faq-item p {
   margin: 0.7rem 0 0;
   color: var(--hq-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--hq-size-card-body);
 }
 
 .community-grid {
@@ -527,14 +480,14 @@ a:hover {
   margin: 0;
   color: var(--hq-accent);
   font-family: var(--hq-font-display);
-  font-size: 1.15rem;
+  font-size: var(--hq-size-card-title);
   font-weight: 400;
 }
 
 .community-card p {
   margin: 0.7rem 0 0;
   color: var(--hq-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--hq-size-card-body);
 }
 
 .site-footer {
@@ -561,7 +514,7 @@ a:hover {
 
 .site-footer__inner a {
   color: var(--hq-text-muted);
-  font-size: 0.88rem;
+  font-size: var(--hq-size-footer);
   text-decoration: none;
 }
 
