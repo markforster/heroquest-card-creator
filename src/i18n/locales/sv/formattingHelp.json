@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listor",
+  "formattingHelp.lists.move": "Flytta",
+  "formattingHelp.lists.door": "Öppna en dörr",
+  "formattingHelp.lists.attack": "Anfall",
+  "formattingHelp.lists.rules": "Använd 1–4 blanksteg efter - eller 1. Underpunkter börjar med exakt 2 blanksteg (en nivå). Numreringen fortsätter från första talet. En tom eller vanlig rad avslutar listan. Radbrytningar hamnar under orden; listor är vänsterställda. Textstilar och tärningar fungerar, HTML-listor gör det inte.",
+  "formattingHelp.lists.compatibility": "Gäller även befintliga kort. Skriv \\- eller \\1. för ett bokstavligt tecken (ett omvänt snedstreck). Övriga snedstreck behålls. Underpunkter tar mer plats; kontrollera anpassning och avklippt text.",
   "formattingHelp.markdown": "Markdown (språk)",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Justering",

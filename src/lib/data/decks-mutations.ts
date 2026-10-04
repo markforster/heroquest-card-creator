@@ -295,6 +295,13 @@ export async function deleteGroup(groupId: string): Promise<void> {
  */
 export async function reorderGroups(deckId: string, orderedGroupIds: string[]): Promise<void> {
   const groups = await listGroups(deckId);
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[groups:reorder] indexeddb before", {
+      deckId,
+      requestedGroupIds: JSON.stringify(orderedGroupIds),
+      storedGroups: groups.map((group) => ({ id: group.id, sortIndex: group.sortIndex })),
+    });
+  }
   const groupMap = new Map(groups.map((group) => [group.id, group]));
   const db = await openHqccDexieDb();
   const updates = orderedGroupIds
@@ -311,6 +318,17 @@ export async function reorderGroups(deckId: string, orderedGroupIds: string[]): 
     await db.deckGroups.bulkPut(updates);
   }
   await touchDeckUpdatedAt(deckId);
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[groups:reorder] indexeddb after", {
+      deckId,
+      writtenGroups: JSON.stringify(
+        updates.map((group) => ({ id: group.id, sortIndex: group.sortIndex })),
+      ),
+      persistedGroups: JSON.stringify(
+        (await listGroups(deckId)).map((group) => ({ id: group.id, sortIndex: group.sortIndex })),
+      ),
+    });
+  }
   orderedGroupIds.forEach((id) => enqueueDbEstimateChange(GROUPS_STORE, id));
 }
 

@@ -9,6 +9,7 @@ import {
   createDefaultExportSettings,
   getExportSettings,
   hasLegacyExportSettings,
+  normalizeExportSettings,
   type ExportSettings,
 } from "@/lib/export-settings";
 
@@ -37,7 +38,7 @@ export const EXPORT_PROFILES_SCHEMA_VERSION = 1 as const;
 export const DEFAULT_EXPORT_PROFILE_NAME = "Default";
 
 function cloneExportSettings(settings: ExportSettings): ExportSettings {
-  return JSON.parse(JSON.stringify(settings)) as ExportSettings;
+  return JSON.parse(JSON.stringify(normalizeExportSettings(settings))) as ExportSettings;
 }
 
 function createProfileRecord(input: {

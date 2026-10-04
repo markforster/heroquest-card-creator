@@ -22,6 +22,7 @@ import {
   DEFAULT_CROP_MARK_STYLE,
   DEFAULT_CUT_MARK_COLOR,
   DEFAULT_CUT_MARK_STYLE,
+  DEFAULT_EXPORT_IMAGE_FORMAT,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
   DEFAULT_PDF_PRINT_CONFIG,
   normalizeBleedPx,
@@ -222,6 +223,7 @@ function parseLegacyExportSettings(
   };
 
   return {
+    imageFormat: DEFAULT_EXPORT_IMAGE_FORMAT,
     bleed: {
       enabled: readBool(localStorage.exportBleedEnabled, false),
       bleedPx: normalizeBleedPx(localStorage.exportBleedPx ?? DEFAULT_BLEED_PX),

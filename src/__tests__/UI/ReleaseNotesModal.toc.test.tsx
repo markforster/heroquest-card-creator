@@ -10,6 +10,8 @@ const expectedSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-3", "Update 04/10/2026 (v0.8.3)"],
+  ["about-update-v0-8-2", "Update 06/09/2026 (v0.8.2)"],
   ["about-update-v0-8-1", "Update 29/08/2026 (v0.8.1)"],
   ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
   ["about-update-v0-7-1", "Update 12/07/2026 (v0.7.1)"],
@@ -112,7 +114,7 @@ describe("ReleaseNotesModal TOC", () => {
     expect(
       sections.map((section) => [section.id, section.querySelector("h3")?.textContent ?? ""]),
     ).toEqual(expectedSections);
-    expect(document.querySelectorAll("article section p")).toHaveLength(59);
+    expect(document.querySelectorAll("article section p")).toHaveLength(67);
     expect(document.querySelectorAll("article section ul")).toHaveLength(16);
     expect(document.querySelectorAll("article section li")).toHaveLength(106);
     expect(
@@ -132,8 +134,18 @@ describe("ReleaseNotesModal TOC", () => {
     );
   });
 
-  it("renders the new 0.8.1, 0.8.0, 0.7.1, 0.6.1 and 0.6.2 release summaries", () => {
+  it("renders the recent release summaries", () => {
     renderModal();
+
+    expect(screen.getByRole("heading", { name: "Update 04/10/2026 (v0.8.3)" })).toBeInTheDocument();
+    expect(screen.getByText(/PDF exports now use JPEG card images by default/)).toBeInTheDocument();
+    expect(screen.getByText(/bulk image exports remain PNG/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/simple bullet and numbered lists, including one level of nesting/i),
+    ).toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { name: "Update 06/09/2026 (v0.8.2)" })).toBeInTheDocument();
+    expect(screen.getByText(/italic formatting.*could appear as bold italic/i)).toBeInTheDocument();
 
     expect(screen.getByRole("heading", { name: "Update 29/08/2026 (v0.8.1)" })).toBeInTheDocument();
     expect(

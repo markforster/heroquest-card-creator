@@ -1,0 +1,62 @@
+/* Shared source for microsite and template site. Run npm run brand:sync after editing. */
+@font-face {
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 550;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Carter Sans W04";
+  src: url("./fonts/Carter Sans W04 Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "HeroQuest";
+  src: url("./fonts/HeroQuest.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --hq-bg: #11100e;
+  --hq-panel: rgba(25, 22, 18, 0.9);
+  --hq-panel-soft: rgba(255, 255, 255, 0.035);
+  --hq-border: rgba(225, 170, 91, 0.36);
+  --hq-border-soft: rgba(225, 170, 91, 0.2);
+  --hq-accent: #d9a957;
+  --hq-accent-bright: #f3d9a8;
+  --hq-text: #ddd2c1;
+  --hq-text-strong: #f7e4c3;
+  --hq-text-muted: #c9bdab;
+  --hq-size-brand: 0.98rem;
+  --hq-size-nav: 0.82rem;
+  --hq-size-footer: 0.88rem;
+  --hq-size-body: 1rem;
+  --hq-size-card-body: 0.9rem;
+  --hq-size-intro: 1.05rem;
+  --hq-size-page-title: clamp(2rem, 5vw, 3.2rem);
+  --hq-size-section-title: clamp(1.35rem, 3vw, 1.75rem);
+  --hq-size-card-title: 1.15rem;
+  --hq-line-body: 1.7;
+  --hq-line-intro: 1.65;
+  --hq-link-hover: #fff4dc;
+  --hq-font-body: "Carter Sans W04", Arial, Helvetica, sans-serif;
+  --hq-font-display: Georgia, "Times New Roman", serif;
+  --hq-font-brand: "HeroQuest", "Cinzel", "Trajan Pro", serif;
+}
+

@@ -1,7 +1,6 @@
 import { CARD_TEXT_FONT_FAMILY } from "@/lib/fonts";
 
-import type { TextAlignment } from "./types";
-import type { CardTextLayout } from "../CardTextBlock";
+import type { TextAlignment, CardTextLayout } from "./types";
 
 type LayoutFn = (input: {
   text?: string | null;
@@ -12,6 +11,7 @@ type LayoutFn = (input: {
   fontWeight?: number | string;
   letterSpacingEm?: number;
   defaultAlign?: TextAlignment;
+  enableLists?: boolean;
 }) => CardTextLayout;
 
 export type FittedCardTextLayout = CardTextLayout & {
@@ -33,6 +33,7 @@ export function layoutCardTextToBounds({
   defaultAlign = "left",
   fitToBounds = false,
   minFontSize = 12,
+  enableLists = false,
 }: {
   layout: LayoutFn;
   text?: string | null;
@@ -46,6 +47,7 @@ export function layoutCardTextToBounds({
   defaultAlign?: TextAlignment;
   fitToBounds?: boolean;
   minFontSize?: number;
+  enableLists?: boolean;
 }): FittedCardTextLayout {
   const resolveLayout = (size: number): CardTextLayout => {
     const lineHeightAtSize =
@@ -60,10 +62,12 @@ export function layoutCardTextToBounds({
       fontWeight,
       letterSpacingEm,
       defaultAlign,
+      enableLists,
     });
   };
 
-  const overflowsHeight = (candidate: CardTextLayout) => candidate.totalHeight > height;
+  const overflowsHeight = (candidate: CardTextLayout) =>
+    candidate.totalHeight > height || Boolean(candidate.horizontalOverflow);
 
   const initial = resolveLayout(fontSize);
   if (!fitToBounds || !text?.trim() || !Number.isFinite(height) || height <= 0) {

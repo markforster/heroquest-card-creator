@@ -10,7 +10,6 @@ import styles from "../../DeckGroupsSection2.module.css";
 export function CreateBoundaryPlaceholder({
   index,
   onCreate,
-  onHoverChange,
   visible,
 }: CreateBoundaryPlaceholderProps) {
   const { t } = useI18n();
@@ -35,10 +34,6 @@ export function CreateBoundaryPlaceholder({
           .filter(Boolean)
           .join(" ")}
         onClick={() => onCreate(index)}
-        onPointerEnter={() => onHoverChange(index, true)}
-        onPointerLeave={() => onHoverChange(index, false)}
-        onMouseEnter={() => onHoverChange(index, true)}
-        onMouseLeave={() => onHoverChange(index, false)}
         aria-label={t("decks.groups.actions.createAtPosition").replace("{index}", String(index))}
         title={t("decks.groups.actions.insertHere")}
         tabIndex={visible ? 0 : -1}

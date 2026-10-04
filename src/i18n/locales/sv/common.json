@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Bildformat",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "JPEG-PDF-filer var cirka 88 % mindre än PNG-PDF-filer i våra tester. Välj PNG för förlustfri export.",
   "app.title": "HeroQuest-kortskapare",
   "actions.template": "Mall",
   "actions.templates": "Mallar",

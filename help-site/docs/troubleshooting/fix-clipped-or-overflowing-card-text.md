@@ -4,7 +4,7 @@ type: troubleshooting
 status: first-draft
 source_questions: [Q-0292, Q-0293, Q-0294, Q-0295, Q-0297, Q-0298, Q-0299, Q-0301]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Fix Clipped or Overflowing Card Text
 
@@ -49,6 +49,16 @@ Hero and Monster cards use a flexible text area instead. Logo Back has no body-t
 ## Text fits, but it is too small
 
 Scale to fit prioritizes keeping all wording visible. For a more readable result, remove blank lines, shorten the copy, reduce larger formatting, or use a more suitable template. Turning fitting off restores the ordinary text size, but the preview may then clip the overflow.
+
+## A list looks wrong or takes too much space
+
+Use `- ` or a number followed by `. `, and exactly two ordinary spaces for a child.
+A double dash does not create nesting, and HTML list tags are not supported.
+An ordinary line ends the list. See the [exact list syntax](../making-cards/format-card-text.md#lists).
+
+Nested items have less width and can wrap more. Reduce nesting or blank lines,
+shorten the items, or enable Scale to fit. Clipping keeps only the content before
+the first row that cannot fit; it does not skip that row to show a later item.
 
 ## The field will not accept more text
 

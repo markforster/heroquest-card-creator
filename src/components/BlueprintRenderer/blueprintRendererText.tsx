@@ -6,6 +6,7 @@ import {
   useRegisterHoverAdornment,
   useSvgFocusTarget,
 } from "@/components/Cards/CardEditor/EditorTargetsContext";
+import { layoutCardTextToBounds } from "@/components/Cards/CardParts/bodyText/fit";
 import CardTextBlock, {
   clipRowsToHeight,
   layoutCardText,
@@ -454,11 +455,14 @@ export function TextLayer({
     typeof text === "string" ? splitTextOnHr(text).filter((segment) => segment.trim() !== "") : [];
   const useSegmentedBackdrop = shouldShowBackdrop && splitSegments.length > 1;
 
-  if (effectiveBackdrop.fitMode === "fit-to-text" && shouldShowBackdrop) {
+  if (effectiveBackdrop.fitMode === "fit-to-text" && shouldShowBackdrop && !useSegmentedBackdrop) {
     const fontSizeResolved = fontSize ?? 22;
     const safeWidth = Math.max(0, textBoundsBase.width - textPadding * 2);
     const { totalHeight } = layoutCardText({
       text: text as string,
+      enableLists: textKey === "description",
+      fontWeight,
+      letterSpacingEm,
       width: safeWidth,
       fontSize: fontSizeResolved,
       lineHeight,
@@ -519,31 +523,19 @@ export function TextLayer({
     const textAreaWidth = Math.max(0, paddedTextBounds.width);
     const textAreaX = paddedTextBounds.x;
     let cursorBubbleY = backdropBounds.y;
+    let exhausted = false;
 
     const segmentItems: Array<{
       text: string;
       textBounds: BlueprintBounds;
       backdropBounds: BlueprintBounds;
       lineHeight: number;
+      fontSize: number;
     }> = [];
 
     splitSegments.forEach((segment, index) => {
       const remainingBubbleHeight = backdropBounds.y + backdropBounds.height - cursorBubbleY;
-      if (remainingBubbleHeight <= 0) return;
-
-      const {
-        rows,
-        lines,
-        lineHeight: resolvedLineHeight,
-      } = layoutCardText({
-        text: segment,
-        width: textAreaWidth,
-        fontSize: fontSizeResolved,
-        lineHeight,
-        fontFamily,
-        defaultAlign: align ?? "left",
-      });
-      if (lines.length === 0) return;
+      if (remainingBubbleHeight <= 0 || exhausted) return;
 
       const isLastSegment = index === splitSegments.length - 1;
       const minBottomPadding =
@@ -564,11 +556,35 @@ export function TextLayer({
         0,
         availableForThisSegment - bubbleTopPadding - textPadding - minBottomPadding,
       );
+      const {
+        rows,
+        lines,
+        lineHeight: resolvedLineHeight,
+        fittedFontSize,
+        overflowed,
+      } = layoutCardTextToBounds({
+        layout: layoutCardText,
+        text: segment,
+        width: textAreaWidth,
+        height: maxTextHeight,
+        fontSize: fontSizeResolved,
+        lineHeight,
+        fontFamily,
+        fontWeight,
+        letterSpacingEm,
+        defaultAlign: align ?? "left",
+        enableLists: textKey === "description",
+        fitToBounds: allowBodyTextFitToBounds && bodyTextFitToBounds,
+      });
+      if (lines.length === 0) return;
+      exhausted = overflowed;
       const visibleRows = clipRowsToHeight(rows, maxTextHeight);
       const visibleTextRows = visibleRows.filter((row) => row.kind !== "paragraph-gap");
-      if (visibleTextRows.length === 0) return;
+      if (visibleTextRows.length === 0 && !overflowed) return;
 
-      const textHeight = visibleRows.reduce((sum, row) => sum + row.height, 0);
+      const textHeight = visibleRows.length
+        ? visibleRows.reduce((sum, row) => sum + row.height, 0)
+        : maxTextHeight;
       const bubbleHeight =
         isLastSegment && isFullHeight
           ? availableForThisSegment
@@ -591,6 +607,7 @@ export function TextLayer({
           height: bubbleHeight,
         },
         lineHeight: resolvedLineHeight,
+        fontSize: fittedFontSize,
       });
 
       cursorBubbleY += bubbleHeight;
@@ -635,9 +652,10 @@ export function TextLayer({
                 opacity={effectiveBackdrop.opacity}
               />
               <CardTextBlock
+                enableLists={textKey === "description"}
                 text={segment.text}
                 bounds={segment.textBounds}
-                fontSize={fontSize}
+                fontSize={segment.fontSize}
                 lineHeight={segment.lineHeight}
                 fontWeight={fontWeight}
                 fontFamily={fontFamily}
@@ -645,7 +663,7 @@ export function TextLayer({
                 letterSpacingEm={letterSpacingEm}
                 align={align}
                 debug={showTextBounds}
-                fitToBounds={allowBodyTextFitToBounds && bodyTextFitToBounds}
+                fitToBounds={false}
                 showOverflowWarning={showOverflowWarning}
               />
             </g>
@@ -690,6 +708,7 @@ export function TextLayer({
         <path d={backdropPath} fill={effectiveBackdrop.color} opacity={effectiveBackdrop.opacity} />
       ) : null}
       <CardTextBlock
+        enableLists={textKey === "description"}
         text={text as string | null | undefined}
         bounds={paddedTextBounds}
         fontSize={fontSize}

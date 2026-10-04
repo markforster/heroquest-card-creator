@@ -4,7 +4,7 @@ type: capability-overview
 status: first-draft
 source_questions: [Q-0060, Q-0061, Q-0062, Q-0063, Q-0064, Q-0079, Q-0098, Q-0150, Q-0152, Q-0153, Q-0154, Q-0155, Q-0156, Q-0157, Q-0158, Q-0159, Q-0160, Q-0161, Q-0166]
 verified: 2026-07-22
-app_version: 0.8.1
+app_version: 0.8.3
 ---
 # Settings Reference
 
@@ -38,6 +38,13 @@ Export profiles store reusable image and PDF defaults.
 - **Crop Marks** and **Cut Marks** can add configurable marks, colours, and line styles when bleed is enabled.
 
 Enabling bleed disables rounded corners and makes the Crop Marks and Cut Marks toggles available. Each mark's colour and style remain unavailable until that mark is enabled.
+
+### Image Format
+
+- **JPEG** is the default for smaller PDFs, with some loss of fine image detail.
+- **PNG** uses lossless card images inside the PDF, usually with a larger file size.
+
+The choice is saved per export profile. Older profiles without a choice use JPEG. It affects new PDF exports only, not standalone PNG exports or stored artwork. See [PDF image format: JPEG or PNG](./configure-export-defaults-and-profiles.md#pdf-image-format-jpeg-or-png) for steps and quality guidance.
 
 ### PDF planning options
 

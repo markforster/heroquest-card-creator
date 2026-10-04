@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Afbeeldingsindeling",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "JPEG-pdf’s waren in onze tests ongeveer 88% kleiner dan PNG-pdf’s. Kies PNG voor een verliesvrije export.",
   "app.title": "HeroQuest-kaartenmaker",
   "actions.template": "Sjabloon",
   "actions.templates": "Sjablonen",

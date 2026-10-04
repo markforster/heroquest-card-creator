@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { AssetRecord } from "@/api/assets";
 import { apiClient } from "@/api/client";
@@ -8,6 +9,7 @@ import styles from "@/app/page.module.css";
 import { formatAssetDate, formatBytes } from "@/components/Assets/asset-formatters";
 import type { AssetUsage, UsagePopoverAnchor } from "@/components/Assets/AssetsRoutePanels.types";
 import AssetsUsageCardsPopover from "@/components/Assets/AssetsUsageCardsPopover";
+import { useEscapeModalAware } from "@/components/common/EscapeStackProvider";
 import { usePopoverPlacement } from "@/components/common/usePopoverPlacement";
 import { useAssetKindQueue } from "@/components/Providers/AssetKindBackfillProvider";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
@@ -71,6 +73,21 @@ export default function AssetsInspectorDetails({
     () => setIsKindPopoverOpen(false),
     isKindPopoverOpen,
   );
+
+  useEffect(() => {
+    if (!isKindPopoverOpen) return;
+    kindPopoverRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, [isKindPopoverOpen]);
+
+  const kindEscapeId = useId();
+  useEscapeModalAware({
+    id: kindEscapeId,
+    isOpen: isKindPopoverOpen,
+    onEscape: () => {
+      setIsKindPopoverOpen(false);
+      kindAnchorRef.current?.focus();
+    },
+  });
 
   const clearUsagePopoverCloseTimeout = () => {
     if (usagePopoverCloseTimeoutRef.current) {
@@ -145,6 +162,7 @@ export default function AssetsInspectorDetails({
       { params: { id: asset.id } },
     );
     setIsKindPopoverOpen(false);
+    kindAnchorRef.current?.focus();
   };
 
   useLayoutEffect(() => {
@@ -225,6 +243,13 @@ export default function AssetsInspectorDetails({
                 disabled={!canOverride}
               >
                 {kindLabel}
+                {canOverride ? (
+                  isKindPopoverOpen ? (
+                    <ChevronUp className={styles.assetsKindChevron} aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className={styles.assetsKindChevron} aria-hidden="true" />
+                  )
+                ) : null}
               </button>
               {isKindPopoverOpen ? (
                 <div
@@ -249,6 +274,10 @@ export default function AssetsInspectorDetails({
                     className={styles.assetsKindPopoverOption}
                     onClick={() => void applyManualKind("icon")}
                   >
+                    <span
+                      className={`${styles.assetsKindDot} ${styles.assetsKindDotIcon}`}
+                      aria-hidden="true"
+                    />
                     {t("label.assetKindIcon")}
                   </button>
                   <button
@@ -256,6 +285,10 @@ export default function AssetsInspectorDetails({
                     className={styles.assetsKindPopoverOption}
                     onClick={() => void applyManualKind("artwork")}
                   >
+                    <span
+                      className={`${styles.assetsKindDot} ${styles.assetsKindDotArtwork}`}
+                      aria-hidden="true"
+                    />
                     {t("label.assetKindArtwork")}
                   </button>
                 </div>

@@ -78,6 +78,17 @@ describe("MainFooter (UI)", () => {
     expect(screen.getByRole("link", { name: "v 0.0.0-test" })).toBeInTheDocument();
   });
 
+  it("links to the community library after About in a new tab", () => {
+    renderMainFooter();
+    const link = screen.getByRole("link", { name: "Community Library" });
+    expect(link).toHaveAttribute("href", "https://heroquest-card-templates.done-well.co.uk/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(link.previousElementSibling?.previousElementSibling).toBe(
+      screen.getByRole("button", { name: "About" }),
+    );
+  });
+
   it("opens the help modal", () => {
     renderMainFooter();
 

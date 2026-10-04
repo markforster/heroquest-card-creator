@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Seznamy",
+  "formattingHelp.lists.move": "Pohyb",
+  "formattingHelp.lists.door": "Otevři dveře",
+  "formattingHelp.lists.attack": "Útok",
+  "formattingHelp.lists.rules": "Za - nebo 1. napište 1–4 mezery. Podpoložka začíná přesně 2 mezerami (jedna úroveň). Číslování pokračuje od prvního čísla. Prázdný nebo běžný řádek seznam ukončí. Zalomené řádky jsou pod slovy; seznamy jsou zarovnány vlevo. Styly a kostky fungují, seznamy HTML ne.",
+  "formattingHelp.lists.compatibility": "Platí i pro existující karty. Zápis \\- nebo \\1. zachová značku doslovně (jedno zpětné lomítko). Ostatní lomítka se nemění. Podpoložky zabírají více místa; zkontrolujte přizpůsobení a oříznutý text.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Zarovnání",

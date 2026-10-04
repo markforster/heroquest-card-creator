@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Formato de imagen",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "En nuestras pruebas, los PDF JPEG fueron aproximadamente un 88 % más pequeños que los PDF PNG. Elige PNG para una exportación sin pérdidas.",
   "app.title": "Creador de cartas HeroQuest",
   "actions.template": "Plantilla",
   "actions.templates": "Plantillas",

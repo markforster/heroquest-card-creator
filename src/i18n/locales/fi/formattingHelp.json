@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Luettelot",
+  "formattingHelp.lists.move": "Liiku",
+  "formattingHelp.lists.door": "Avaa ovi",
+  "formattingHelp.lists.attack": "Hyökkää",
+  "formattingHelp.lists.rules": "Kirjoita merkin - tai 1. jälkeen 1–4 välilyöntiä. Alakohta alkaa täsmälleen 2 välilyönnillä (yksi alataso). Numerointi jatkuu ensimmäisestä luvusta. Tyhjä tai tavallinen rivi päättää luettelon. Jatkorivit asettuvat sanojen alle; luettelot tasataan vasemmalle. Tekstityylit ja nopat toimivat, HTML-luettelot eivät.",
+  "formattingHelp.lists.compatibility": "Tämä koskee myös aiempia kortteja. Kirjoita \\- tai \\1. säilyttääksesi merkin sellaisenaan (yksi kenoviiva). Muut kenoviivat säilyvät. Alakohdat vievät enemmän tilaa; tarkista sovitus ja leikkautunut teksti.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Tasaus",

@@ -62,6 +62,11 @@ describe("HelpModal", () => {
     ).toBeInTheDocument();
     expect(mockCheckHelpSiteAvailability).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "PDF export" })).toBeInTheDocument();
+    expect(screen.getByText("Smaller PDFs:")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Older profiles without a format choice also use JPEG/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Individual and bulk image exports remain PNG/)).toBeInTheDocument();
     expect(
       screen.getByText(/Deck PDF export creates a print-ready PDF from a deck/i),
     ).toBeInTheDocument();

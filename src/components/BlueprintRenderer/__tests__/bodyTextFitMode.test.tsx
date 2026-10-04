@@ -21,6 +21,7 @@ jest.mock("@/components/Cards/CardParts/CardTextBlock", () => ({
   }) => ({
     lines: text.split(/\r?\n/).filter(Boolean),
     lineHeight: lineHeight ?? fontSize * 1.05,
+    totalHeight: text.split(/\r?\n/).filter(Boolean).length * (lineHeight ?? fontSize * 1.05),
   }),
 }));
 

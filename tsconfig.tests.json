@@ -20,5 +20,5 @@
     "src/lib/__testutils__/**/*.ts",
     "src/lib/__testutils__/**/*.tsx"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "apps/heroquest-library"]
 }

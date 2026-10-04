@@ -7,3 +7,4 @@ export * from "@/lib/pdf-export/render-pdf";
 export * from "@/lib/pdf-export/alignment-test";
 export * from "@/lib/pdf-export/default-config";
 export * from "@/lib/pdf-export/footer";
+export * from "@/lib/pdf-export/jpeg-optimization";

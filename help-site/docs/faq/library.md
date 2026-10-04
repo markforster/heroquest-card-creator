@@ -305,7 +305,7 @@ Search by stored filename, then combine it with asset-kind and current MIME-type
 
 ## What is asset kind and how do I change it?
 
-Asset kind organizes images as Artwork, Icon, or Unclassified; select the kind badge to override automatic classification.
+Asset kind organizes images as Artwork, Icon, or Unclassified. Click the classification pill with the downward chevron below an asset thumbnail, or use the **Asset kind** pill in the right-hand inspector. Choose **Artwork** or **Icon** under **Override classification**. See [Correct an image's kind](../managing-your-library/assets/upload-and-organize-assets.md#correct-an-images-kind).
 
 [Read the full guidance](../managing-your-library/assets/upload-and-organize-assets.md)
 

@@ -8,6 +8,7 @@ export const releaseNotesSections = [
   ["about-what-you-can-do-today", "What you can do today"],
   ["about-notes-future-work", "Notes & future work"],
   ["about-credits-attribution", "Credits & Attribution"],
+  ["about-update-v0-8-3", "Update 04/10/2026 (v0.8.3)"],
   ["about-update-v0-8-2", "Update 06/09/2026 (v0.8.2)"],
   ["about-update-v0-8-1", "Update 29/08/2026 (v0.8.1)"],
   ["about-update-v0-8-0", "Update 25/07/2026 (v0.8.0)"],
@@ -227,6 +228,46 @@ export default function ReleaseNotesContent() {
             svg icons
           </a>
           &nbsp;is licensed by CC BY 4.0
+        </DocParagraph>
+      </DocSection>
+
+      <DocSection
+        id="about-update-v0-8-3"
+        title="Update 04/10/2026 (v0.8.3)"
+        className={docStyles.docSectionSpaced}
+      >
+        <DocParagraph>
+          v0.8.3 is a focused usability release that makes everyday card authoring and deck
+          organisation a little more flexible. It helps you write clearer cards, keep larger decks
+          in order, understand your asset library more easily, and produce smaller PDFs for sharing.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          PDF exports now use JPEG card images by default. Across four decks compared, PDFs were
+          approximately 88%–91% smaller; one went from 82.3 MB to 9.9 MB. Savings vary with your
+          cards and artwork. Choose JPEG or lossless PNG under Settings &gt; Export Settings &gt;
+          Image Format, and save the choice separately for each export profile. Older profiles
+          without a format choice also use JPEG.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          JPEG keeps the same card dimensions and PDF layout, but can introduce subtle differences
+          around textures and fine edges when enlarged. PNG remains available when preserving every
+          detail matters more than file size. This affects new PDF exports only: individual and bulk
+          image exports remain PNG, and your original artwork and existing PDFs are unchanged.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Card body text now supports simple bullet and numbered lists, including one level of
+          nesting. Lists wrap cleanly inside the available card space, while the existing text
+          formatting tools continue to work alongside them.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Deck groups can now be reordered by dragging their dedicated handles. The new order is
+          saved with the deck, so groups stay where you put them when you return to the deck later.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          Asset classification is now easier to discover in both the Assets grid and the selected
+          asset inspector. Clearer controls show when a classification can be changed, and the
+          updated help explains how to switch between Artwork and Icon without changing the image
+          itself.
         </DocParagraph>
       </DocSection>
 

@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0290, Q-0291, Q-0292, Q-0293, Q-0294, Q-0296, Q-0297, Q-0299, Q-0300]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Fit Body Text on a Card
 
@@ -40,6 +40,11 @@ Paragraph gaps and blank lines use vertical space. When fitting is needed, parag
 Formatting also affects how much room the text needs. Larger scale tags, headings, long unbroken wording, and leader lines may require more space than plain paragraphs.
 
 ## What if Scale to fit is not enough?
+
+List markers and indentation use some of the available width. Nested items can
+wrap onto more rows than ordinary paragraphs. Fitting recalculates marker columns,
+indentation and line wrapping together at each size. Reduce nesting or unnecessary
+blank lines if the result is crowded; fitting cannot guarantee that every list fits.
 
 Fitting has a minimum readable size. If the content still cannot fit, the preview continues to show **Text clipped**. The app does not remove your saved wording, but the part outside the visible area is not shown on the card.
 

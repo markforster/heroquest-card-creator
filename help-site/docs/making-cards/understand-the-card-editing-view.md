@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0090, Q-0091, Q-0092, Q-0093, Q-0094, Q-0095, Q-0096, Q-0097, Q-0098]
 verified: 2026-07-22
-app_version: 0.8.1
+app_version: 0.8.3
 ---
 # Understand the Card Editing View
 
@@ -89,7 +89,7 @@ Depending on the template, tools beside the text box can include:
 
 - **Emoji** opens a picker and inserts an emoji at the current cursor position or replaces the selected text.
 - **Inline dice** builds a dice symbol without requiring you to remember its code. You can choose a standard six-sided die, icon die, or detail die; select its face or value; choose colours; reuse recent choices; preview the result; and insert or copy it.
-- **Formatting help** shows examples for bold, italic, underline, colour, size, titles, subtitles, alignment, leader lines, grouped leaders, and inline dice.
+- **Formatting help** shows examples for bold, italic, underline, colour, size, titles, subtitles, bullet and numbered lists, alignment, leader lines, grouped leaders, and inline dice.
 - **Text colour** changes the main body-text colour where the template supports it.
 - **Backdrop controls** can show or hide the panel behind the text, place it inset or flush with the card, change which title corners it meets, fit it to the text or use the full available area, and change its colour.
 - **Show or hide body text** lets supported back templates keep their text area optional.

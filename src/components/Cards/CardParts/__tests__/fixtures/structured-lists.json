@@ -1,0 +1,305 @@
+{
+  "version": 2,
+  "contract": "docs/2026 - 0.8.3/structured-lists.requirements.v1.md",
+  "status": "Adopted implementation contract. visualChecks records the historical baseline; futureChecks records implemented acceptance expectations. expectedMarkers is asserted in unbounded layout and unclipped UI captures.",
+  "cases": [
+    {
+      "id": "legacy-inline",
+      "expectedMarkers": [],
+      "category": "regression",
+      "title": "Inline formatting",
+      "text": "Plain text\n**Bold** and *Italic* and ***Both***\n<b>Tagged bold</b> <i>Tagged italic</i> <u>Underline</u>\n<color=#3366ff>Blue</color> and <color=#cc2222><b>Red bold</b></color>",
+      "baselineLines": [
+        "Plain text",
+        "Bold and Italic and Both",
+        "Tagged bold Tagged italic Underline",
+        "Blue and Red bold"
+      ],
+      "visualChecks": [
+        "All supported tags disappear; ordinary words remain.",
+        "Bold, italic and combined styles are distinct; Underline is underlined.",
+        "Blue is blue and Red bold is red and bold."
+      ],
+      "futureChecks": ["Same appearance and line origins as baseline."]
+    },
+    {
+      "id": "legacy-headings",
+      "expectedMarkers": [],
+      "category": "regression",
+      "title": "Headings and scale",
+      "text": "<title>Quest Rules</title>\n<subtitle>Movement</subtitle>\nNormal <scale=1.5>Large</scale> normal\n<sc=0.75>Small</sc>\n\nAfter blank line",
+      "baselineLines": [
+        "Quest Rules",
+        "Movement",
+        "Normal Large normal",
+        "Small",
+        "After blank line"
+      ],
+      "visualChecks": [
+        "Title is enlarged bold; subtitle is enlarged italic.",
+        "Large increases its row height; Small is visibly smaller.",
+        "Exactly one authored blank line separates Small from After blank line."
+      ],
+      "futureChecks": [
+        "Heading sizing, mixed-scale baseline and paragraph spacing remain unchanged."
+      ]
+    },
+    {
+      "id": "legacy-alignment",
+      "expectedMarkers": [],
+      "category": "regression",
+      "title": "Alignment boundaries",
+      "text": ":::al\nLeft text\n:::ac\nCentre text\n:::ar\nRight text\n:::\nDefault again\n:::ac Inline centre::: trailing text",
+      "baselineLines": [
+        "Left text",
+        "Centre text",
+        "Right text",
+        "Default again",
+        "Inline centre",
+        " trailing text"
+      ],
+      "visualChecks": [
+        "Left, centre and right rows align to their respective edges.",
+        "Reset restores the template default.",
+        "Trailing text after the inline close remains visible on its own row."
+      ],
+      "futureChecks": ["Alignment directives retain existing behaviour."]
+    },
+    {
+      "id": "legacy-leaders",
+      "expectedMarkers": [],
+      "category": "regression",
+      "title": "Leader groups",
+      "text": "[Cost[.]50 gold]\n[[\n[{pivot:50%,wrap:value}]\n[Range[.]Six squares]\n[Effect[.]A long explanation that should wrap in the value column on narrower cards without displacing the left-hand label.]\n]]",
+      "visualChecks": [
+        "Cost and its value occupy opposite ends with dots in between.",
+        "Range and Effect share a value-column origin.",
+        "On narrow cards Effect continuation lines stay in the value column."
+      ],
+      "futureChecks": [
+        "Leader recognition, shared pivot and continuation positions remain unchanged."
+      ]
+    },
+    {
+      "id": "legacy-dice",
+      "expectedMarkers": [],
+      "category": "regression",
+      "title": "Dice and rich text",
+      "text": "Roll &cd-s-w; then &d6-6-w;.\n<b>Attack</b> with &cd-ad-r; and <u>defend</u>.\n<scale=1.25>Large words</scale> beside &cd-h-r;.",
+      "visualChecks": [
+        "Four dice render as symbols, never raw token strings.",
+        "Dice remain intact when a line wraps.",
+        "Styling before and after dice matches the current renderer; no new cross-dice style inheritance is assumed."
+      ],
+      "futureChecks": ["Dice glyphs, spacing and rich-text treatment remain unchanged."]
+    },
+    {
+      "id": "bullets-wrap",
+      "expectedMarkers": ["•", "•", "•"],
+      "category": "list",
+      "title": "Bullet wrapping",
+      "text": "Choose an action:\n- Move up to six squares.\n- Attack the nearest visible monster. This intentionally long item must wrap over several lines on a narrow card so that its continuation alignment can be inspected carefully.\n- Search for treasure.\nNormal text resumes here.",
+      "visualChecks": [
+        "Before implementation, hyphens remain literal and wrapped rows return to the ordinary text origin."
+      ],
+      "futureChecks": [
+        "Exactly three bullet markers.",
+        "The long item's continuation rows align with Attack, not its bullet.",
+        "Normal text resumes at the original text origin; no added list margins."
+      ]
+    },
+    {
+      "id": "numbers-width",
+      "expectedMarkers": ["8.", "9.", "10.", "11.", "3.", "4."],
+      "category": "list",
+      "title": "Numbers across ten",
+      "text": "8. Choose a target.\n1. Roll attack dice.\n99. Count skulls.\n1. Apply damage and remove the monster only after all defence dice have been resolved.\n\n03. Begin a new sequence.\n99. Finish the sequence.",
+      "visualChecks": ["Before implementation, source numbers remain 8, 1, 99, 1, 03, 99."],
+      "futureChecks": [
+        "First run displays 8, 9, 10, 11; second run displays 3, 4.",
+        "All sibling text starts at one shared origin despite marker width changes.",
+        "Exactly one authored blank-line gap separates the runs."
+      ]
+    },
+    {
+      "id": "nested-mixed",
+      "expectedMarkers": ["1.", "•", "•", "2.", "3.", "4.", "•", "•"],
+      "category": "list",
+      "title": "Mixed nested lists",
+      "text": "1. Move\n  - Open a door.\n  - Enter a room and check every visible square before continuing to the next action.\n2. Attack\n  3. Choose a weapon.\n  1. Roll dice.\n- Finish\n  - End the turn.",
+      "visualChecks": [
+        "Before implementation, source prefixes remain literal; no hanging indentation is expected."
+      ],
+      "futureChecks": [
+        "Root numbers remain 1, 2; bullet Finish begins a new run.",
+        "Child markers start at the parent text origin, with child content further indented.",
+        "Attack's child numbers display 3, 4.",
+        "Wrapped child content stays aligned to child text."
+      ]
+    },
+    {
+      "id": "mixed-rich-lists",
+      "expectedMarkers": ["•", "•", "•", "•", "1.", "2.", "3."],
+      "category": "list",
+      "title": "Combat options",
+      "text": "<title>Combat Options</title>\nChoose one action:\n- **Attack:** Roll &cd-ad-r;.\n- <b>Defend:</b> Keep <color=#3366ff>one defence bonus</color> until your next turn.\n  - <i>This longer explanation should wrap beneath its own text without returning underneath the bullet.</i>\n- <scale=1.25>Recover</scale> one Body Point.\n\n<subtitle>Resolve the Turn</subtitle>\n1. Choose a target.\n2. Apply the <u>damage</u>.\n3. End your turn.",
+      "visualChecks": [
+        "Heading, emphasis, blue text, dice and underline already render before lists are implemented.",
+        "List prefixes currently remain literal."
+      ],
+      "futureChecks": [
+        "Three root bullets, one child bullet and three ordered items.",
+        "Markers retain base text styling despite item colour, italics or scaling.",
+        "Headings stay outside lists and keep existing metrics.",
+        "Long child line has a hanging indent."
+      ]
+    },
+    {
+      "id": "breaks-resets",
+      "expectedMarkers": ["•", "1.", "7.", "8.", "•"],
+      "category": "list",
+      "title": "List termination",
+      "text": "- First item\nUnmarked continuation is ordinary text.\n  - Orphan child\n1. Start\n\n7. Restart\n2. Next\n\n\n- After two gaps",
+      "visualChecks": ["All authored blank lines are preserved in the current renderer."],
+      "futureChecks": [
+        "Unmarked line ends the first bullet list.",
+        "Orphan child stays ordinary text.",
+        "Numbered runs display 1 then 7, 8.",
+        "One and two blank-line gaps remain distinct."
+      ]
+    },
+    {
+      "id": "alignment-lists",
+      "expectedMarkers": ["•", "•", "•"],
+      "category": "list",
+      "title": "Lists and alignment",
+      "text": ":::ac\nCentred introduction\n- A list within the centred region\n- A second list item\nCentred conclusion\n:::\n:::ar Inline region begins\n- Literal line inside inline region\n:::\n- List after closing region",
+      "visualChecks": [
+        "Before implementation, the first two hyphen lines follow ambient centre alignment.",
+        "The hyphen line inside the multiline inline region remains right aligned."
+      ],
+      "futureChecks": [
+        "First two list items are left aligned; introduction and conclusion remain centred.",
+        "The hyphen line inside the active inline region remains literal and right aligned.",
+        "Final line becomes a bullet after the region closes."
+      ]
+    },
+    {
+      "id": "invalid-markers",
+      "expectedMarkers": [],
+      "category": "literal",
+      "title": "Unsupported markers",
+      "text": "+ Plus\n* Star\n-- Double dash\n-No space\n1) Parenthesis\n1.No space\n-\n1.\n- - -\n- * *\n1234567890. Too many digits\n<ul><li>HTML list</li></ul>\n<ol><li>Numbered HTML</li></ol>",
+      "baselineLines": [
+        "+ Plus",
+        "* Star",
+        "-- Double dash",
+        "-No space",
+        "1) Parenthesis",
+        "1.No space",
+        "-",
+        "1.",
+        "- - -",
+        "- * *",
+        "1234567890. Too many digits",
+        "<ul><li>HTML list</li></ul>",
+        "<ol><li>Numbered HTML</li></ol>"
+      ],
+      "visualChecks": [
+        "Unsupported HTML tags and prefixes remain visible as text, not interpreted HTML."
+      ],
+      "futureChecks": ["Same literal fallback as baseline; no bullets or generated numbering."]
+    },
+    {
+      "id": "whitespace-boundaries",
+      "expectedMarkers": ["•", "•", "•", "•", "•"],
+      "category": "list",
+      "title": "Whitespace boundaries",
+      "text": "- One separator space\n-    Four separator spaces\n-     Five separator spaces\n - One leading space\n- Parent\n  - Two leading spaces\n   - Three leading spaces\n    - Four leading spaces\n\t- Leading tab\n-\tSeparator tab\n- \tTab before content\n- Trailing spaces   ",
+      "visualChecks": [
+        "UI input must retain exact spaces and tabs; do not retype this case manually."
+      ],
+      "futureChecks": [
+        "One/four separator spaces accepted; five rejected.",
+        "Only zero or exactly two leading spaces supported; child requires its parent.",
+        "Tabs in prefix/separator remain ordinary text.",
+        "Trailing spaces do not create a second marker or item."
+      ]
+    },
+    {
+      "id": "escaped-markers",
+      "expectedMarkers": ["•"],
+      "category": "list",
+      "title": "Literal escapes",
+      "text": "\\- Literal bullet\n\\1. Literal number\n  \\- Literal orphan child\n\\\\- Two backslashes stay\n- Actual item\n\\- Ends the run\n  - Orphan after escape\nPath C:\\cards remains text",
+      "visualChecks": ["Before implementation, all backslashes remain visible."],
+      "futureChecks": [
+        "Exactly one backslash disappears before each valid escaped marker.",
+        "Double backslash and path backslash remain untouched.",
+        "Only Actual item becomes a bullet; escape ends its run."
+      ]
+    },
+    {
+      "id": "inline-block-boundaries",
+      "expectedMarkers": ["•", "•", "•", "•", "•", "•"],
+      "category": "list",
+      "title": "Blocks inside items",
+      "text": "<title>Real Heading</title>\n- <title>Literal heading tags</title>\n- [Cost[.]50 gold]\n- :::ac Literal alignment:::\n- <b></b>\n- <foo>Unknown</foo>\n- <color=#cc2222><b>Red bold item</b></color>",
+      "visualChecks": [
+        "Standalone heading is styled; embedded title tags, leader syntax and alignment text remain literal."
+      ],
+      "futureChecks": [
+        "Six bullet rows, including one base-height marker-only row for empty styled content.",
+        "No nested block parsing inside items.",
+        "Red item content is red and bold; its marker is base colour and weight."
+      ]
+    },
+    {
+      "id": "backdrop-separator",
+      "expectedMarkers": ["1.", "2.", "4.", "5."],
+      "category": "integration",
+      "title": "Backdrop separation",
+      "text": "1. First section\n2. Continue\n---\n4. Second section\n1. Continue again",
+      "visualChecks": [
+        "Separator behaviour depends on the existing backdrop mode; capture Labelled Back as well as Rules."
+      ],
+      "futureChecks": [
+        "Where backdrop segmentation is enabled, two independently laid-out sections restart runs (1,2 and 4,5).",
+        "Other paths retain their existing literal separator behaviour; no new horizontal-rule feature."
+      ]
+    },
+    {
+      "id": "overflow-stress",
+      "expectedMarkers": ["•", "•", "•", "•", "•", "•", "1.", "2.", "3."],
+      "category": "bounds",
+      "title": "Crowded list",
+      "text": "<title>Long Quest Rules</title>\n- **Movement:** Before moving, inspect each corridor, check adjacent doors, and decide whether the Hero can reach a safe square without passing through another figure.\n  - <i>Remember that a long nested explanation has less available width, so it should occupy more visual rows while keeping every continuation beneath its own text.</i>\n- <scale=1.5>Attack:</scale> Choose a visible target and roll &cd-ad-r; before resolving the monster's defence. Repeat this explanation carefully so that the available card space is stressed by both larger text and inline symbols.\n- **Defence:** Resolve each skull, apply armour, count shields, and record lost Body Points before choosing whether to continue the encounter or withdraw through the nearest doorway.\n- **Search:** Check traps, treasure, hidden doors and any special quest rules. This deliberately verbose paragraph exists to consume enough space to compare the unscaled and fitted versions.\n- **End:** Remove temporary markers, restore any expiring effects, and hand play to the next Hero. Confirm that this final instruction remains visible or that clipping is clearly indicated.\n\n<subtitle>Final Check</subtitle>\n1. Count every remaining monster.\n2. Resolve every temporary effect.\n3. Keep the final line visible whenever fitting permits.",
+      "visualChecks": [
+        "Capture fit off and fit on on Small Artwork.",
+        "Report actual Text clipped visibility rather than assuming fit succeeds.",
+        "Compare final-line visibility and relative heading/body sizes."
+      ],
+      "futureChecks": [
+        "Fitting scales indentation and text together.",
+        "All wrapped list rows count towards clipping.",
+        "No later row appears after an earlier row was clipped."
+      ]
+    },
+    {
+      "id": "long-token-dice",
+      "expectedMarkers": ["•", "•", "•", "•"],
+      "category": "bounds",
+      "title": "Atomic content",
+      "text": "- SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious\n  - &cd-ad-r;&cd-ad-r;&cd-ad-r; followed by more words.\n- <scale=1.5>WWWWWWWWWWWWWWWWWWWWWWWWWWWW</scale>\n- Short final item",
+      "visualChecks": [
+        "Long words follow the existing split/hyphen behaviour.",
+        "Dice remain whole symbols."
+      ],
+      "futureChecks": [
+        "Continuation rows keep hanging indentation despite long-token splitting.",
+        "Atomic dice cannot silently overflow the reduced item width.",
+        "No synthetic spacing changes leak into ordinary text."
+      ]
+    }
+  ]
+}

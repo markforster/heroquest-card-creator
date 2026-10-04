@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Képformátum",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "Tesztjeinkben a JPEG PDF-ek körülbelül 88%-kal kisebbek voltak a PNG PDF-eknél. Válaszd a PNG-t veszteségmentes exporthoz.",
   "app.title": "HeroQuest kártyakészítő",
   "actions.template": "Sablon",
   "actions.templates": "Sablonok",

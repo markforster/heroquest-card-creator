@@ -123,6 +123,7 @@ function GroupTextLayer({
   align,
   debug,
   fitToBounds,
+  enableLists = false,
   interactive = false,
   suppressPreviewOnlyWarnings = false,
 }: {
@@ -137,6 +138,7 @@ function GroupTextLayer({
   align?: "left" | "center" | "right";
   debug?: boolean;
   fitToBounds?: boolean;
+  enableLists?: boolean;
   interactive?: boolean;
   suppressPreviewOnlyWarnings?: boolean;
 }) {
@@ -168,6 +170,7 @@ function GroupTextLayer({
         </>
       ) : null}
       <CardTextBlock
+        enableLists={enableLists}
         text={text}
         bounds={bounds}
         fontSize={fontSize}
@@ -337,6 +340,19 @@ function buildGroupItems({
         totalHeight,
       } = layoutCardText({
         text,
+        enableLists: textKey === "description",
+        fontWeight:
+          typeof child.props?.fontWeight === "number" || typeof child.props?.fontWeight === "string"
+            ? child.props.fontWeight
+            : undefined,
+        letterSpacingEm:
+          typeof child.props?.letterSpacingEm === "number"
+            ? child.props.letterSpacingEm
+            : undefined,
+        defaultAlign:
+          child.props?.align === "center" || child.props?.align === "right"
+            ? child.props.align
+            : "left",
         width: group.width,
         fontSize,
         lineHeight,
@@ -382,6 +398,7 @@ function buildGroupItems({
 
           return (
             <GroupTextLayer
+              enableLists={textKey === "description"}
               key={child.id}
               text={text}
               bounds={renderBounds}

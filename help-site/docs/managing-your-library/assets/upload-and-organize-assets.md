@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0018, Q-0019, Q-0020, Q-0021, Q-0022, Q-0134, Q-0135, Q-0136, Q-0139]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Upload and Organize Assets
 
@@ -52,19 +52,22 @@ All active controls narrow the same grid. Clear each control when troubleshootin
 
 ## Correct an image's kind
 
-The app tries to classify each upload automatically. If an image appears in the wrong group:
+When automatic classification is enabled and supported by your browser, the app suggests **Artwork** or **Icon** for each upload. Artwork is for main illustrations and backgrounds; Icon is for smaller icon fields. You can change the result or classify an **Unknown** image manually. Wait if the pill still says **Classifying**.
+
+1. Find the image in **Assets**.
+2. Click its classification pill below the thumbnail, including the downward chevron. Alternatively, select the image and click the **Asset kind** pill in the right-hand inspector.
+3. Under **Override classification**, choose **Artwork** or **Icon**.
+
+The chevron points up while the menu is open. Click the pill again, press **Escape**, or click outside the menu to close it without making a change.
+
+Your choice is saved and the menu closes. The image may move to another group or disappear from the current results if you are filtering by kind. Manual classification is also available when automatic classification is turned off or unavailable in Safari.
 
 <!-- help-visual:p053:start -->
 <figure class="hqcc-help-figure hqcc-help-figure--portrait" markdown="span">
-  ![Asset inspector showing the Override classification menu with Icon and Artwork choices.](../../assets/placements/p053--managing-your-library-assets-upload-and-organize-assets--correct-an-image-s-kind.jpg)
+  ![Asset inspector showing the upward classification chevron and the Override classification menu with Icon and Artwork choices.](../../assets/placements/p053--managing-your-library-assets-upload-and-organize-assets--correct-an-image-s-kind.jpg)
   <figcaption>Override classification when an uploaded image should be treated as an icon rather than artwork, or vice versa.</figcaption>
 </figure>
 <!-- help-visual:p053:end -->
-
-
-1. Select the image.
-2. In the inspector, choose its current **Asset kind**.
-3. Under **Override classification**, choose **Artwork** or **Icon**.
 
 Changing the kind affects organization and which image fields offer the asset. It does not convert, crop, or otherwise change the image itself.
 

@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0282, Q-0289, Q-0290, Q-0292, Q-0296, Q-0300, Q-0301]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Understand Body Text Tools
 
@@ -26,7 +26,7 @@ Most body-text fields provide:
 
 - **Insert emoji** to choose and insert a symbol.
 - **Insert inline dice** to build a die symbol without typing its formatting code.
-- **Formatting help** for emphasis, colour, size, headings, alignment, leader lines, and dice examples.
+- **Formatting help** for emphasis, colour, size, headings, bullet and numbered lists, alignment, leader lines, and dice examples.
 - A text-colour control when that template supports body-text colour changes.
 - **Scale to fit** when the template has a fixed-size text area.
 

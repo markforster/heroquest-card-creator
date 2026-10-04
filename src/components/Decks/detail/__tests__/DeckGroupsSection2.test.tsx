@@ -1,6 +1,6 @@
 import { TransformStream } from "node:stream/web";
 
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import * as React from "react";
 
 if (!(globalThis as unknown as { TransformStream?: typeof TransformStream }).TransformStream) {
@@ -543,8 +543,29 @@ describe("DeckGroupsSection2 mock boards", () => {
     renderWorkspace();
     const createButton = getCreateBoundaryButton(0);
     expect(createButton).toHaveAttribute("tabindex", "-1");
-    fireEvent.pointerEnter(createButton);
+    fireEvent.mouseMove(screen.getByTestId("groups-row-groups"), { clientX: -9999 });
     expect(createButton).toHaveAttribute("tabindex", "0");
+  });
+
+  it("renders one virtual boundary slot before, between, and after groups", () => {
+    renderWorkspace();
+    const row = screen.getByTestId("groups-row-groups");
+
+    expect([...row.children].map((child) => child.getAttribute("data-testid"))).toEqual([
+      "group-slot-group:A",
+      "group-slot-group:B",
+      "group-slot-group:C",
+      "create-boundary-3",
+    ]);
+    expect(
+      within(screen.getByTestId("group-slot-group:A")).getByTestId("create-boundary-0"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("group-slot-group:B")).getByTestId("create-boundary-1"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("group-slot-group:C")).getByTestId("create-boundary-2"),
+    ).toBeInTheDocument();
   });
 
   it("does not render create rail for entries/source boards", () => {
@@ -587,9 +608,342 @@ describe("DeckGroupsSection2 mock boards", () => {
         },
       },
     });
-    const createButton = getCreateBoundaryButton(0);
-    fireEvent.pointerEnter(createButton);
-    expect(createButton).toHaveAttribute("tabindex", "0");
+    expect(screen.getByTestId("create-boundary-0")).toBeInTheDocument();
+    expect(screen.getByTestId("create-boundary-1")).toBeInTheDocument();
+  });
+
+  it("clears stale create-boundary hover state around group reordering", () => {
+    renderWorkspace();
+    const row = screen.getByTestId("groups-row-groups");
+    const firstBoundary = getCreateBoundaryButton(0);
+
+    fireEvent.mouseMove(row, { clientX: -9999 });
+    fireEvent.pointerEnter(firstBoundary);
+    expect(firstBoundary).toHaveAttribute("tabindex", "0");
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+        },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+        },
+      });
+      callbacks.onDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+        },
+      });
+    });
+
+    expect(getCreateBoundaryButton(0)).toHaveAttribute("tabindex", "-1");
+    expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "-1");
+    expect(getCreateBoundaryButton(2)).toHaveAttribute("tabindex", "-1");
+    expect(getCreateBoundaryButton(3)).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("persists the latest group order when drag-end uses a stale callback", async () => {
+    renderWorkspace();
+    const staleDragEnd = callbacks.onDragEnd;
+
+    act(() => {
+      callbacks.onDragStart?.({
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+        },
+      });
+      callbacks.onDragOver?.({
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+        },
+      });
+      staleDragEnd?.({
+        canceled: false,
+        operation: {
+          source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(mutationMocks.reorderGroups).toHaveBeenCalledWith("deck-1", ["B", "A", "C"]);
+    });
+  });
+
+  it("resolves the middle boundary against the reordered group geometry", () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const testId =
+        this.getAttribute("data-testid") ??
+        this.querySelector("[data-testid^=group-group]")?.getAttribute("data-testid") ??
+        "";
+      const groupId = testId.startsWith("group-") ? testId.slice(6) : "";
+      const order = ["group:B", "group:A", "group:C"];
+      const index = order.indexOf(groupId);
+      const left = index * 120;
+      return {
+        bottom: 100,
+        height: 100,
+        left,
+        right: left + 100,
+        top: 0,
+        width: 100,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      };
+    };
+
+    try {
+      renderWorkspace();
+      const row = screen.getByTestId("groups-row-groups");
+
+      act(() => {
+        callbacks.onDragStart?.({
+          operation: {
+            source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          },
+        });
+        callbacks.onDragOver?.({
+          operation: {
+            source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+            target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+          },
+        });
+        callbacks.onDragEnd?.({
+          canceled: false,
+          operation: {
+            source: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+            target: { id: "group:A", type: "group", group: "group:A", board: "groups" },
+          },
+        });
+      });
+
+      fireEvent.mouseMove(row, { clientX: 120 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("maps the leading boundary to the visually first reordered group", () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const testId =
+        this.getAttribute("data-testid") ??
+        this.querySelector("[data-testid^=group-group]")?.getAttribute("data-testid") ??
+        "";
+      const groupId = testId.startsWith("group-") ? testId.slice(6) : "";
+      const visualOrder = ["group:B", "group:A", "group:C"];
+      const index = visualOrder.indexOf(groupId);
+      const left = index * 120;
+      return {
+        bottom: 100,
+        height: 100,
+        left,
+        right: left + 100,
+        top: 0,
+        width: 100,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      };
+    };
+
+    try {
+      renderWorkspace();
+      fireEvent.mouseMove(screen.getByTestId("groups-row-groups"), { clientX: -1 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+      expect(getCreateBoundaryButton(0)).toHaveAttribute("tabindex", "-1");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("maps a visually reordered gap to the logical boundary for its next group", () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const testId =
+        this.getAttribute("data-testid") ??
+        this.querySelector("[data-testid^=group-group]")?.getAttribute("data-testid") ??
+        "";
+      const groupId = testId.startsWith("group-") ? testId.slice(6) : "";
+      const visualOrder = ["group:A", "group:C", "group:B"];
+      const index = visualOrder.indexOf(groupId);
+      const left = index * 120;
+      return {
+        bottom: 100,
+        height: 100,
+        left,
+        right: left + 100,
+        top: 0,
+        width: 100,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      };
+    };
+
+    try {
+      renderWorkspace();
+      fireEvent.mouseMove(screen.getByTestId("groups-row-groups"), { clientX: 120 });
+      expect(getCreateBoundaryButton(2)).toHaveAttribute("tabindex", "0");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("shows a boundary only across the gap between groups", () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const testId =
+        this.getAttribute("data-testid") ??
+        this.querySelector("[data-testid^=group-group]")?.getAttribute("data-testid") ??
+        "";
+      const groupId = testId.startsWith("group-") ? testId.slice(6) : "";
+      const index = ["group:A", "group:B", "group:C"].indexOf(groupId);
+      const left = index * 120;
+      return {
+        bottom: 100,
+        height: 100,
+        left,
+        right: left + 100,
+        top: 0,
+        width: 100,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      };
+    };
+
+    try {
+      renderWorkspace();
+      const row = screen.getByTestId("groups-row-groups");
+
+      fireEvent.mouseMove(row, { clientX: 100 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+
+      fireEvent.mouseMove(row, { clientX: 101 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+
+      fireEvent.mouseMove(row, { clientX: 119 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+
+      fireEvent.mouseMove(row, { clientX: 121 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "-1");
+
+      fireEvent.mouseMove(row, { clientX: 119 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("resolves the trailing boundary after moving the final group left", () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const testId =
+        this.getAttribute("data-testid") ??
+        this.querySelector("[data-testid^=group-group]")?.getAttribute("data-testid") ??
+        "";
+      const groupId = testId.startsWith("group-") ? testId.slice(6) : "";
+      const order = ["group:A", "group:C", "group:B"];
+      const index = order.indexOf(groupId);
+      const left = index * 120;
+      return {
+        bottom: 100,
+        height: 100,
+        left,
+        right: left + 100,
+        top: 0,
+        width: 100,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      };
+    };
+
+    try {
+      renderWorkspace();
+      const row = screen.getByTestId("groups-row-groups");
+
+      act(() => {
+        callbacks.onDragStart?.({
+          operation: {
+            source: { id: "group:C", type: "group", group: "group:C", board: "groups" },
+          },
+        });
+        callbacks.onDragOver?.({
+          operation: {
+            source: { id: "group:C", type: "group", group: "group:C", board: "groups" },
+            target: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          },
+        });
+        callbacks.onDragEnd?.({
+          canceled: false,
+          operation: {
+            source: { id: "group:C", type: "group", group: "group:C", board: "groups" },
+            target: { id: "group:B", type: "group", group: "group:B", board: "groups" },
+          },
+        });
+      });
+
+      // The trailing boundary must remain addressable in row space after the final group,
+      // not only while the pointer is inside the group's narrow right-edge zone.
+      fireEvent.mouseMove(row, { clientX: 380 });
+      expect(getCreateBoundaryButton(3)).toHaveAttribute("tabindex", "0");
+      expect(row.lastElementChild).toHaveAttribute("data-testid", "create-boundary-3");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
+  });
+
+  it("moves away from a hovered middle rail when the pointer reaches the final group", () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const testId =
+        this.getAttribute("data-testid") ??
+        this.querySelector("[data-testid^=group-group]")?.getAttribute("data-testid") ??
+        "";
+      const groupId = testId.startsWith("group-") ? testId.slice(6) : "";
+      const order = ["group:A", "group:B", "group:C"];
+      const index = order.indexOf(groupId);
+      const left = index * 120;
+      return {
+        bottom: 100,
+        height: 100,
+        left,
+        right: left + 100,
+        top: 0,
+        width: 100,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      };
+    };
+
+    try {
+      renderWorkspace();
+      const row = screen.getByTestId("groups-row-groups");
+
+      fireEvent.mouseMove(row, { clientX: 120 });
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "0");
+
+      fireEvent.mouseMove(row, { clientX: 341 });
+
+      expect(getCreateBoundaryButton(1)).toHaveAttribute("tabindex", "-1");
+      expect(getCreateBoundaryButton(3)).toHaveAttribute("tabindex", "0");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
   });
 
   it("hydrates empty-slot placeholder for default empty group and accepts source drop", async () => {

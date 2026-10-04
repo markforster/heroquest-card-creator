@@ -114,6 +114,29 @@ describe("AssetsPanelContent thumbnail loading (UI)", () => {
     expect(badge).toHaveClass(styles.assetsKindBadgeTile);
   });
 
+  it("toggles classification without selecting the tile and restores focus on Escape", async () => {
+    renderPanel();
+    const badge = await screen.findByRole("button", { name: "Unknown" });
+    const tile = badge.closest("button")!;
+
+    fireEvent.click(badge);
+    expect(badge).toHaveAttribute("aria-expanded", "true");
+    expect(tile).not.toHaveClass(styles.assetsItemSelected);
+    fireEvent.click(badge);
+    expect(badge).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.keyDown(badge, { key: " " });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(badge).toHaveAttribute("aria-expanded", "false");
+    expect(badge).toHaveFocus();
+    expect(tile).not.toHaveClass(styles.assetsItemSelected);
+
+    fireEvent.keyDown(badge, { key: "Enter" });
+    fireEvent.mouseDown(document.body);
+    expect(badge).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("does not flash a spinner for a thumbnail that finishes before the delay", async () => {
     let resolveThumbUrl!: (value: string | null) => void;
     mockGetAssetObjectUrl.mockImplementationOnce(

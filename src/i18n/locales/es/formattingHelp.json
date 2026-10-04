@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listas",
+  "formattingHelp.lists.move": "Mover",
+  "formattingHelp.lists.door": "Abrir una puerta",
+  "formattingHelp.lists.attack": "Atacar",
+  "formattingHelp.lists.rules": "Tras - o 1. use de 1 a 4 espacios. Un subelemento lleva exactamente 2 espacios iniciales (un nivel). La numeración continúa desde el primer número. Una línea vacía o normal termina la lista. Los renglones se alinean bajo el texto; las listas van a la izquierda. Se admiten estilos y dados, no listas HTML.",
+  "formattingHelp.lists.compatibility": "También se aplica a tarjetas existentes. Escriba \\- o \\1. para un marcador literal (una barra inversa). Las demás barras no cambian. La anidación ocupa más espacio; revise el ajuste y el texto recortado.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Alineación",

@@ -52,6 +52,27 @@ export function DeckSortableBoardView({
     countRenderableSets(itemsByGroup[groupIds[0]] ?? []) === 0;
   const [hoveredGroupId, setHoveredGroupId] = useState<GroupId | null>(null);
 
+  const renderBoundary = (index: number) => {
+    if (!config.allowGroupCreate || hideCreateBoundariesForBootstrapEmptyState) return null;
+    const key =
+      index === groupIds.length
+        ? `after-${groupIds[groupIds.length - 1] ?? "empty"}`
+        : `before-${groupIds[index]}`;
+    return (
+      <CreateBoundaryPlaceholder
+        key={key}
+        index={index}
+        onCreate={model.onCreateGroupAtIndex}
+        visible={
+          !activeSetId &&
+          !activeGroupId &&
+          hoverBoundaryIndex === index &&
+          !blockedBoundaries.has(index)
+        }
+      />
+    );
+  };
+
   return (
     <section
       className={[styles.board, useFillParent ? styles.boardFillParent : ""]
@@ -89,240 +110,210 @@ export function DeckSortableBoardView({
         onMouseMove={(event) => model.onHoverBoundary(event.clientX)}
         onMouseLeave={model.onLeaveBoard}
       >
+        {groupIds.length === 0 ? renderBoundary(0) : null}
         {groupIds.map((groupId, index) => (
-          <div key={groupId} className={styles.groupStack}>
-            {config.allowGroupCreate && !hideCreateBoundariesForBootstrapEmptyState ? (
-              <CreateBoundaryPlaceholder
-                index={index}
-                onCreate={model.onCreateGroupAtIndex}
-                onHoverChange={model.onBoundaryHoverChange}
-                visible={
-                  !activeSetId &&
-                  !activeGroupId &&
-                  hoverBoundaryIndex === index &&
-                  !blockedBoundaries.has(index)
-                }
-              />
-            ) : null}
-            <div
-              className={useFillParent ? styles.groupWrapperFillParent : ""}
-              ref={(node) => model.registerGroupRef(groupId, node)}
-            >
-              <GroupColumn
-                boardId={config.boardId}
-                index={index}
-                groupId={groupId}
-                label={model.groupLabelsById[groupId]}
-                fillParent={useFillParent}
-                canReceiveDrops={config.allowDropTarget}
-                showHeader={SHOW_GROUP_HEADINGS}
-                sourceLayout={isSourceBoard}
-                entriesLayout={isEntriesBoard}
-                className={
-                  model.resolveGroupClassName?.({
-                    boardId: config.boardId,
-                    groupId,
-                    isHovered: hoveredGroupId === groupId,
-                    hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                      (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                    ),
-                    setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                  }) ?? undefined
-                }
-                style={model.resolveGroupStyle?.({
-                  boardId: config.boardId,
-                  groupId,
-                  isHovered: hoveredGroupId === groupId,
-                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  ),
-                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                })}
-                bodyClassName={
-                  model.resolveGroupBodyClassName?.({
-                    boardId: config.boardId,
-                    groupId,
-                    isHovered: hoveredGroupId === groupId,
-                    hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                      (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                    ),
-                    setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                  }) ?? undefined
-                }
-                bodyStyle={model.resolveGroupBodyStyle?.({
-                  boardId: config.boardId,
-                  groupId,
-                  isHovered: hoveredGroupId === groupId,
-                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  ),
-                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                })}
-                onHoverChange={(isHovered) => {
-                  setHoveredGroupId((current) => {
-                    if (isHovered) return groupId;
-                    return current === groupId ? null : current;
-                  });
-                }}
-                allowGroupReorder={
-                  config.boardId === "groups" &&
-                  Boolean(model.allowGroupReorder) &&
-                  groupIds.length > 1
-                }
-                isGroupDragSource={activeGroupId === groupId}
-              >
-                {(() => {
-                  const groupSetIds = itemsByGroup[groupId] ?? [];
-                  const hasSelectedSet = groupSetIds.some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  );
-                  const groupVisualContext: GroupVisualContext = {
-                    boardId: config.boardId,
-                    groupId,
-                    isHovered: hoveredGroupId === groupId,
-                    hasSelectedSet,
-                    setCount: countRenderableSets(groupSetIds),
-                  };
-
-                  return groupSetIds.map((setId, setIndex) => (
-                    <Fragment key={setId}>
-                      {config.allowInGroupSort && isEmptySlotEphemeralSetId(setId) ? (
-                        <EmptySlotDropCard
-                          setId={setId}
-                          groupId={groupId}
-                          sourceLayout={isSourceBoard}
-                          renderContent={model.renderSetContent}
-                          shellClassName={
-                            model.resolveSetShellClassName?.({
-                              ...groupVisualContext,
-                              setId,
-                              setIndex,
-                            }) ?? undefined
-                          }
-                          shellStyle={model.resolveSetShellStyle?.({
-                            ...groupVisualContext,
-                            setId,
-                            setIndex,
-                          })}
-                        />
-                      ) : null}
-                      {config.allowInGroupSort && !isEmptySlotEphemeralSetId(setId) ? (
-                        <SortableSetCard
-                          boardId={config.boardId}
-                          setId={setId}
-                          label={model.setLabelsById[setId]}
-                          cardId={model.setCardIdById[setId]}
-                          index={setIndex}
-                          groupId={groupId}
-                          renderContent={model.renderSetContent}
-                          isSelected={model.isSetSelected?.(setId, groupId) ?? false}
-                          isEphemeral={isSourceEphemeralSetId(setId)}
-                          renderTopToolbar={model.renderTopToolbar}
-                          renderBottomToolbar={model.renderBottomToolbar}
-                          sourceLayout={isSourceBoard}
-                          shellClassName={
-                            model.resolveSetShellClassName?.({
-                              ...groupVisualContext,
-                              setId,
-                              setIndex,
-                            }) ?? undefined
-                          }
-                          shellStyle={model.resolveSetShellStyle?.({
-                            ...groupVisualContext,
-                            setId,
-                            setIndex,
-                          })}
-                          onClick={(event) => {
-                            if (model.activeSetId) return;
-                            model.onSetClick?.(setId, groupId, {
-                              additive: event.metaKey || event.ctrlKey,
-                            });
-                          }}
-                          onHoverChange={(isHovered) =>
-                            model.onSetHoverChange?.({
-                              boardId: config.boardId,
-                              groupId,
-                              setId,
-                              isHovered,
-                            })
-                          }
-                        />
-                      ) : null}
-                      {!config.allowInGroupSort ? (
-                        <DraggableSetCard
-                          boardId={config.boardId}
-                          setId={setId}
-                          label={model.setLabelsById[setId]}
-                          cardId={model.setCardIdById[setId]}
-                          groupId={groupId}
-                          renderContent={model.renderSetContent}
-                          isSelected={model.isSetSelected?.(setId, groupId) ?? false}
-                          isEphemeral={isSourceEphemeralSetId(setId)}
-                          renderTopToolbar={model.renderTopToolbar}
-                          renderBottomToolbar={model.renderBottomToolbar}
-                          sourceLayout={isSourceBoard}
-                          shellClassName={
-                            model.resolveSetShellClassName?.({
-                              ...groupVisualContext,
-                              setId,
-                              setIndex,
-                            }) ?? undefined
-                          }
-                          shellStyle={model.resolveSetShellStyle?.({
-                            ...groupVisualContext,
-                            setId,
-                            setIndex,
-                          })}
-                          onClick={(event) => {
-                            if (model.activeSetId) return;
-                            model.onSetClick?.(setId, groupId, {
-                              additive: event.metaKey || event.ctrlKey,
-                            });
-                          }}
-                          onHoverChange={(isHovered) =>
-                            model.onSetHoverChange?.({
-                              boardId: config.boardId,
-                              groupId,
-                              setId,
-                              isHovered,
-                            })
-                          }
-                        />
-                      ) : null}
-                    </Fragment>
-                  ));
-                })()}
-                {model.renderGroupOverlay?.({
-                  boardId: config.boardId,
-                  groupId,
-                  isHovered: hoveredGroupId === groupId,
-                  hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
-                    (setId) => model.isSetSelected?.(setId, groupId) ?? false,
-                  ),
-                  setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
-                  setIds: itemsByGroup[groupId] ?? [],
-                })}
-                {countRenderableSets(itemsByGroup[groupId] ?? []) === 0 && model.emptyMessage ? (
-                  <div className={styles.groupEmptyMessage}>{model.emptyMessage}</div>
-                ) : null}
-              </GroupColumn>
-            </div>
-          </div>
-        ))}
-
-        {config.allowGroupCreate && !hideCreateBoundariesForBootstrapEmptyState ? (
-          <CreateBoundaryPlaceholder
-            index={groupIds.length}
-            onCreate={model.onCreateGroupAtIndex}
-            onHoverChange={model.onBoundaryHoverChange}
-            visible={
-              !activeSetId &&
-              !activeGroupId &&
-              hoverBoundaryIndex === groupIds.length &&
-              !blockedBoundaries.has(groupIds.length)
+          <GroupColumn
+            key={groupId}
+            registerGroupRef={(node) => model.registerGroupRef(groupId, node)}
+            onGroupDragIntent={model.onGroupDragIntent}
+            boardId={config.boardId}
+            index={index}
+            groupId={groupId}
+            leadingContent={renderBoundary(index)}
+            label={model.groupLabelsById[groupId]}
+            fillParent={useFillParent}
+            canReceiveDrops={config.allowDropTarget}
+            showHeader={SHOW_GROUP_HEADINGS}
+            sourceLayout={isSourceBoard}
+            entriesLayout={isEntriesBoard}
+            className={
+              model.resolveGroupClassName?.({
+                boardId: config.boardId,
+                groupId,
+                isHovered: hoveredGroupId === groupId,
+                hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                  (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                ),
+                setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
+              }) ?? undefined
             }
-          />
-        ) : null}
+            style={model.resolveGroupStyle?.({
+              boardId: config.boardId,
+              groupId,
+              isHovered: hoveredGroupId === groupId,
+              hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+              ),
+              setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
+            })}
+            bodyClassName={
+              model.resolveGroupBodyClassName?.({
+                boardId: config.boardId,
+                groupId,
+                isHovered: hoveredGroupId === groupId,
+                hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                  (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+                ),
+                setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
+              }) ?? undefined
+            }
+            bodyStyle={model.resolveGroupBodyStyle?.({
+              boardId: config.boardId,
+              groupId,
+              isHovered: hoveredGroupId === groupId,
+              hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+              ),
+              setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
+            })}
+            onHoverChange={(isHovered) => {
+              setHoveredGroupId((current) => {
+                if (isHovered) return groupId;
+                return current === groupId ? null : current;
+              });
+            }}
+            allowGroupReorder={
+              config.boardId === "groups" && Boolean(model.allowGroupReorder) && groupIds.length > 1
+            }
+            isGroupDragSource={activeGroupId === groupId}
+          >
+            {(() => {
+              const groupSetIds = itemsByGroup[groupId] ?? [];
+              const hasSelectedSet = groupSetIds.some(
+                (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+              );
+              const groupVisualContext: GroupVisualContext = {
+                boardId: config.boardId,
+                groupId,
+                isHovered: hoveredGroupId === groupId,
+                hasSelectedSet,
+                setCount: countRenderableSets(groupSetIds),
+              };
+
+              return groupSetIds.map((setId, setIndex) => (
+                <Fragment key={setId}>
+                  {config.allowInGroupSort && isEmptySlotEphemeralSetId(setId) ? (
+                    <EmptySlotDropCard
+                      setId={setId}
+                      groupId={groupId}
+                      sourceLayout={isSourceBoard}
+                      renderContent={model.renderSetContent}
+                      shellClassName={
+                        model.resolveSetShellClassName?.({
+                          ...groupVisualContext,
+                          setId,
+                          setIndex,
+                        }) ?? undefined
+                      }
+                      shellStyle={model.resolveSetShellStyle?.({
+                        ...groupVisualContext,
+                        setId,
+                        setIndex,
+                      })}
+                    />
+                  ) : null}
+                  {config.allowInGroupSort && !isEmptySlotEphemeralSetId(setId) ? (
+                    <SortableSetCard
+                      boardId={config.boardId}
+                      setId={setId}
+                      label={model.setLabelsById[setId]}
+                      cardId={model.setCardIdById[setId]}
+                      index={setIndex}
+                      groupId={groupId}
+                      renderContent={model.renderSetContent}
+                      isSelected={model.isSetSelected?.(setId, groupId) ?? false}
+                      isEphemeral={isSourceEphemeralSetId(setId)}
+                      renderTopToolbar={model.renderTopToolbar}
+                      renderBottomToolbar={model.renderBottomToolbar}
+                      sourceLayout={isSourceBoard}
+                      shellClassName={
+                        model.resolveSetShellClassName?.({
+                          ...groupVisualContext,
+                          setId,
+                          setIndex,
+                        }) ?? undefined
+                      }
+                      shellStyle={model.resolveSetShellStyle?.({
+                        ...groupVisualContext,
+                        setId,
+                        setIndex,
+                      })}
+                      onClick={(event) => {
+                        if (model.activeSetId) return;
+                        model.onSetClick?.(setId, groupId, {
+                          additive: event.metaKey || event.ctrlKey,
+                        });
+                      }}
+                      onHoverChange={(isHovered) =>
+                        model.onSetHoverChange?.({
+                          boardId: config.boardId,
+                          groupId,
+                          setId,
+                          isHovered,
+                        })
+                      }
+                    />
+                  ) : null}
+                  {!config.allowInGroupSort ? (
+                    <DraggableSetCard
+                      boardId={config.boardId}
+                      setId={setId}
+                      label={model.setLabelsById[setId]}
+                      cardId={model.setCardIdById[setId]}
+                      groupId={groupId}
+                      renderContent={model.renderSetContent}
+                      isSelected={model.isSetSelected?.(setId, groupId) ?? false}
+                      isEphemeral={isSourceEphemeralSetId(setId)}
+                      renderTopToolbar={model.renderTopToolbar}
+                      renderBottomToolbar={model.renderBottomToolbar}
+                      sourceLayout={isSourceBoard}
+                      shellClassName={
+                        model.resolveSetShellClassName?.({
+                          ...groupVisualContext,
+                          setId,
+                          setIndex,
+                        }) ?? undefined
+                      }
+                      shellStyle={model.resolveSetShellStyle?.({
+                        ...groupVisualContext,
+                        setId,
+                        setIndex,
+                      })}
+                      onClick={(event) => {
+                        if (model.activeSetId) return;
+                        model.onSetClick?.(setId, groupId, {
+                          additive: event.metaKey || event.ctrlKey,
+                        });
+                      }}
+                      onHoverChange={(isHovered) =>
+                        model.onSetHoverChange?.({
+                          boardId: config.boardId,
+                          groupId,
+                          setId,
+                          isHovered,
+                        })
+                      }
+                    />
+                  ) : null}
+                </Fragment>
+              ));
+            })()}
+            {model.renderGroupOverlay?.({
+              boardId: config.boardId,
+              groupId,
+              isHovered: hoveredGroupId === groupId,
+              hasSelectedSet: (itemsByGroup[groupId] ?? []).some(
+                (setId) => model.isSetSelected?.(setId, groupId) ?? false,
+              ),
+              setCount: countRenderableSets(itemsByGroup[groupId] ?? []),
+              setIds: itemsByGroup[groupId] ?? [],
+            })}
+            {countRenderableSets(itemsByGroup[groupId] ?? []) === 0 && model.emptyMessage ? (
+              <div className={styles.groupEmptyMessage}>{model.emptyMessage}</div>
+            ) : null}
+          </GroupColumn>
+        ))}
+        {groupIds.length > 0 ? renderBoundary(groupIds.length) : null}
       </BoardDropSurface>
     </section>
   );

@@ -1,4 +1,10 @@
 {
+  "formattingHelp.lists.title": "Listes",
+  "formattingHelp.lists.move": "Se déplacer",
+  "formattingHelp.lists.door": "Ouvrir une porte",
+  "formattingHelp.lists.attack": "Attaquer",
+  "formattingHelp.lists.rules": "Après - ou 1., utilisez 1 à 4 espaces. Un sous-élément commence par exactement 2 espaces (un seul sous-niveau). La numérotation suit le premier nombre. Une ligne vide ou ordinaire termine la liste. Les retours restent sous le texte ; les listes sont alignées à gauche. Styles et dés fonctionnent, pas les listes HTML.",
+  "formattingHelp.lists.compatibility": "Les cartes existantes utilisent aussi cette syntaxe. Écrivez \\- ou \\1. pour garder le marqueur littéral (une barre oblique inverse). Les autres restent inchangées. Vérifiez l’ajustement et le texte tronqué : les sous-listes prennent plus de place.",
   "formattingHelp.markdown": "Markdown",
   "formattingHelp.richText": "Rich text",
   "formattingHelp.alignment": "Alignement",

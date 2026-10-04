@@ -1,4 +1,5 @@
 import { listGroups } from "@/lib/data/decks-service";
+import { isDebugToolsEnabled } from "@/lib/env";
 
 import type { ZodiosPlugin } from "@zodios/core";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -15,6 +16,12 @@ export const listDeckGroupsRequestPlugin: ZodiosPlugin = {
         throw new Error("[api:listDeckGroups] Missing deckId");
       }
       const data = await listGroups(deckId);
+      if (isDebugToolsEnabled()) {
+        console.debug("[groups:reorder] list-groups", {
+          deckId,
+          groups: JSON.stringify(data.map((group) => ({ id: group.id, sortIndex: group.sortIndex }))),
+        });
+      }
       return {
         data,
         status: 200,
