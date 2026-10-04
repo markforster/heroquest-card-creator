@@ -63,4 +63,20 @@ describe("getExportProfilesState", () => {
     const reloaded = await restoreExportProfilesState(stored);
     expect(reloaded).toEqual(stored);
   });
+
+  it("normalizes older stored profiles to the JPEG image format default", async () => {
+    const stored = await getExportProfilesState();
+    const legacyState = {
+      ...stored,
+      profiles: stored.profiles.map((profile) => {
+        const legacySettings = { ...profile.settings };
+        delete legacySettings.imageFormat;
+        return { ...profile, settings: legacySettings };
+      }),
+    };
+
+    const restored = await restoreExportProfilesState(legacyState as typeof stored);
+
+    expect(restored.profiles[0].settings.imageFormat).toBe("jpeg");
+  });
 });

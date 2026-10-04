@@ -1,6 +1,6 @@
 "use client";
 
-import { Gamepad2, Lightbulb, TriangleAlert, Twitter } from "lucide-react";
+import { ExternalLink, Gamepad2, Lightbulb, TriangleAlert, Twitter } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { isMobile, isTablet } from "react-device-detect";
 
@@ -120,6 +120,17 @@ export default function MainFooter() {
             >
               {t("actions.about")}
             </button>
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://heroquest-card-templates.done-well.co.uk/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.footerLink} d-inline-flex align-items-center gap-1 text-nowrap`}
+              title={t("tooltip.communityLibrary")}
+            >
+              {t("actions.communityLibrary")}
+              <ExternalLink size={12} aria-hidden="true" />
+            </a>
             {showDownloadLink ? (
               <>
                 <span>·</span>

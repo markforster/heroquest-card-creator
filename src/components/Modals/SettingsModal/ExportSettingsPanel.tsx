@@ -7,6 +7,7 @@ import ExportOptionsForm from "@/components/Export/ExportOptionsForm";
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import PdfExportConfigForm from "@/components/Export/PdfExportConfigForm";
 import ConfirmModal from "@/components/Modals/ConfirmModal";
+import ExportImageFormatGroup from "@/components/Modals/SettingsModal/ExportImageFormatGroup";
 import ExportProfileNameModal from "@/components/Modals/SettingsModal/ExportProfileNameModal";
 import ExportProfilesBottomActionBar from "@/components/Modals/SettingsModal/ExportProfilesBottomActionBar";
 import ExportProfilesTopToolbar from "@/components/Modals/SettingsModal/ExportProfilesTopToolbar";
@@ -67,6 +68,7 @@ function applyExportOptionsChange(
   const resolvedCutEnabled = resolvedBleedEnabled ? requestedCutEnabled : false;
 
   return {
+    imageFormat: settings.imageFormat,
     bleed: {
       enabled: resolvedBleedEnabled,
       bleedPx: resolvedBleedPx,
@@ -253,6 +255,11 @@ export default function ExportSettingsPanel() {
             onChange={(next) =>
               setDraftSettings((current) => applyExportOptionsChange(current, next))
             }
+          />
+
+          <ExportImageFormatGroup
+            value={draftSettings.imageFormat}
+            onChange={(imageFormat) => setDraftSettings((current) => ({ ...current, imageFormat }))}
           />
 
           <div className={styles.settingsGroup}>

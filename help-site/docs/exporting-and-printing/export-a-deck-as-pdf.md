@@ -4,7 +4,7 @@ type: guide
 status: first-draft
 source_questions: [Q-0116, Q-0117, Q-0118]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Export a Deck as PDF
 
@@ -29,6 +29,16 @@ Choose **Front + back** to create matching front and reverse sheets for double-s
 5. Check the summary, then choose **Export PDF**.
 
 The deck must contain at least one set before the Export control becomes available. **Complete sets** still needs card entries, while **All sets** or **Selected sets** can include an empty set using a placeholder front.
+
+## Choose smaller PDFs or lossless card images
+
+The selected export profile controls the image format inside your PDF. **JPEG** is the default for smaller files; **PNG** keeps the original lossless card-image format and usually produces larger files.
+
+To change it, open **Settings > Export Settings**, select your profile, choose **JPEG** or **PNG** under **Image Format**, and choose **Save**. Then use that profile in the PDF export window. See [PDF image format: JPEG or PNG](../settings-and-data/configure-export-defaults-and-profiles.md#pdf-image-format-jpeg-or-png) for the full explanation.
+
+JPEG does not change card dimensions, page layout, or deck quantities. It does discard some image detail, which can show around fine edges or textures when enlarged. Check a small export or test print if you are unsure which format suits your artwork.
+
+The change applies only to newly generated PDFs. Image Export still produces PNG files, and your source artwork and existing PDFs are not changed.
 
 ## Choose which sets to include
 

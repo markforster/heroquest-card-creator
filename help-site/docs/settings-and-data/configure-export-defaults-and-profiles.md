@@ -4,7 +4,7 @@ type: how-to
 status: first-draft
 source_questions: [Q-0061, Q-0062, Q-0118, Q-0150, Q-0151, Q-0152, Q-0167, Q-0168, Q-0169, Q-0170, Q-0171, Q-0172, Q-0173, Q-0174, Q-0175]
 verified: 2026-07-22
-app_version: 0.8.0
+app_version: 0.8.3
 ---
 # Configure Export Defaults and Profiles
 
@@ -13,7 +13,7 @@ An export profile is a reusable group of image and PDF export settings. Use prof
 A profile has two related jobs:
 
 - **Image export settings** control how each card face is prepared, including bleed, rounded corners, and trimming marks.
-- **PDF settings** control how prepared card faces are placed on physical pages and how reverse sheets are arranged.
+- **PDF settings** control the image format inside the PDF, how prepared card faces are placed on physical pages, and how reverse sheets are arranged.
 
 Profiles store starting values. Choosing a profile does not export anything by itself, and changing options for one PDF run does not rewrite the saved profile.
 
@@ -71,6 +71,26 @@ Choose **Lines**, **Squares**, or **Triangles** according to the guide shape tha
 Cut marks provide a more continuous guide around the cutting boundary. Choose **Solid**, **Dashed**, **Long dashed**, **Dotted**, or **Ticks** to suit the tool or visual guide you prefer.
 
 Crop marks and cut marks are alternatives that can also be combined when a workflow benefits from both. Both require bleed and add space outside the trimmed card. Confirm what a professional print service accepts before including either type of mark.
+
+## PDF image format: JPEG or PNG
+
+Use **Image Format** to choose how finished card images are stored inside a PDF. This choice is saved separately for each export profile.
+
+1. Open **Settings > Export Settings**.
+2. Select the profile you want to change.
+3. In **Image Format**, choose **JPEG** or **PNG**.
+4. Choose **Save**.
+5. Select that profile when exporting your deck as a PDF.
+
+**JPEG** is the default and usually produces much smaller PDFs. In four deck comparisons, PDFs were approximately 88%–91% smaller; one went from 82.3 MB to 9.9 MB. Savings vary with the cards and artwork, so this is not a guaranteed reduction.
+
+**PNG** preserves the rendered card image without JPEG compression loss, but generally produces larger PDFs. Choose it when preserving fine detail matters more than file size, or when your print workflow requires it.
+
+JPEG keeps the same image dimensions and PDF layout, but discards some detail. Subtle texture and edge differences can become visible when enlarged. Compare a small export, and test-print a page if print quality is important to you. Transparent areas, including rounded corners, are filled with white for JPEG images to match the PDF page.
+
+Profiles without an image-format choice use JPEG, including older profiles. A profile created with **Save as** starts from the selected profile's settings. To keep the previous PNG-based PDF output, choose PNG and save the profile.
+
+This setting affects new PDF exports only. Individual and bulk image exports remain PNG. Original artwork, stored thumbnails, and existing PDFs are unchanged; it does not reduce the size of your stored library.
 
 ## PDF print settings
 
@@ -183,7 +203,7 @@ The built-in/default profile cannot be deleted, and the only remaining profile c
 
 ## What the profile controls
 
-Profiles contain image export options such as bleed, rounded corners, and marks, plus PDF planning defaults such as paper, orientation, face mode, duplex preset, bleed source, and bleed measurement.
+Profiles contain image export options such as bleed, rounded corners, and marks, the JPEG or PNG format for images inside PDFs, plus PDF planning defaults such as paper, orientation, face mode, duplex preset, bleed source, and bleed measurement.
 
 The profile supplies defaults; the actual export still depends on the cards, collection, or deck being exported. A deck PDF can also offer per-run layout and bleed customization without changing the saved profile. See [Export Cards as PNG Images](../exporting-and-printing/export-cards-as-png-images.md) and [Export a Deck as PDF](../exporting-and-printing/export-a-deck-as-pdf.md).
 

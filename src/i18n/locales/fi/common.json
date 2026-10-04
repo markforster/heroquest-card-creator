@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Kuvamuoto",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "JPEG-PDF-tiedostot olivat testeissämme noin 88 % pienempiä kuin PNG-PDF-tiedostot. Valitse PNG, jos tarvitset häviöttömän viennin.",
   "app.title": "HeroQuest‑korttityökalu",
   "actions.template": "Malli",
   "actions.templates": "Mallit",

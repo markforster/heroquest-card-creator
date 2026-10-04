@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Bildformat",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "JPEG-PDFs waren in unseren Tests ungefähr 88 % kleiner als PNG-PDFs. Wählen Sie PNG für einen verlustfreien Export.",
   "app.title": "HeroQuest-Karteneditor",
   "actions.template": "Vorlage",
   "actions.templates": "Vorlagen",

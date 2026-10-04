@@ -41,6 +41,7 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "src/lib/__testutils__/**"
+    "src/lib/__testutils__/**",
+    "apps/heroquest-library"
   ]
 }

@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Billedformat",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "JPEG-PDF'er var cirka 88 % mindre end PNG-PDF'er i vores tests. Vælg PNG, når du har brug for en tabsfri eksport.",
   "app.title": "HeroQuest-kortskaber",
   "actions.template": "Skabelon",
   "actions.templates": "Skabeloner",

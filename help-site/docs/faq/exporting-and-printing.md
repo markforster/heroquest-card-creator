@@ -107,6 +107,18 @@ Open an exportable deck, choose Export > PDF Export, choose set scope and layout
 
 [Read the full guidance](../exporting-and-printing/export-a-deck-as-pdf.md)
 
+**To make the PDF smaller:**
+
+Open **Settings > Export Settings**, select your profile, choose **JPEG** under **Image Format**, and save. Use that profile for the PDF export. JPEG is the default; four deck comparisons produced PDFs approximately 88%–91% smaller than PNG-based exports, but savings vary.
+
+[Read the full guidance](../settings-and-data/configure-export-defaults-and-profiles.md#pdf-image-format-jpeg-or-png)
+
+**Does choosing JPEG change my original images or PNG exports?**
+
+No. It changes only the card images embedded in new PDFs. Your original artwork, thumbnails, existing PDFs, and individual or bulk PNG exports remain unchanged. Choose **PNG** in the profile if you want lossless card images inside the PDF too.
+
+[Read the full guidance](../settings-and-data/configure-export-defaults-and-profiles.md#pdf-image-format-jpeg-or-png)
+
 ## How are front and back faces arranged for double-sided printing?
 
 Fronts are laid out in deck order and quantity; Front + back mode creates corresponding reverse sheets using each set's back and the chosen duplex transformation.

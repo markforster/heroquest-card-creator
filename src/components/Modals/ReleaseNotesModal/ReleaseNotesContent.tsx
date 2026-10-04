@@ -238,9 +238,21 @@ export default function ReleaseNotesContent() {
       >
         <DocParagraph>
           v0.8.3 is a focused usability release that makes everyday card authoring and deck
-          organisation a little more flexible. It adds three small but useful improvements aimed at
-          helping you write clearer cards, keep larger decks in order, and understand your asset
-          library more easily.
+          organisation a little more flexible. It helps you write clearer cards, keep larger decks
+          in order, understand your asset library more easily, and produce smaller PDFs for sharing.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          PDF exports now use JPEG card images by default. Across four decks compared, PDFs were
+          approximately 88%–91% smaller; one went from 82.3 MB to 9.9 MB. Savings vary with your
+          cards and artwork. Choose JPEG or lossless PNG under Settings &gt; Export Settings &gt;
+          Image Format, and save the choice separately for each export profile. Older profiles
+          without a format choice also use JPEG.
+        </DocParagraph>
+        <DocParagraph className={docStyles.docParagraphSpaced}>
+          JPEG keeps the same card dimensions and PDF layout, but can introduce subtle differences
+          around textures and fine edges when enlarged. PNG remains available when preserving every
+          detail matters more than file size. This affects new PDF exports only: individual and bulk
+          image exports remain PNG, and your original artwork and existing PDFs are unchanged.
         </DocParagraph>
         <DocParagraph className={docStyles.docParagraphSpaced}>
           Card body text now supports simple bullet and numbered lists, including one level of

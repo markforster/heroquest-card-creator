@@ -8,6 +8,10 @@ import {
   PDF_ATTRIBUTION_TEXT_GAP_MM,
   PDF_ATTRIBUTION_TEXT_SIZE_PT,
 } from "@/lib/pdf-export/footer";
+import {
+  encodePdfFaceAsJpeg,
+  isPdfJpegOptimizationEnabled,
+} from "@/lib/pdf-export/jpeg-optimization";
 import { applyPdfMetadata } from "@/lib/pdf-export/metadata";
 import type {
   LayoutPlan,
@@ -30,6 +34,7 @@ type RenderPdfOptions = {
   fileName: string;
   sourceType: PdfExportSourceType;
   renderFacePngBytes: (faceId: string) => Promise<Uint8Array | null>;
+  useOptimizedJpeg?: boolean;
   shouldCancel?: () => boolean;
   onPhase?: (phase: "rendering" | "finalizing") => void;
   onProgress?: (progress: {
@@ -760,6 +765,7 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
     fileName,
     sourceType,
     renderFacePngBytes,
+    useOptimizedJpeg = isPdfJpegOptimizationEnabled(),
     shouldCancel,
     onPhase,
     onProgress,
@@ -772,7 +778,10 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
   const pageHeightPt = mmToPt(layout.paperMm.height);
   const footerFont = await pdf.embedFont(StandardFonts.Helvetica);
 
-  const embeddedByFaceId = new Map<string, Awaited<ReturnType<typeof pdf.embedPng>>>();
+  type EmbeddedFaceImage =
+    | Awaited<ReturnType<typeof pdf.embedJpg>>
+    | Awaited<ReturnType<typeof pdf.embedPng>>;
+  const embeddedByFaceId = new Map<string, EmbeddedFaceImage>();
   let renderedFaces = 0;
   let skippedFaces = 0;
   const qrDataUrl = embeddedImagesByFileName[PDF_ATTRIBUTION_QR_KEY];
@@ -835,7 +844,8 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
           skippedFaces += 1;
           continue;
         }
-        image = await pdf.embedPng(bytes);
+        const jpegBytes = useOptimizedJpeg ? await encodePdfFaceAsJpeg(bytes) : null;
+        image = jpegBytes ? await pdf.embedJpg(jpegBytes) : await pdf.embedPng(bytes);
         embeddedByFaceId.set(slot.frontId, image);
       }
 
@@ -891,7 +901,8 @@ export async function renderPdf(options: RenderPdfOptions): Promise<PdfExportRes
           skippedFaces += 1;
           continue;
         }
-        image = await pdf.embedPng(bytes);
+        const jpegBytes = useOptimizedJpeg ? await encodePdfFaceAsJpeg(bytes) : null;
+        image = jpegBytes ? await pdf.embedJpg(jpegBytes) : await pdf.embedPng(bytes);
         embeddedByFaceId.set(slot.backId, image);
       }
 

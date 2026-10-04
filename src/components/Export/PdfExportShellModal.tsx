@@ -28,7 +28,12 @@ import { cardTemplatesById } from "@/data/card-templates";
 import { getTemplateNameLabel } from "@/i18n/getTemplateNameLabel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { cardRecordToCardData } from "@/lib/card-record-mapper";
-import type { ExportSettings } from "@/lib/export-settings";
+import {
+  DEFAULT_EXPORT_IMAGE_FORMAT,
+  normalizeExportImageFormat,
+  type ExportImageFormat,
+  type ExportSettings,
+} from "@/lib/export-settings";
 import {
   DEFAULT_PDF_PRINT_CONFIG,
   composePrintComposition,
@@ -46,6 +51,7 @@ import {
 type ResolvedBleedOptions = ReturnType<typeof resolvePdfExportBleedOptions>;
 
 export type PdfExportShellState = {
+  imageFormat: ExportImageFormat;
   config: PrintConfig;
   bleedOptions: ExportOptionsFormState;
   layoutMode: "default" | "custom";
@@ -99,6 +105,7 @@ export type PdfExportAlignmentRun = PdfExportRun & {
 };
 
 type ExecutablePdfExportRun = PdfExportRun & {
+  imageFormat: ExportImageFormat;
   sourceType: PdfExportSourceType;
   config: PrintConfig;
   layout: LayoutPlan;
@@ -180,6 +187,10 @@ function createProfileDefaultBleedOptions(
   };
 }
 
+function createProfileDefaultImageFormat(settings: ExportSettings | undefined): ExportImageFormat {
+  return normalizeExportImageFormat(settings?.imageFormat ?? DEFAULT_EXPORT_IMAGE_FORMAT);
+}
+
 function areValuesEqual<T>(left: T, right: T): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -216,6 +227,9 @@ export default function PdfExportShellModal({
   );
   const [config, setConfig] = useState<PrintConfig>(defaultConfig);
   const [bleedOptions, setBleedOptions] = useState<ExportOptionsFormState>(defaultBleedOptions);
+  const [imageFormat, setImageFormat] = useState<ExportImageFormat>(
+    createProfileDefaultImageFormat(selectedProfile?.settings),
+  );
   const [layoutMode, setLayoutMode] = useState<"default" | "custom">("default");
   const [bleedMode, setBleedMode] = useState<"default" | "custom">("default");
   const [isExporting, setIsExporting] = useState(false);
@@ -248,12 +262,14 @@ export default function PdfExportShellModal({
     const nextProfileId = defaultProfile?.id;
     const nextConfig = createProfileDefaultConfig(nextSettings, shellPolicy);
     const nextBleedOptions = createProfileDefaultBleedOptions(nextSettings);
+    const nextImageFormat = createProfileDefaultImageFormat(nextSettings);
 
     setSelectedProfileId((current) => (current === nextProfileId ? current : nextProfileId));
     setConfig((current) => (areValuesEqual(current, nextConfig) ? current : nextConfig));
     setBleedOptions((current) =>
       areValuesEqual(current, nextBleedOptions) ? current : nextBleedOptions,
     );
+    setImageFormat((current) => (current === nextImageFormat ? current : nextImageFormat));
     setLayoutMode((current) => (current === "default" ? current : "default"));
     setBleedMode((current) => (current === "default" ? current : "default"));
     setIsExporting((current) => (current ? false : current));
@@ -290,6 +306,7 @@ export default function PdfExportShellModal({
 
   const shellState = useMemo<PdfExportShellState>(
     () => ({
+      imageFormat,
       config,
       bleedOptions,
       layoutMode,
@@ -304,6 +321,7 @@ export default function PdfExportShellModal({
       config,
       effectiveBleedOptions,
       effectiveConfig,
+      imageFormat,
       layoutMode,
       resolvedBleedOptions,
     ],
@@ -346,6 +364,7 @@ export default function PdfExportShellModal({
       setSelectedProfileId(profileId);
       setConfig(createProfileDefaultConfig(nextProfile?.settings, shellPolicy));
       setBleedOptions(createProfileDefaultBleedOptions(nextProfile?.settings));
+      setImageFormat(createProfileDefaultImageFormat(nextProfile?.settings));
     },
     [defaultProfile, profiles, shellPolicy],
   );
@@ -415,6 +434,7 @@ export default function PdfExportShellModal({
 
       return {
         ...builtRun,
+        imageFormat: shellState.imageFormat,
         sourceType,
         config: configForRun,
         layout,
@@ -422,7 +442,7 @@ export default function PdfExportShellModal({
         renderFacePngBytes,
       };
     },
-    [placeholderLookup, shellState, slotPairs, t],
+    [placeholderLookup, shellState, slotPairs, sourceType, t],
   );
 
   const buildExecutableAlignmentRun = useCallback(
@@ -455,6 +475,7 @@ export default function PdfExportShellModal({
 
       return {
         ...builtRun,
+        imageFormat: shellState.imageFormat,
         sourceType: "alignment",
         config: configForRun,
         layout,
@@ -481,6 +502,7 @@ export default function PdfExportShellModal({
           composition: run.composition,
           fileName: run.fileName,
           sourceType: run.sourceType,
+          useOptimizedJpeg: run.imageFormat === "jpeg",
           renderFacePngBytes: run.renderFacePngBytes,
           shouldCancel: () => cancelRequestedRef.current,
           includeCalibrationPage: run.includeCalibrationPage ?? true,

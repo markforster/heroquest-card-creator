@@ -24,7 +24,12 @@ export type ExportCutMarksSettings = {
   style: "solid" | "dashed" | "long-dashed" | "dotted" | "ticks";
 };
 
+export type ExportImageFormat = "jpeg" | "png";
+
+export const DEFAULT_EXPORT_IMAGE_FORMAT: ExportImageFormat = "jpeg";
+
 export type ExportSettings = {
+  imageFormat: ExportImageFormat;
   bleed: ExportPngBleedSettings;
   cropMarks: ExportCropMarksSettings;
   cutMarks: ExportCutMarksSettings;
@@ -67,6 +72,7 @@ const STORAGE_KEYS = {
 
 export function createDefaultExportSettings(): ExportSettings {
   return {
+    imageFormat: DEFAULT_EXPORT_IMAGE_FORMAT,
     bleed: {
       enabled: false,
       bleedPx: DEFAULT_BLEED_PX,
@@ -84,6 +90,53 @@ export function createDefaultExportSettings(): ExportSettings {
     },
     roundedCorners: DEFAULT_EXPORT_ROUNDED_CORNERS,
     pdf: DEFAULT_PDF_PRINT_CONFIG,
+  };
+}
+
+export function normalizeExportImageFormat(value: unknown): ExportImageFormat {
+  return value === "png" ? "png" : DEFAULT_EXPORT_IMAGE_FORMAT;
+}
+
+export function normalizeExportSettings(
+  settings: Partial<ExportSettings> | null | undefined,
+): ExportSettings {
+  const defaults = createDefaultExportSettings();
+  const candidate = settings ?? {};
+  const normalizedPdf = normalizePdfPrintConfig(candidate.pdf);
+  const marginsMm = candidate.pdf?.marginsMm;
+  const gapMm = candidate.pdf?.gapMm;
+
+  const normalizeNonNegative = (value: number | undefined, fallback: number) =>
+    Number.isFinite(value) ? Math.max(0, Number(value)) : fallback;
+
+  return {
+    imageFormat: normalizeExportImageFormat(candidate.imageFormat),
+    bleed: {
+      ...defaults.bleed,
+      ...candidate.bleed,
+    },
+    cropMarks: {
+      ...defaults.cropMarks,
+      ...candidate.cropMarks,
+    },
+    cutMarks: {
+      ...defaults.cutMarks,
+      ...candidate.cutMarks,
+    },
+    roundedCorners: candidate.roundedCorners ?? defaults.roundedCorners,
+    pdf: {
+      ...normalizedPdf,
+      marginsMm: {
+        top: normalizeNonNegative(marginsMm?.top, normalizedPdf.marginsMm.top),
+        right: normalizeNonNegative(marginsMm?.right, normalizedPdf.marginsMm.right),
+        bottom: normalizeNonNegative(marginsMm?.bottom, normalizedPdf.marginsMm.bottom),
+        left: normalizeNonNegative(marginsMm?.left, normalizedPdf.marginsMm.left),
+      },
+      gapMm: {
+        x: normalizeNonNegative(gapMm?.x, normalizedPdf.gapMm.x),
+        y: normalizeNonNegative(gapMm?.y, normalizedPdf.gapMm.y),
+      },
+    },
   };
 }
 
@@ -139,6 +192,7 @@ export function getExportSettings(): ExportSettings {
   });
 
   return {
+    imageFormat: DEFAULT_EXPORT_IMAGE_FORMAT,
     bleed: { enabled: bleedEnabled, bleedPx, askBeforeExport },
     cropMarks: { enabled: cropMarksEnabled, color: cropMarksColor, style: cropMarksStyle },
     cutMarks: { enabled: cutMarksEnabled, color: cutMarksColor, style: cutMarksStyle },

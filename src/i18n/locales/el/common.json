@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Μορφή εικόνας",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "Τα PDF JPEG ήταν περίπου 88% μικρότερα από τα PDF PNG στις δοκιμές μας. Επιλέξτε PNG για εξαγωγή χωρίς απώλειες.",
   "app.title": "Δημιουργός Καρτών HeroQuest",
   "actions.template": "Πρότυπο",
   "actions.templates": "Πρότυπα",

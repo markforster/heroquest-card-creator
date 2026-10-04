@@ -1,4 +1,10 @@
 {
+  "actions.communityLibrary": "Community Library",
+  "tooltip.communityLibrary": "Browse cards and decks shared by the community (opens in a new tab).",
+  "heading.exportImageFormat": "Formát obrázku",
+  "label.exportImageFormatJpeg": "JPEG",
+  "label.exportImageFormatPng": "PNG",
+  "help.exportImageFormat": "PDF soubory JPEG byly v našich testech přibližně o 88 % menší než PNG. PNG zvolte, pokud potřebujete bezztrátový export.",
   "app.title": "Tvorba karet HeroQuest",
   "actions.template": "Šablona",
   "actions.templates": "Šablony",

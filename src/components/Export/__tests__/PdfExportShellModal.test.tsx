@@ -18,6 +18,7 @@ const mockWaitForAssetElements = jest.fn();
 const mockWaitForFrame = jest.fn();
 const mockBuildAssetCache = jest.fn();
 let mockExportSettings = {
+  imageFormat: "jpeg" as const,
   bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
   cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
   cutMarks: { enabled: true, color: "#00FFFF", style: "dashed" },
@@ -369,6 +370,7 @@ function makeAlignmentRun(): PdfExportAlignmentRun {
 beforeEach(() => {
   mockGetCard.mockReset();
   mockExportSettings = {
+    imageFormat: "jpeg",
     bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
     cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
     cutMarks: { enabled: true, color: "#00FFFF", style: "solid" },
@@ -645,8 +647,35 @@ describe("PdfExportShellModal", () => {
     );
     expect(mockRenderPdf).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ sourceType: "deck" }),
+      expect.objectContaining({ sourceType: "deck", useOptimizedJpeg: true }),
     );
+  });
+
+  it("passes the profile PNG choice through to the PDF renderer", async () => {
+    mockExportSettings = {
+      ...mockExportSettings,
+      imageFormat: "png",
+    };
+    mockProfiles[0].settings = mockExportSettings;
+
+    render(
+      <PdfExportShellModal
+        isOpen
+        title="Export shell"
+        sourceType="deck"
+        slotPairs={slotPairs}
+        onCancel={jest.fn()}
+        buildExportRun={() => makeRun()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+
+    await waitFor(() => {
+      expect(mockRenderPdf).toHaveBeenCalledWith(
+        expect.objectContaining({ sourceType: "deck", useOptimizedJpeg: false }),
+      );
+    });
   });
 
   it("renders normal export faces inside the shell for real cards and placeholders", async () => {

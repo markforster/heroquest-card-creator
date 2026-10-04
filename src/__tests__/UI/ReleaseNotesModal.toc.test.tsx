@@ -114,7 +114,7 @@ describe("ReleaseNotesModal TOC", () => {
     expect(
       sections.map((section) => [section.id, section.querySelector("h3")?.textContent ?? ""]),
     ).toEqual(expectedSections);
-    expect(document.querySelectorAll("article section p")).toHaveLength(65);
+    expect(document.querySelectorAll("article section p")).toHaveLength(67);
     expect(document.querySelectorAll("article section ul")).toHaveLength(16);
     expect(document.querySelectorAll("article section li")).toHaveLength(106);
     expect(
@@ -138,6 +138,8 @@ describe("ReleaseNotesModal TOC", () => {
     renderModal();
 
     expect(screen.getByRole("heading", { name: "Update 04/10/2026 (v0.8.3)" })).toBeInTheDocument();
+    expect(screen.getByText(/PDF exports now use JPEG card images by default/)).toBeInTheDocument();
+    expect(screen.getByText(/bulk image exports remain PNG/)).toBeInTheDocument();
     expect(
       screen.getByText(/simple bullet and numbered lists, including one level of nesting/i),
     ).toBeInTheDocument();

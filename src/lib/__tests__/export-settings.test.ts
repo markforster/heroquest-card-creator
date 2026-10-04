@@ -1,5 +1,6 @@
 import {
   DEFAULT_BLEED_PX,
+  DEFAULT_EXPORT_IMAGE_FORMAT,
   DEFAULT_EXPORT_ROUNDED_CORNERS,
   DEFAULT_PDF_PRINT_CONFIG,
   EXPORT_SETTINGS_STORAGE_KEYS,
@@ -18,6 +19,7 @@ describe("export-settings pdf defaults", () => {
     expect(settings.pdf).toEqual(DEFAULT_PDF_PRINT_CONFIG);
     expect(settings.bleed.bleedPx).toBe(DEFAULT_BLEED_PX);
     expect(settings.roundedCorners).toBe(DEFAULT_EXPORT_ROUNDED_CORNERS);
+    expect(settings.imageFormat).toBe(DEFAULT_EXPORT_IMAGE_FORMAT);
   });
 
   it("persists supported pdf settings and normalizes edge-to-edge spacing", () => {
