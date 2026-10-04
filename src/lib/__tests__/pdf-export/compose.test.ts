@@ -11,11 +11,29 @@ jest.mock("@/components/Decks/deck-preview", () => ({
 }));
 
 import { apiClient } from "@/api/client";
+import type { PairRecord } from "@/api/pairs/types";
 import { listPairsMap } from "@/components/Decks/deck-preview";
 import { composeDeckSlotPairs, composePrintComposition } from "@/lib/pdf-export/compose";
 
-const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
+const mockedApiClient = {
+  listDeckGroups: jest.mocked(apiClient.listDeckGroups),
+  listDeckSets: jest.mocked(apiClient.listDeckSets),
+  listDeckEntries: jest.mocked(apiClient.listDeckEntries),
+};
 const mockedListPairsMap = listPairsMap as jest.MockedFunction<typeof listPairsMap>;
+
+function createPair(id: string, frontFaceId: string | null): PairRecord {
+  return {
+    id,
+    frontFaceId,
+    backFaceId: null,
+    name: id,
+    nameLower: id,
+    createdAt: 1,
+    updatedAt: 1,
+    schemaVersion: 1,
+  };
+}
 
 describe("pdf-export compose", () => {
   beforeEach(() => {
@@ -71,10 +89,10 @@ describe("pdf-export compose", () => {
     });
     mockedListPairsMap.mockResolvedValue(
       new Map([
-        ["pair-1", { frontFaceId: "front-1" }],
-        ["pair-2", { frontFaceId: "front-2" }],
-        ["pair-4", { frontFaceId: "front-4" }],
-        ["missing-front", { frontFaceId: null }],
+        ["pair-1", createPair("pair-1", "front-1")],
+        ["pair-2", createPair("pair-2", "front-2")],
+        ["pair-4", createPair("pair-4", "front-4")],
+        ["missing-front", createPair("missing-front", null)],
       ]),
     );
 
@@ -96,7 +114,7 @@ describe("pdf-export compose", () => {
     mockedApiClient.listDeckEntries.mockResolvedValue([
       { id: "entry-1", pairId: "pair-1", sortIndex: 1, count: 1 },
     ] as never);
-    mockedListPairsMap.mockResolvedValue(new Map([["pair-1", { frontFaceId: "front-1" }]]));
+    mockedListPairsMap.mockResolvedValue(new Map([["pair-1", createPair("pair-1", "front-1")]]));
 
     await expect(composeDeckSlotPairs("deck-1", "frontsOnly")).resolves.toEqual([
       { slotId: "set-0:entry-1:0", frontId: "front-1", backId: null },

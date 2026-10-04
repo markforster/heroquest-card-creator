@@ -35,7 +35,7 @@ describe("hashArrayBufferSha256", () => {
       value: { subtle: { digest: digestMock } },
     });
 
-    const buffer = new TextEncoder().encode("abc").buffer;
+    const buffer = new Uint8Array(new TextEncoder().encode("abc")).buffer;
     await expect(hashArrayBufferSha256(buffer)).resolves.toBe(expected);
     expect(digestMock).toHaveBeenCalledWith("SHA-256", buffer);
   });
@@ -51,7 +51,7 @@ describe("hashArrayBufferSha256", () => {
   it("falls back when crypto.subtle is missing", async () => {
     Object.defineProperty(globalThis, "crypto", { configurable: true, value: {} });
 
-    const buffer = new TextEncoder().encode("abc").buffer;
+    const buffer = new Uint8Array(new TextEncoder().encode("abc")).buffer;
     await expect(hashArrayBufferSha256(buffer)).resolves.toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     );

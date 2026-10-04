@@ -65,6 +65,7 @@ function renderPane({
         hasActiveNarrowing={hasActiveNarrowing}
         isTableView={false}
         cardViews={[]}
+        groupedCardViews={[]}
         cardActions={createActions()}
         isPairMode={false}
         dragEnabled={false}

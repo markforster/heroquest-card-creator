@@ -98,7 +98,7 @@ jest.mock("@/i18n/getTemplateNameLabel", () => ({
 
 jest.mock("@/components/Export/PdfExportShellModal", () => {
   const React = jest.requireActual<typeof import("react")>("react");
-  const defaultConfig = {
+  const defaultConfig: PrintConfig = {
     paper: "Letter",
     orientation: "portrait",
     marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
@@ -426,7 +426,7 @@ beforeEach(() => {
   );
   mockSummarizeDeckPdfRunData.mockImplementation(
     (
-      runData: { slotPairs: unknown[] },
+      runData: { slotPairs: SlotPair[] },
       mode: string,
       _scopeMode: string,
       selectedSetIds: Set<string>,

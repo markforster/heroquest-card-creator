@@ -260,6 +260,7 @@ function createSummaryCard(overrides: Partial<CardRecord>): CardRecord {
 
 function createCollectionRecord(overrides: Partial<CollectionRecord>): CollectionRecord {
   return {
+    schemaVersion: 1,
     id: "collection-1",
     name: "Collection One",
     cardIds: [],

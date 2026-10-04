@@ -69,7 +69,9 @@ describe("getExportProfilesState", () => {
     const legacyState = {
       ...stored,
       profiles: stored.profiles.map((profile) => {
-        const legacySettings = { ...profile.settings };
+        const legacySettings: Omit<typeof profile.settings, "imageFormat"> & {
+          imageFormat?: typeof profile.settings.imageFormat;
+        } = { ...profile.settings };
         delete legacySettings.imageFormat;
         return { ...profile, settings: legacySettings };
       }),

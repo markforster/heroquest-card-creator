@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import type { ExportOptionsFormState } from "@/components/Export/ExportOptionsForm";
 import PdfExportShellModal from "@/components/Export/PdfExportShellModal";
 import type { PdfExportAlignmentRun, PdfExportRun } from "@/components/Export/PdfExportShellModal";
+import type { ExportImageFormat } from "@/lib/export-settings";
 import type { PrintConfig, SlotPair } from "@/lib/pdf-export";
 
 import type { ReactNode } from "react";
@@ -18,7 +19,7 @@ const mockWaitForAssetElements = jest.fn();
 const mockWaitForFrame = jest.fn();
 const mockBuildAssetCache = jest.fn();
 let mockExportSettings = {
-  imageFormat: "jpeg" as const,
+  imageFormat: "jpeg" as ExportImageFormat,
   bleed: { enabled: true, bleedPx: 18, askBeforeExport: false },
   cropMarks: { enabled: true, color: "#00FFFF", style: "lines" },
   cutMarks: { enabled: true, color: "#00FFFF", style: "dashed" },
@@ -353,15 +354,20 @@ function makeRun(): PdfExportRun {
   return {
     fileName: "cards.pdf",
     includeCalibrationPage: true,
-    renderFacePngBytes: async () => new Uint8Array([1, 2, 3]),
   };
 }
 
 function makeAlignmentRun(): PdfExportAlignmentRun {
   return {
     ...makeRun(),
+    renderFacePngBytes: jest.fn(async () => null),
     composition: {
-      sheets: [{ sheetIndex: 0, slots: [{ frontId: "alignment:front:0:1", backId: null }] }],
+      sheets: [
+        {
+          sheetIndex: 0,
+          slots: [{ slotId: "alignment-1", frontId: "alignment:front:0:1", backId: null }],
+        },
+      ],
       totalSlots: 1,
     },
   };

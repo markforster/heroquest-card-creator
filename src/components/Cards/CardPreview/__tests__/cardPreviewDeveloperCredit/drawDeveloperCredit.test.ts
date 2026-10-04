@@ -1,6 +1,13 @@
-const measureCardTextMaxLineWidth = jest.fn(() => ({ maxLineWidth: 42 }));
-const getBleedTrimOrigin = jest.fn(() => ({ trimX: 3, trimY: 4 }));
-const resolveCopyrightTextStyle = jest.fn(() => ({ fontSize: 20 }));
+const measureCardTextMaxLineWidth = jest.fn<{ maxLineWidth: number }, unknown[]>(() => ({
+  maxLineWidth: 42,
+}));
+const getBleedTrimOrigin = jest.fn<{ trimX: number; trimY: number }, unknown[]>(() => ({
+  trimX: 3,
+  trimY: 4,
+}));
+const resolveCopyrightTextStyle = jest.fn<{ fontSize: number }, unknown[]>(() => ({
+  fontSize: 20,
+}));
 
 jest.mock("@/components/Cards/CardParts/CardTextBlock", () => ({
   measureCardTextMaxLineWidth: (...args: unknown[]) => measureCardTextMaxLineWidth(...args),

@@ -21,6 +21,11 @@ function createCardRecord(overrides: Partial<CardRecord> = {}): CardRecord {
 function createPairRecord(overrides: Partial<PairRecord> = {}): PairRecord {
   return {
     id: "pair-1",
+    name: "Pair 1",
+    nameLower: "pair 1",
+    createdAt: 1,
+    updatedAt: 1,
+    schemaVersion: 1,
     frontFaceId: "front-1",
     backFaceId: "back-1",
     ...overrides,

@@ -78,6 +78,9 @@ jest.mock("@/components/Cards/CardPreview", () => {
         const svgRef = useRef<SVGSVGElement | null>(null);
 
         useImperativeHandle(ref, () => ({
+          exportAsPng: jest.fn(async () => {}),
+          renderToPngBlob: jest.fn(async () => null),
+          renderToCanvas: jest.fn(async () => null),
           renderToJpegBlob: (
             ...args: Parameters<NonNullable<CardPreviewHandle["renderToJpegBlob"]>>
           ) => renderToJpegBlobMock(localId, props.cardData?.name, ...args),
