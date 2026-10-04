@@ -1,5 +1,5 @@
 const model = { rightPanelFaceMode: "front" };
-const useDeckRightPanelModel = jest.fn(() => model);
+const useDeckRightPanelModel = jest.fn<typeof model, unknown[]>(() => model);
 
 jest.mock("@/components/Decks/hooks/useDeckRightPanelModel", () => ({
   useDeckRightPanelModel: (...args: unknown[]) => useDeckRightPanelModel(...args),

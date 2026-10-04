@@ -289,7 +289,9 @@ describe("processDbEstimateQueue", () => {
   it("waits while paused and resumes queued processing when unpaused", async () => {
     window.localStorage.setItem(QUEUE_KEY, JSON.stringify([{ store: "decks", id: "deck-1" }]));
 
-    const requestIdleCallbackMock = jest.fn(() => 1);
+    const requestIdleCallbackMock = jest.fn<number, Parameters<typeof requestIdleCallback>>(
+      () => 1,
+    );
     globalThis.requestIdleCallback = requestIdleCallbackMock as typeof requestIdleCallback;
 
     const db = createFakeDb({

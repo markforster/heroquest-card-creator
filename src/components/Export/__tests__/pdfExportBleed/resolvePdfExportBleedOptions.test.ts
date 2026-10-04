@@ -1,4 +1,7 @@
-const getBleedTrimOrigin = jest.fn(() => ({ trimX: 20, trimY: 20 }));
+const getBleedTrimOrigin = jest.fn<{ trimX: number; trimY: number }, unknown[]>(() => ({
+  trimX: 20,
+  trimY: 20,
+}));
 
 jest.mock("@/lib/bleed-export", () => ({
   getBleedTrimOrigin: (...args: unknown[]) => getBleedTrimOrigin(...args),

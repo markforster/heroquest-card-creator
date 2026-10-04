@@ -85,7 +85,7 @@ describe("startThumbnailJpegMigration", () => {
     globalThis.Blob = NodeBlob as unknown as typeof Blob;
     convertedBlob = createJpegBlob(10);
     openHqccDexieDb.mockReset();
-    createImageBitmapMock = jest.fn(async () => ({
+    createImageBitmapMock = jest.fn<Promise<BitmapLike>, [Blob]>(async () => ({
       width: 20,
       height: 10,
       close: jest.fn(),
